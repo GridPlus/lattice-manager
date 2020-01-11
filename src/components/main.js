@@ -1,7 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Layout, Menu, Icon, Select, Row, Col } from 'antd';
-import { SDKSession } from '../sdk/sdkSession';
+import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Row, Col, Spin, Tag } from 'antd';
+import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect } from './index'
 const { Header, Content, Footer, Sider } = Layout;
 const { SubMenu } = Menu;
@@ -12,14 +12,41 @@ class Main extends React.Component {
     super(props)
     this.state = {
       collapsed: false,
-      sdk: null,
       currency: 'eth',
+      session: new SDKSession(),
+      errMsg: null,
+      pendingMsg: null,
     };
     this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
+    this.handleConnect = this.handleConnect.bind(this);
+    this.handleLogout = this.handleLogout.bind(this);
+  }
+
+  resetMsg() {
+    this.setState({
+      errMsg: null,
+      pendingMsg: null,
+    })
   }
 
   handleCurrencyChange(value) {
+    this.resetMsg();
     this.setState({ currency: value })
+  }
+
+  handleLogout() {
+    this.resetMsg();
+    this.state.session.disconnect();
+  }
+
+  handleConnect(data) {
+    this.resetMsg();
+    this.setState({ pendingMsg: 'Connecting to your Lattice1...' });
+    this.state.session.connect(data.deviceID, data.password, (err) => {
+      if (err) {
+        this.setState({ errMsg: 'Failed to connect to your Lattice. Please ensure your device is online and that you entered the correct DeviceID.' })
+      }
+    })
   }
 
   onCollapse = collapsed => {
@@ -49,29 +76,53 @@ class Main extends React.Component {
   }
 
   renderHeader() {
+    const extra = [
+      <Select key="currency-select" defaultValue="eth" onChange={this.handleCurrencyChange}>
+        <Option value="eth">ETH</Option>
+        <Option value="btc">BTC</Option>
+      </Select>
+    ];
+    if (this.state.session.isConnected()) {
+      extra.push(
+        <Button key="logout-button" type="primary" onClick={this.handleLogout}>
+          Logout
+        </Button>
+      )
+    }
     return (
-      <Header>
-        <Row>
-          <Col span={4}>
-            <div className="logo">
-              <img alt={"GridPlus"} src={"/logo.png"} width={100} />
-            </div>
-          </Col>
-          <Col span={4} offset={16}>
-            <Select defaultValue="eth" style={{ width: 120 }} onChange={this.handleCurrencyChange}>
-              <Option value="eth">ETH</Option>
-              <Option value="btc">BTC</Option>
-            </Select>
-          </Col>
-        </Row>
-      </Header>
+      <PageHeader
+        tags={<Tag>GridPlus Web Wallet</Tag>}
+        // avatar={{src: "/logo.png"}}
+        style={{background: "#001529", "fontColor": "#fff"}}
+        ghost={false}
+        extra={extra}
+      />
     )
+  }
+
+  renderAlert() {
+    if (this.state.errMsg) {
+      return (
+        <Alert message={this.state.errMsg} type={"error"} closable />
+      )
+    } else if (this.state.pendingMsg) {
+      return (
+        <Spin spinning={true}>
+          <Alert message={"Connecting to your Lattice"} closable/>
+        </Spin>
+      )
+    } else {
+      return;
+    }
   }
 
   renderContent() {
     return (
-      <div style={{ margin: '50px 0 0 0'}}>
-        <Connect/>
+      <div>
+        {this.renderAlert()}
+        <div style={{ margin: '50px 0 0 0'}}>
+          <Connect submitCb={this.handleConnect}/>
+        </div>
       </div>
     )
   }

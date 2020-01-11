@@ -1,19 +1,35 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Button, Card, Col, Collapse, Icon, Input, Row, Popover } from 'antd'
+import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Popover, Spin } from 'antd'
 const { Panel } = Collapse;
 
 class Connect extends React.Component {
+    constructor(props) {
+      super(props)
+      this.state = {
+        errMsg: null,
+      }
+      this.handleSubmit = this.handleSubmit.bind(this);
+      this.renderMsg = this.renderMsg.bind(this);
+    }
+
+
   handleSubmit(data) {
     const deviceID = document.getElementById("deviceIdInput").value;
     const password = document.getElementById("passwordInput").value;
+    if (password.length < 8) {
+      this.setState({errMsg: "Your password must be at least 8 characters."})
+    } else {
+      this.setState({ errMsg: null })
+      this.props.submitCb({deviceID, password});
+    }
   }
 
   renderForm(getFieldDecorator) {
     return (
       <div>
         <Input placeholder="DeviceID" id="deviceIdInput" style={{ margin: '20px 0 0 0'}} />
-        <Input.Password placeholder="Password" id="passwordInput" style={{ margin: '20px 0 0 0'}} />
+        <Input.Password placeholder="Password" id="passwordInput" onPressEnter={this.handleSubmit} style={{ margin: '20px 0 0 0'}} />
         <Button type="primary" onClick={this.handleSubmit} style={{ margin: '20px 0 0 0'}}>
           Connect
         </Button>
@@ -21,11 +37,20 @@ class Connect extends React.Component {
     )
   }
 
+  renderMsg() {
+    if (this.state.errMsg !== null) {
+      return (<Alert message={this.state.errMsg} type={"error"} closable />)
+    } else {
+      return;
+    }
+  }
+
   render() {
     return (
       <Row>
         <Col span={10} offset={7}>
           <center>
+            {this.renderMsg()}
             <Card title="Connect to Lattice1" bordered={true}>
               <p>
                 Please enter your Lattice's Device ID&nbsp;
