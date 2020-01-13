@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Popover, Spin } from 'antd'
+import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Popover } from 'antd'
 const { Panel } = Collapse;
 
 class Connect extends React.Component {
@@ -28,11 +28,17 @@ class Connect extends React.Component {
   renderForm(getFieldDecorator) {
     return (
       <div>
-        <Input placeholder="DeviceID" id="deviceIdInput" style={{ margin: '20px 0 0 0'}} />
-        <Input.Password placeholder="Password" id="passwordInput" onPressEnter={this.handleSubmit} style={{ margin: '20px 0 0 0'}} />
-        <Button type="primary" onClick={this.handleSubmit} style={{ margin: '20px 0 0 0'}}>
-          Connect
-        </Button>
+        <Row>
+          <Input placeholder="DeviceID" id="deviceIdInput" style={{ margin: '20px 0 0 0', width: "50%"}} />
+        </Row>
+        <Row>
+          <Input.Password placeholder="Password" id="passwordInput" onPressEnter={this.handleSubmit} style={{ margin: '20px 0 0 0', width: "50%"}} />
+        </Row>
+        <Row>
+          <Button type="primary" onClick={this.handleSubmit} style={{ margin: '20px 0 0 0'}}>
+            Connect
+          </Button>
+        </Row>
       </div>
     )
   }

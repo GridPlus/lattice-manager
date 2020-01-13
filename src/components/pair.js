@@ -1,19 +1,15 @@
 import React from 'react';
 import { Card, Col, Row, Input } from 'antd'
 import 'antd/dist/antd.css'
+const { Search } = Input;
 
 class Pair extends React.Component {
 
   constructor(props) {
     super(props);
-    this.handleInput = this.handleInput.bind(this);
-  }
-
-  handleInput() {
-    const value = document.getElementById("secret").value;
-    if (value.length > 7) {
-      return this.props.submit(value);
-    }
+    this.timeout = setTimeout(() => {
+      return this.props.submit(null, true);
+    }, 60000)
   }
 
   render() {
@@ -24,7 +20,13 @@ class Pair extends React.Component {
             <Card title="Enter Secret" bordered={true}>
               <p></p>
               <p>Please enter the pairing secret displayed on your Lattice screen:</p>
-              <Input id="secret" onChange={this.handleInput} style={{width: 100}}/>
+              <Search 
+                enterButton="Pair"
+                size="large" 
+                id="secret" 
+                onSearch={value => this.props.submit(value)}
+                style={{width: "50%", margin: '20px 0 0 0'}}
+              />
             </Card>
           </center>
         </Col>

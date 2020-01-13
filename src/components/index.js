@@ -9,3 +9,4 @@ export { default as Wallet } from './wallet'
 
 // Stateless components
 export { default as Loading } from './loading'
+export { default as Error } from './error'

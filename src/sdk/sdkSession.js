@@ -2,6 +2,8 @@ import { Client } from 'gridplus-sdk';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
 const GRIDPLUS_CLOUD_API = 'https://pay.gridplus.io:3000';
+const SDK_TIMEOUT = 60000;
+
 class SDKSession {
   constructor() {
     this.client = null;
@@ -77,7 +79,7 @@ class SDKSession {
     }, 3000)
   }
 
-  connect(deviceID, pw, cb) {
+  connect(deviceID, pw, cb, initialTimeout=SDK_TIMEOUT) {
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
@@ -92,12 +94,12 @@ class SDKSession {
       crypto: this.crypto,
       privKey: key,
       baseUrl: 'https://signing.staging-gridpl.us',
-      timeout: 10000, // Artificially short timeout for simply locating the Lattice
+      timeout: initialTimeout, // Artificially short timeout for simply locating the Lattice
     })
     client.connect(deviceID, (err) => {
       if (err) return cb(err);
       // Update the timeout to a longer one for future async requests
-      client.timeout = 60000;
+      client.timeout = SDK_TIMEOUT;
       this.client = client;
       return cb(null, client.isPaired);
     });
