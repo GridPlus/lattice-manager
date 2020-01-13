@@ -4,6 +4,7 @@ export { default as Main } from './main'
 
 // Content screens
 export { default as Connect } from './connect'
+export { default as Pair } from './pair'
 export { default as Wallet } from './wallet'
 
 // Stateless components

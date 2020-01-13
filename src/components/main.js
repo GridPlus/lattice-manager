@@ -2,13 +2,13 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Spin, Tag } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Loading, Wallet } from './index'
+import { Connect, Loading, Pair, Wallet } from './index'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
 
 class Main extends React.Component {
   constructor(props) {
-    super(props)
+    super(props)    
     this.state = {
       collapsed: false,
       currency: 'ETH',
@@ -19,20 +19,35 @@ class Main extends React.Component {
       hasClient: false,
       waiting: false, // Waiting on asynchronous data, usually from the Lattice
       stateTick: 0, // A simple counter to track state transitions between components
+      // Login info stored in localstorage. Can be cleared out at any time by the `logout` func
+      deviceID: null,
+      password: null,
     };
+
     this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
     this.handleConnect = this.handleConnect.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
+    this.handlePair = this.handlePair.bind(this);
+  }
+
+  componentDidMount() {
+    // Lookup deviceID and pw from storage
+    const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
+    const password = window.localStorage.getItem('gridplus_web_wallet_password');
+    if (deviceID && password) {
+      this.setState({ deviceID, password })
+      this.handleConnect({ deviceID, password})
+    }
   }
 
   tick() {
-    this.setState({ stateTick: this.state.stateTick + 1 })
+    this.setState({ waiting: false, stateTick: this.state.stateTick + 1 })
   }
 
   setMsg(msg={}) {
     this.setState({
       errMsg: msg.errMsg || null,
-      pendingMsg: msg.PendingMsg || null,
+      pendingMsg: msg.pendingMsg || null,
     })
   }
 
@@ -57,29 +72,58 @@ class Main extends React.Component {
   handleLogout() {
     this.resetClient(false);
     this.state.session.disconnect();
+    window.localStorage.clear();
+  }
+
+  // Asynchronously load addresses from the client session using
+  // the currently selected currency
+  loadAddresses() {
+    this.setState({ waiting: true });
+    this.state.session.loadAddresses(this.state.currency, (err) => {
+      this.tick(); //  Notify state we potentially have new data
+      if (err) return this.setMsg({ errMsg: err });
+    });
   }
 
   handleConnect(data) {
-    this.setMsg({ pendingMsg: 'Connecting to your Lattice1...' });
-    this.state.session.connect(data.deviceID, data.password, (err) => {
-      // if (err) {
-      //   this.resetClient();
-      //   this.setState({ errMsg: 'Failed to connect to your Lattice. Please ensure your device is online and that you entered the correct DeviceID.' })
-      // } else {
+    this.setState({ waiting: true })
+    this.state.session.connect(data.deviceID, data.password, (err, isPaired) => {
+      this.setState({ waiting: false })
+      if (err) {
+        this.resetClient();
+        this.setState({ errMsg: 'Failed to find to your Lattice. Please ensure your device is online and that you entered the correct DeviceID.' })
+      } else {
+        // We connected!
+        // 1. Set this as the client
         this.resetClient(true);
-        // Load initial balances and transactions
-        this.setState({ waiting: true });
-        this.state.session.loadAddresses(this.state.currency, (err) => {
-          this.tick(); //  Notify state we potentially have new data
-          this.setState({ waiting: false });
-          if (err) return this.setMsg({ errMsg: err });  
-        });
-      // }
+        // 2. Save these credentials to localStorage
+        window.localStorage.setItem('gridplus_web_wallet_id', data.deviceID);
+        window.localStorage.setItem('gridplus_web_wallet_password', data.password);
+        
+        // Are we already paired?
+        // If so, load addresses.
+        // If not, the component should re-render a pairing screen
+        if (isPaired) {
+          this.loadAddresses();
+        }
+      }
+    })
+  }
+
+  handlePair(data) {
+    this.setState({ waiting: true });
+    this.state.session.pair(data, (err) => {
+      this.setState({ waiting: false });
+      if (err) {
+        this.setState({ errMsg: 'Failed to pair with your device. Please try again. '});
+        this.handleConnect({ deviceID: this.state.deviceID, password: this.state.password });
+      } else {
+        this.loadAddresses();
+      }
     })
   }
 
   onCollapse = collapsed => {
-    console.log(collapsed);
     this.setState({ collapsed });
   };
 
@@ -132,12 +176,12 @@ class Main extends React.Component {
   renderAlert() {
     if (this.state.errMsg) {
       return (
-        <Alert message={this.state.errMsg} type={"error"} closable />
+        <Alert message={this.state.errMsg} type={"error"} showIcon closable />
       )
     } else if (this.state.pendingMsg) {
       return (
-        <Spin spinning={true}>
-          <Alert message={"Connecting to your Lattice"} closable/>
+        <Spin spinning={true} tip={this.state.pendingMsg}>
+          <Alert message={"  "}/>
         </Spin>
       )
     } else {
@@ -148,11 +192,12 @@ class Main extends React.Component {
   renderContent() {
     if (this.state.waiting) {
       return (<Loading/> )
-    // } else if (false) {
     } else if (!this.state.hasClient) {
       return (
         <Connect submitCb={this.handleConnect}/>
       )
+    } else if (!this.state.session.isPaired()) {
+      return (<Pair submit={this.handlePair}/>)
     } else {
       return (
         <Wallet currency={this.state.currency} 
@@ -177,7 +222,7 @@ class Main extends React.Component {
         <Layout>
           {this.renderSidebar()}
         <Layout>
-          <Content style={{ margin: '0 16px' }}>
+          <Content style={{ margin: '20px 16px' }}>
             {this.renderAlert()}
             <div style={{ margin: '50px 0 0 0'}}>
               {this.renderContent()}        

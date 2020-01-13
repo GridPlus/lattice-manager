@@ -23,6 +23,10 @@ class SDKSession {
     return this.client !== null;
   }
 
+  isPaired() {
+    return this.client.isPaired || false;
+  }
+
   getBalance(currency) {
     return this.balances[currency] || 0;
   }
@@ -55,9 +59,8 @@ class SDKSession {
     fetch(url, data)
     .then((response) => response.json())
     .then((r) => {
-      console.log(r)
       this.balances[currency] = r.data[0].balance.value;
-      this.usdValues[currency] = r.data[0].balance.price;
+      this.usdValues[currency] = r.data[0].balance.dollarAmount;
       this.txs[currency ] = r.data[0].transactions;
       return cb(null);
     })
@@ -74,13 +77,7 @@ class SDKSession {
     }, 3000)
   }
 
-  // loadBalances()
-
   connect(deviceID, pw, cb) {
-    // Reject the request if there is already a client session
-    if (this.client !== null)
-      return cb('Client already exists in session. Please call disconnect() first.');
-
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
@@ -94,12 +91,20 @@ class SDKSession {
       name: 'GridPlus Web Wallet',
       crypto: this.crypto,
       privKey: key,
+      baseUrl: 'https://signing.staging-gridpl.us',
+      timeout: 10000, // Artificially short timeout for simply locating the Lattice
     })
     client.connect(deviceID, (err) => {
       if (err) return cb(err);
+      // Update the timeout to a longer one for future async requests
+      client.timeout = 60000;
       this.client = client;
-      return cb();
+      return cb(null, client.isPaired);
     });
+  }
+
+  pair(secret, cb) {
+    this.client.pair(secret, cb);
   }
 
   _genPrivKey(deviceID, pw) {
