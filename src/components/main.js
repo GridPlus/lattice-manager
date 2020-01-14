@@ -15,6 +15,7 @@ class Main extends React.Component {
       menuItem: 'menu-wallet',
       session: new SDKSession(),
       errMsg: null,
+      error: { msg: null, cb: null },
       pendingMsg: null,
       hasClient: false,
       waiting: false, // Waiting on asynchronous data, usually from the Lattice
@@ -28,6 +29,9 @@ class Main extends React.Component {
     this.connectSession = this.connectSession.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
     this.handlePair = this.handlePair.bind(this);
+    this.retry = this.retry.bind(this);
+
+    this.loadAddresses = this.loadAddresses.bind(this);
   }
 
   componentDidMount() {
@@ -46,7 +50,7 @@ class Main extends React.Component {
 
   // Simple mechanism to force a state update and potential redraws
   tick() {
-    this.setState({ waiting: false, stateTick: this.state.stateTick + 1 })
+    this.setState({ stateTick: this.state.stateTick + 1 })
   }
 
   // Update alert message. If no args are provided, this will clear
@@ -64,6 +68,14 @@ class Main extends React.Component {
 
   unwait() {
     this.setState({ pendingMsg: null, waiting: false });
+  }
+
+  setError(data) {
+    if (data) {
+      this.setState({ error: data });
+    } else {
+      this.setState({ error: { msg: null, cb: null }});
+    }
   }
 
   // Let this component know that we do/not have a client session
@@ -130,7 +142,8 @@ class Main extends React.Component {
         // 2. Save these credentials to localStorage
         window.localStorage.setItem('gridplus_web_wallet_id', data.deviceID);
         window.localStorage.setItem('gridplus_web_wallet_password', data.password);
-        
+        // 3. Clear error data
+        this.setError();
         // Are we already paired?
         // If so, load addresses
         if (isPaired) {
@@ -149,8 +162,20 @@ class Main extends React.Component {
     this.wait("Loading addresses")
     this.state.session.loadAddresses(this.state.currency, (err) => {
       this.unwait();
-      this.tick(); //  Notify state we potentially have new data
-      if (err) return this.setAlertMessage({ errMsg: err });
+      // Catch an error if there is one
+      if (err) {
+        this.setError({ msg: err, cb: this.loadAddresses })
+        return;
+      }
+      // If there is no error, get the data
+      this.wait("Syncing chain data");
+      this.state.session.fetchData(this.state.currency, (err) => {
+        this.unwait();
+        this.tick();
+        if (err) {
+          this.setError({ msg: `Failed to sync history for ${this.state.currency}`,})
+        }
+      });
     });
   }
 
@@ -173,7 +198,7 @@ class Main extends React.Component {
       // a timeout after 60 seconds. This will move the user
       // to the <Error> screen
       // Tick just in case
-      this.tick();
+      this.setError({ msg: 'Pairing timed out. Please try again.', cb: this.connectSession });
       return;
     }
     // If we didn't timeout, submit the secret and hope for success!
@@ -181,11 +206,8 @@ class Main extends React.Component {
     this.state.session.pair(data, (err) => {
       this.unwait();
       if (err) {
-        // If there was an error, automatically call `connect` again,
-        // which will generate a new secret and take the user back to 
-        // the pair screen.
-        this.setState({ errMsg: 'Failed to pair with your device. Please try again. '});
-        this.connectSession();
+        // If there was an error here, the user probably entered the wrong secret
+        this.setError({ msg: 'Secret was incorrect. Please try again.', cb: this.connectSession });
       } else {
         // Success! Load our addresses from this wallet.
         this.loadAddresses();
@@ -257,7 +279,13 @@ class Main extends React.Component {
     }
   }
 
+  retry(cb) {
+    this.setError();
+    return cb();
+  }
+
   renderContent() {
+    const hasError = this.state.error.msg && this.state.error.cb;
     if (this.state.waiting) {
       return (<Loading msg={this.state.pendingMsg} /> )
     } else if (!this.state.hasClient) {
@@ -265,19 +293,16 @@ class Main extends React.Component {
       return (
         <Connect submitCb={this.connectSession}/>
       )
+    } else if (hasError) {
+      return (
+        <Error  cb={this.state.error.cb}
+                msg={this.state.error.msg}
+                retryCb={this.retry}
+        />
+      )
     } else if (!this.state.session.isPaired()) {
-      if (this.state.pairingTimedOut) {
-        return (
-          // We timed out trying to pair
-          <Error cb={this.connectSession}
-                 msg={"Pairing timed out. Please try again"}
-                 btnMsg={"Retry"}  
-          />
-        )
-      } else {
-        // Proceed with pairing
-        return (<Pair submit={this.handlePair}/>)
-      }
+      // Automatically try to pair if we have a session but no pairing  
+      return (<Pair submit={this.handlePair}/>)
     } else {
       // Wallet screen
       return (

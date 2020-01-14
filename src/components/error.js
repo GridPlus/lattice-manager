@@ -10,8 +10,8 @@ class Error extends React.Component {
           <center>
             <Card title="Error" bordered={true}>
               <p>{this.props.msg}</p>
-              <Button onClick={() => { this.props.cb() }} type="danger">
-                {this.props.btnMsg}
+              <Button onClick={() => { this.props.retryCb(this.props.cb) }} type="danger">
+                {this.props.btnMsg || "Retry"}
               </Button>
             </Card>
           </center>
