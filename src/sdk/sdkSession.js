@@ -73,9 +73,9 @@ class SDKSession {
   loadAddresses(currency, cb) {
     // Dummy code
     setTimeout(() => {
-      // this.addresses[currency] = ['0xb91BcFD9D30178E962F0d6c204cE7Fd09C05D84C']
-      // return cb(null);
-      return cb("Failed to load addresses");
+      this.addresses[currency] = ['0xb91BcFD9D30178E962F0d6c204cE7Fd09C05D84C']
+      return cb(null);
+      // return cb("Failed to load addresses");
     }, 3000)
   }
 

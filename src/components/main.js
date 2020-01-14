@@ -19,7 +19,8 @@ class Main extends React.Component {
       pendingMsg: null,
       hasClient: false,
       waiting: false, // Waiting on asynchronous data, usually from the Lattice
-      stateTick: 0, // A simple counter to track state transitions between components
+      // Tick state in order to force a re-rendering of the `Wallet` component
+      stateTick: 0,
       // Login info stored in localstorage. Can be cleared out at any time by the `logout` func
       deviceID: null,
       password: null,
@@ -48,7 +49,9 @@ class Main extends React.Component {
   // LOCAL STATE UPDATES
   //------------------------------------------
 
-  // Simple mechanism to force a state update and potential redraws
+  // Simple mechanism to force a state update
+  // Only use this when you want to force the Wallet component
+  // to update/re-render!
   tick() {
     this.setState({ stateTick: this.state.stateTick + 1 })
   }
@@ -149,9 +152,6 @@ class Main extends React.Component {
         if (isPaired) {
           this.loadAddresses();
         }
-        // If not, this component will attempt to draw the pairing screen.
-        // Tick just in case
-        this.tick();
       }
     }, timeout);
   }
@@ -171,7 +171,6 @@ class Main extends React.Component {
       this.wait("Syncing chain data");
       this.state.session.fetchData(this.state.currency, (err) => {
         this.unwait();
-        this.tick();
         if (err) {
           this.setError({ msg: `Failed to sync history for ${this.state.currency}`,})
         }
@@ -287,22 +286,26 @@ class Main extends React.Component {
   renderContent() {
     const hasError = this.state.error.msg && this.state.error.cb;
     if (this.state.waiting) {
-      return (<Loading msg={this.state.pendingMsg} /> )
+      return (
+        <Loading msg={this.state.pendingMsg} /> 
+      );
     } else if (!this.state.hasClient) {
       // Connect to the Lattice via the SDK
       return (
         <Connect submitCb={this.connectSession}/>
-      )
+      );
     } else if (hasError) {
       return (
         <Error  cb={this.state.error.cb}
                 msg={this.state.error.msg}
                 retryCb={this.retry}
         />
-      )
+      );
     } else if (!this.state.session.isPaired()) {
       // Automatically try to pair if we have a session but no pairing  
-      return (<Pair submit={this.handlePair}/>)
+      return (
+        <Pair submit={this.handlePair}/>
+      );
     } else {
       // Wallet screen
       return (
