@@ -1,8 +1,9 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Spin, Tag } from 'antd';
+import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Wallet } from './index'
+import { CONSTANTS } from '../constants'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
 
@@ -57,6 +58,14 @@ class Main extends React.Component {
     })
   }
 
+  wait(msg=null) {
+    this.setState({ pendingMsg: msg, waiting: true });
+  }
+
+  unwait() {
+    this.setState({ pendingMsg: null, waiting: false });
+  }
+
   // Let this component know that we do/not have a client session
   // If we do not have a client, we should disconnect the session.
   // If we do have a client (i.e. a new connection), set that
@@ -105,10 +114,10 @@ class Main extends React.Component {
   // Call `connect` on the SDK session. If we get an error back, clear out the client,
   // as we cannot connect.
   connectSession(data=this.state) {
-    console.log('connectSession data', data)
-    this.setState({ waiting: true })
+    this.wait("Trying to contact your Lattice");
+    const timeout = this.state.hasClient ? CONSTANTS.ASYNC_SDK_TIMEOUT : CONSTANTS.SHORT_TIMEOUT;
     this.state.session.connect(data.deviceID, data.password, (err, isPaired) => {
-      this.setState({ waiting: false })
+      this.unwait();
       if (err) {
         // If we failed to connect, clear out the SDK session. This component will
         // prompt the user for new login data and will try to create one.
@@ -131,14 +140,15 @@ class Main extends React.Component {
         // Tick just in case
         this.tick();
       }
-    })
+    }, timeout);
   }
 
   // Asynchronously load addresses from the client session using
   // the currently selected currency
   loadAddresses() {
-    this.setState({ waiting: true });
+    this.wait("Loading addresses")
     this.state.session.loadAddresses(this.state.currency, (err) => {
+      this.unwait();
       this.tick(); //  Notify state we potentially have new data
       if (err) return this.setAlertMessage({ errMsg: err });
     });
@@ -167,9 +177,9 @@ class Main extends React.Component {
       return;
     }
     // If we didn't timeout, submit the secret and hope for success!
-    this.setState({ waiting: true });
+    this.wait("Establishing connection with your Lattice");
     this.state.session.pair(data, (err) => {
-      this.setState({ waiting: false });
+      this.unwait();
       if (err) {
         // If there was an error, automatically call `connect` again,
         // which will generate a new secret and take the user back to 
@@ -242,12 +252,6 @@ class Main extends React.Component {
       return (
         <Alert message={this.state.errMsg} type={"error"} showIcon closable />
       )
-    } else if (this.state.pendingMsg) {
-      return (
-        <Spin spinning={true} tip={this.state.pendingMsg}>
-          <Alert message={"  "}/>
-        </Spin>
-      )
     } else {
       return;
     }
@@ -255,7 +259,7 @@ class Main extends React.Component {
 
   renderContent() {
     if (this.state.waiting) {
-      return (<Loading/> )
+      return (<Loading msg={this.state.pendingMsg} /> )
     } else if (!this.state.hasClient) {
       // Connect to the Lattice via the SDK
       return (

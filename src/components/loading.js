@@ -10,7 +10,7 @@ class Loading extends React.Component {
           <center>
             <Card title="Loading" bordered={true}>
               <Spin/>
-              <p>Waiting for data from your Lattice1</p>
+              <p>{this.props.msg ? this.props.msg : "Waiting for data from your Lattice1"}</p>
             </Card>
           </center>
         </Col>
