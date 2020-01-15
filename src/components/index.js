@@ -6,6 +6,7 @@ export { default as Main } from './main'
 export { default as Connect } from './connect'
 export { default as Pair } from './pair'
 export { default as Wallet } from './wallet'
+export { default as Receive } from './receive'
 
 // Stateless components
 export { default as Loading } from './loading'

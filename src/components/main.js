@@ -2,7 +2,7 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Wallet } from './index'
+import { Connect, Error, Loading, Pair, Receive, Wallet } from './index'
 import { CONSTANTS } from '../constants'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -26,13 +26,19 @@ class Main extends React.Component {
       password: null,
     };
 
+    // Bind local state updaters
     this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
-    this.connectSession = this.connectSession.bind(this);
+    this.handleMenuChange = this.handleMenuChange.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
+
+    // Bind callbacks whose calls may originate elsewhere
+    this.connectSession = this.connectSession.bind(this);
     this.handlePair = this.handlePair.bind(this);
+    this.loadAddresses = this.loadAddresses.bind(this);
+
+    // Bind wrappers
     this.retry = this.retry.bind(this);
 
-    this.loadAddresses = this.loadAddresses.bind(this);
   }
 
   componentDidMount() {
@@ -107,9 +113,8 @@ class Main extends React.Component {
     this.setState({ currency: value })
   }
 
-  handleMenuChange(value) {
-    this.setAlertMessage();
-    this.setState({ menuItem: value })
+  handleMenuChange({key}) {
+    this.setState({ menuItem: key })
   }
 
   handleLogout() {
@@ -225,7 +230,7 @@ class Main extends React.Component {
   renderSidebar() {
     return (
       <Sider>
-        <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline">
+        <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
           <Menu.Item key="menu-wallet">
             <Icon type="wallet" />
             <span>Wallet</span>
@@ -283,6 +288,28 @@ class Main extends React.Component {
     return cb();
   }
 
+  renderMenuItem() {
+    switch (this.state.menuItem) {
+      case 'menu-wallet':
+        return (
+          <Wallet currency={this.state.currency} 
+                  session={this.state.session}
+                  msgHandler={this.setAlertMessage}
+                  tick={this.state.tick}
+          />
+        );
+      case 'menu-receive':
+        return (
+          <Receive currency={this.state.currency}
+                   session={this.state.session}
+                   tick={this.state.tick}
+          />
+        )
+      default:
+        return;
+    }
+  }
+
   renderContent() {
     const hasError = this.state.error.msg && this.state.error.cb;
     if (this.state.waiting) {
@@ -307,14 +334,7 @@ class Main extends React.Component {
         <Pair submit={this.handlePair}/>
       );
     } else {
-      // Wallet screen
-      return (
-        <Wallet currency={this.state.currency} 
-                session={this.state.session}
-                msgHandler={this.setAlertMessage}
-                tick={this.state.tick}
-        />
-      );
+      return this.renderMenuItem();
     }
   }
 
