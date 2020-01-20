@@ -2,7 +2,7 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Receive, Wallet } from './index'
+import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
 import { CONSTANTS } from '../constants'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -311,6 +311,8 @@ class Main extends React.Component {
   }
 
   renderContent() {
+    return (<Send currency={this.state.currency}/>);
+/*
     const hasError = this.state.error.msg && this.state.error.cb;
     if (this.state.waiting) {
       return (
@@ -336,6 +338,7 @@ class Main extends React.Component {
     } else {
       return this.renderMenuItem();
     }
+*/
   }
 
   renderFooter() {

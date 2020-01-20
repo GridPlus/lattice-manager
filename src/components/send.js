@@ -1,56 +1,43 @@
 import React from 'react';
 import 'antd/dist/antd.css'
 import { Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
-import { checkEth } from '../util/sendChecks';
-const { Search } = Input;
-const ADDRESS_SEARCH = "address";
-const VALUE_SEARCH = "value";
+import { allChecks } from '../util/sendChecks';
+const RECIPIENT_ID = "recipient";
+const VALUE_ID = "value";
 
 class Send extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      windowWidth: window.innerWidth,
       recipient: '',
-      value: 0,
+      value: null,
+      recipientCheck: null,
+      valueCheck: null,
     }
 
-    this.updateWidth = this.updateWidth.bind(this);
     this.submit = this.submit.bind(this);
   }
 
-  componentDidMount() {
-    window.addEventListener('resize', this.updateWidth);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('resize', this.updateWidth);
-  }
-
-  updateWidth() {
-    this.setState({ windowWidth: window.innerWidth });
-  }
-
-  paste(id) {
-    const e = document.getElementById(id);
-    e.select();
-    document.execCommand("paste")
-  }
-
   updateRecipient(evt) {
-    this.setState({ recipient: evt.target.value });
+    const val = evt.target.value;
+    const check = allChecks[this.props.currency].recipient;
+    this.setState({ 
+      recipient: val, 
+      recipientCheck: check(val), 
+    });
   }
 
   updateValue(evt) {
     let val = evt.target.value;
+    const check = allChecks[this.props.currency].value;
     let numberVal = Number(val);
     const isZeroPrefixed = val[0] === '0';
     const isLessThanOne = isZeroPrefixed && val[1] === '.';
     // Only update state if the value can be converted to a number!
     if (val === '0') {
       // Plain zero is fine
-      this.setState({ value: val })
+      ;
     } else if (!isNaN(numberVal)) {
       // We want to save the string, as it may contain a period
       // which is necessary for forming decimal numbers
@@ -58,48 +45,82 @@ class Send extends React.Component {
       // we should make sure we strip out leading zeros for numbers
       // larger than zero (i.e. 0.4 is good, 01.4 is not)
       if (isZeroPrefixed && !isLessThanOne) val = val.slice(1);
-      this.setState({ value: val })
     } else if (val === '.') {
       // If the user is trying to make a decimal value <1, prefix
       // with a 0
       val = '0' + val;
-      this.setState({ value: val })
+    } else {
+      return;
     }
+
+    this.setState({ 
+      value: val,
+      valueCheck: check(val) 
+    });
   }
 
   submit() {
-    let valid = false;
+    let checks, isValid;
+    const check = allChecks[this.props.currency].full;
     switch (this.props.currency) {
       case 'ETH':
-        valid = checkEth(this.state);
+        checks = check(this.state);
         break;
       default:
         break;
     }
-    console.log('submitted: valid?', valid)
+
+    isValid = checks.recipient && checks.value;
+ 
+  }
+
+  renderIcon(id) {
+    const name = `${id}Check`;
+    const isValid = this.state[name];
+    if (isValid === true) {
+      return (<Icon type="check-circle" theme="filled" style={{color: 'green'}}/>)
+    } else if (isValid === false) {
+      return (<Icon type="close-circle" theme="filled" style={{color: 'red'}}/>)
+    } else {
+      return;
+    }
   }
 
   renderCard() {
     if (true) {
       return (
         <div>
-          <p style={{textAlign:'left'}}><b>Recipient</b></p>
-          <Search type="text" 
-                  id={ADDRESS_SEARCH} 
-                  value={this.state.recipient} 
-                  enterButton={<Icon type="snippets" />}
-                  // onSearch={() => this.paste(ADDRESS_SEARCH)}
-                  onChange={this.updateRecipient.bind(this)}
-          />
-          <p style={{margin: "20px 0 0 0", textAlign: 'left'}}><b>Value</b></p>
-          <Search type="text" 
-                  id={VALUE_SEARCH} 
-                  value={this.state.value} 
-                  enterButton={<Icon type="snippets" />}
-                  // onSearch={() => this.paste(VALUE_SEARCH)}
-                  onChange={this.updateValue.bind(this)}
-          />
-          <Button type="primary" onClick={this.submit} style={{ margin: '20px 0 0 0'}}>
+          <Row>
+            <Col span={18} offset={2}>
+              <p style={{textAlign:'left'}}><b>Recipient</b></p>
+              <Input type="text" 
+                      id={RECIPIENT_ID} 
+                      value={this.state.recipient} 
+                      onChange={this.updateRecipient.bind(this)}
+              />
+            </Col>
+            <Col offset={20}>
+              <div style={{margin: "30px 0 0 0", fontSize: "24px"}}>
+                {this.renderIcon(RECIPIENT_ID)}
+              </div>
+            </Col>
+          </Row>
+          <Row style={{margin: "20px 0 0 0"}}>
+            <Col span={18} offset={2}>
+              <p style={{textAlign: 'left'}}><b>Value</b></p>
+              <Input type="text" 
+                      id={VALUE_ID} 
+                      value={this.state.value} 
+                      onChange={this.updateValue.bind(this)}
+              />
+            </Col>
+            <Col offset={20}>
+              <div style={{margin: "30px 0 0 0", fontSize: "24px"}}>
+                {this.renderIcon(VALUE_ID)}
+              </div>
+            </Col>
+          </Row>
+          <Button type="primary" onClick={this.submit} style={{ margin: '30px 0 0 0'}}>
             Send
           </Button>
         </div>
@@ -116,8 +137,8 @@ class Send extends React.Component {
 
   render() {
     return (
-      <Row>
-        <Col span={16} offset={4}>
+      <Row justify={'center'} type={'flex'}>
+        <Col style={{width: '600px'}}>
           <center>
             <Card title="Send" bordered={true}>
               {this.renderCard()}
