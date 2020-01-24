@@ -2,7 +2,7 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Receive, Wallet } from './index'
+import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
 import { CONSTANTS } from '../constants'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -303,6 +303,13 @@ class Main extends React.Component {
           <Receive currency={this.state.currency}
                    session={this.state.session}
                    tick={this.state.tick}
+          />
+        );
+      case 'menu-send':
+        return (
+          <Send currency={this.state.currency}
+                session={this.state.session}
+                tick={this.state.tick}
           />
         )
       default:
