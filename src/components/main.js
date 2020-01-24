@@ -304,6 +304,13 @@ class Main extends React.Component {
                    session={this.state.session}
                    tick={this.state.tick}
           />
+        );
+      case 'menu-send':
+        return (
+          <Send currency={this.state.currency}
+                session={this.state.session}
+                tick={this.state.tick}
+          />
         )
       default:
         return;
@@ -311,8 +318,6 @@ class Main extends React.Component {
   }
 
   renderContent() {
-    return (<Send currency={this.state.currency}/>);
-/*
     const hasError = this.state.error.msg && this.state.error.cb;
     if (this.state.waiting) {
       return (
@@ -338,7 +343,6 @@ class Main extends React.Component {
     } else {
       return this.renderMenuItem();
     }
-*/
   }
 
   renderFooter() {
