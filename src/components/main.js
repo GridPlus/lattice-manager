@@ -110,7 +110,10 @@ class Main extends React.Component {
 
   handleCurrencyChange(value) {
     this.setAlertMessage();
-    this.setState({ currency: value })
+    this.setState({ currency: value }, function() {
+      // Load addresses for new currency once it is updated
+      this.loadAddresses();
+    })
   }
 
   handleMenuChange({key}) {

@@ -1,7 +1,10 @@
 import { Client } from 'gridplus-sdk';
 import { CONSTANTS } from '../constants';
+import { harden } from '../util/helpers';
+import { default as StorageSession } from '../util/storageSession';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
+const EMPTY_WALLET_UID = Buffer.alloc(32);
 
 class SDKSession {
   constructor() {
@@ -14,6 +17,10 @@ class SDKSession {
     this.usdValues = {};
     // Cached list of transactions, indexed by currency
     this.txs = {};
+    // Make use of localstorage to persist wallet data
+    this.storageSession = null;
+    // Save the device ID for the session
+    this.deviceID = null;
   }
 
   disconnect() {
@@ -70,13 +77,81 @@ class SDKSession {
     });
   }
 
+
+  // Load a set of addresses based on the currency and also based on the current
+  // list of addresses we hold. Note that we are operating under a specific walletUID.
+  // The walletUID maps 1:1 to a wallet seed and therefore the addresses of any provided
+  // indices will ALWAYS be the same. Thus, we don't need to re-request them unless
+  // we lose localStorage, which is also captured via a StorageSession.
+  // Therefore, we can always assume that the addresses we have are "immutable" given
+  // current state params (walletUID and StorageSession).
   loadAddresses(currency, cb) {
-    // Dummy code
-    setTimeout(() => {
-      this.addresses[currency] = ['0xb91BcFD9D30178E962F0d6c204cE7Fd09C05D84C']
+    if (!this.client) return cb('No client connected');
+    const opts = {};
+
+    // Get the current address list for this currency
+    let currentAddresses = this.addresses[currency];
+    if (!currentAddresses) currentAddresses = [];
+    const nextIdx = currentAddresses.length;
+
+    switch(currency) {
+      case 'BTC':
+        // TODO: Bitcoin syncing logic. We need to consider a gap limit of 20
+        // for regular addresses and a gap limit of 1 for change addresses.
+        opts.startPath = [ harden(44), harden(0), harden(0), 0, nextIdx ];
+        opts.n = 1;
+        break;
+      case 'ETH':
+        // Do not load addresses if we already have the first ETH one.
+        // We will only ever use one ETH address, so callback success here.
+        if (nextIdx > 0) return cb(null);
+        // If we don't have any addresses here, let's get the first one
+        opts.startPath = [ harden(44), harden(60), harden(0), 0, nextIdx ];
+        opts.n = 1;
+        break;
+      default:
+        return cb('Invalid currency to request addresses');
+    }
+    this.client.getAddresses(opts, (err, addresses) => {
+      if (err) return cb(err);
+      // Save the addresses to memory and also update them in localStorage
+      // Note that we do need to track index here
+      this.addresses[currency] = addresses;
+      this.saveStorage();
       return cb(null);
-      // return cb("Failed to load addresses");
-    }, 3000)
+    })
+  }
+
+  saveStorage() {
+    // This function should never be called without a deviceID 
+    // or StorageSession
+    if (!this.deviceID || !this.storageSession) return;
+
+    // Package data and save it
+    // NOTE: We are only storing addresses at this point, as
+    // the blockchain state needs to be up-to-date and is therefore
+    // not very useful to store.
+    const walletData = {
+      addresses: this.addresses,
+    };
+
+    this.storageSession.save(this.deviceID, walletData);
+  }
+
+  initStorage() {
+    // This function should never be called without a deviceID
+    if (!this.deviceID) return;
+
+    // Start a storage session and attempt to rehydrate the relevant
+    // data for the current wallet UID.
+    this.storageSession = new StorageSession(this.deviceID);
+    const wallet_uid = this.client.activeWallet.uid;
+    if (!wallet_uid.equals(EMPTY_WALLET_UID)) {
+      // If we have a non-null wallet UID, rehydrate the data
+      const walletData = this.storageSession.getWalletData(wallet_uid);
+      this.addresses = walletData.addresses || {};
+    }
+    // If we do have a non-null wallet UID, we don't need to do anything
   }
 
   connect(deviceID, pw, cb, initialTimeout=CONSTANTS.ASYNC_SDK_TIMEOUT) {
@@ -101,6 +176,9 @@ class SDKSession {
       // Update the timeout to a longer one for future async requests
       client.timeout = CONSTANTS.ASYNC_SDK_TIMEOUT;
       this.client = client;
+      // Setup a new storage session
+      this.deviceID = deviceID;
+      this.initStorage();
       return cb(null, client.isPaired);
     });
   }
