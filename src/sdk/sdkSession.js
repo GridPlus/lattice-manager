@@ -25,6 +25,9 @@ class SDKSession {
 
   disconnect() {
     this.client = null;
+    this.saveStorage();
+    this.storageSession = null;
+    this.deviceId = null;
   }
 
   isConnected() {
