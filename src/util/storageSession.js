@@ -3,22 +3,23 @@ class StorageSession {
   constructor(device_id, pass) {
     this.data = null;
     this.store = JSON.parse(window.localStorage.getItem('gridplus') || '{}');
+    console.log('store', this.store)
   }
 
-  save(deviceID, data) {
+  save(deviceID, wallet_uid, data) {
     // Get the data for this deviceID
-    const _data = this.store[deviceID] || {};
+    if (!this.store[deviceID]) this.store[deviceID] = {};
+    if (!this.store[deviceID][wallet_uid]) this.store[deviceID][wallet_uid] = {};
     // Update relevant keys without overwriting anything else
     Object.keys(data).forEach((k) => {
-      _data[k] = data[k];
+      this.store[deviceID][wallet_uid][k] = data[k];
     })
     // Update the store itself
-    this.store[deviceID] = _data;
     window.localStorage.setItem('gridplus', JSON.stringify(this.store));
   }
 
-  getWalletData(wallet_uid) {
-    return this.store[wallet_uid];
+  getWalletData(deviceID, wallet_uid) {
+    return this.store[deviceID][wallet_uid];
   }
 }
 

@@ -4,10 +4,10 @@ import { harden } from '../util/helpers';
 import { default as StorageSession } from '../util/storageSession';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
-const EMPTY_WALLET_UID = Buffer.alloc(32);
+const EMPTY_WALLET_UID = Buffer.alloc(32).toString('hex');
 
 class SDKSession {
-  constructor() {
+  constructor(deviceID) {
     this.client = null;
     this.crypto = null;
     // Cached list of addresses, indexed by currency
@@ -20,7 +20,8 @@ class SDKSession {
     // Make use of localstorage to persist wallet data
     this.storageSession = null;
     // Save the device ID for the session
-    this.deviceID = null;
+    this.deviceID = deviceID;
+    this.initStorage();
   }
 
   disconnect() {
@@ -69,10 +70,12 @@ class SDKSession {
     const url = `${CONSTANTS.GRIDPLUS_CLOUD_API}/v2/accounts/get-data`
     fetch(url, data)
     .then((response) => response.json())
-    .then((r) => {
-      this.balances[currency] = r.data[0].balance.value;
-      this.usdValues[currency] = r.data[0].balance.dollarAmount;
-      this.txs[currency ] = r.data[0].transactions;
+    .then((resp) => {
+      const r = resp.data[0];
+      if (r.error) return cb(r.error);
+      this.balances[currency] = r.balance.value;
+      this.usdValues[currency] = r.balance.dollarAmount;
+      this.txs[currency ] = r.transactions;
       return cb(null);
     })
     .catch((err) => {
@@ -101,6 +104,7 @@ class SDKSession {
       case 'BTC':
         // TODO: Bitcoin syncing logic. We need to consider a gap limit of 20
         // for regular addresses and a gap limit of 1 for change addresses.
+        if (nextIdx > 0) return cb(null); // Temporary to avoid reloading all the time
         opts.startPath = [ harden(44), harden(0), harden(0), 0, nextIdx ];
         opts.n = 1;
         break;
@@ -137,24 +141,29 @@ class SDKSession {
     const walletData = {
       addresses: this.addresses,
     };
-
-    this.storageSession.save(this.deviceID, walletData);
+    if (this.client) {
+      const wallet_uid = this.client.activeWallet.uid.toString('hex');
+      this.storageSession.save(this.deviceID, wallet_uid, walletData);
+    }
   }
 
   initStorage() {
-    // This function should never be called without a deviceID
-    if (!this.deviceID) return;
+    // Create a storage session only if we have a deviceID and don't
+    // have a current storage session
+    if (this.deviceID && !this.storageSession)
+      this.storageSession = new StorageSession(this.deviceID);
 
-    // Start a storage session and attempt to rehydrate the relevant
-    // data for the current wallet UID.
-    this.storageSession = new StorageSession(this.deviceID);
-    const wallet_uid = this.client.activeWallet.uid;
-    if (!wallet_uid.equals(EMPTY_WALLET_UID)) {
-      // If we have a non-null wallet UID, rehydrate the data
-      const walletData = this.storageSession.getWalletData(wallet_uid) || {};
-      this.addresses = walletData.addresses || {};
+    if (this.client) {
+      // If we have a client and if it has a non-zero active wallet UID,
+      // lookup the addresses corresponding to that wallet UID in storage.
+      const wallet_uid = this.client.activeWallet.uid.toString('hex');
+      if (wallet_uid !== EMPTY_WALLET_UID) {
+        // If we have a non-null wallet UID, rehydrate the data
+        const walletData = this.storageSession.getWalletData(this.deviceID, wallet_uid) || {};
+        this.addresses = walletData.addresses || {};
+      }
+      // If we do have a non-null wallet UID, we don't need to do anything
     }
-    // If we do have a non-null wallet UID, we don't need to do anything
   }
 
   connect(deviceID, pw, cb, initialTimeout=CONSTANTS.ASYNC_SDK_TIMEOUT) {
@@ -164,7 +173,6 @@ class SDKSession {
     // enter a reasonably strong password to prevent unwanted requests
     // from nefarious actors.
     const key = this._genPrivKey(deviceID, pw);
-
     // If no client exists in this session, create a new one and
     // attach it.
     const client = new Client({ 
@@ -179,7 +187,9 @@ class SDKSession {
       // Update the timeout to a longer one for future async requests
       client.timeout = CONSTANTS.ASYNC_SDK_TIMEOUT;
       this.client = client;
-      // Setup a new storage session
+      // Setup a new storage session if these are new credentials.
+      // (This call will be bypassed if the credentials are already saved
+      // in localStorage because initStorage is also called in the constructor)
       this.deviceID = deviceID;
       this.initStorage();
       return cb(null, client.isPaired);

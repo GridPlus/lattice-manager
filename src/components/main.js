@@ -13,7 +13,7 @@ class Main extends React.Component {
     this.state = {
       currency: 'ETH',
       menuItem: 'menu-wallet',
-      session: new SDKSession(),
+      session: null,
       errMsg: null,
       error: { msg: null, cb: null },
       pendingMsg: null,
@@ -46,9 +46,24 @@ class Main extends React.Component {
     const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
     const password = window.localStorage.getItem('gridplus_web_wallet_password');
     if (deviceID && password) {
-      this.setState({ deviceID, password })
-      this.connectSession({ deviceID, password})
+      this.connect(deviceID, password, () => {
+        this.connectSession();
+      });
     }
+  }
+
+  connect(deviceID, password, cb) {
+    const updates = { deviceID, password };
+    if (!this.state.session) {
+      // Create a new session if we don't have one.
+      updates.session =  new SDKSession(deviceID);
+    }
+    this.setState(updates, cb);
+  }
+
+  isConnected() {
+    if (!this.state.session) return false;
+    return this.state.session.isConnected();
   }
 
   //------------------------------------------
@@ -99,11 +114,11 @@ class Main extends React.Component {
 
   handleCurrencyChange(value) {
     this.setAlertMessage();
-    this.setState({ currency: value }, function() {
+    this.setState({ currency: value, error: { msg: null, cb: null } }, function() {
       // Load addresses for new currency once it is updated
       // If we get a callback, this worked (i.e. we either already)
       // had the necessary addresses or we fetched them properly.
-      if (this.state.session.isConnected()) {
+      if (this.isConnected()) {
         this.fetchAddresses(this.fetchData);
       }
     })
@@ -115,7 +130,9 @@ class Main extends React.Component {
 
   handleLogout() {
     this.state.session.disconnect();
-    window.localStorage.clear();
+    this.setState({ session: null });
+    window.localStorage.removeItem('gridplus_web_wallet_id');
+    window.localStorage.removeItem('gridplus_web_wallet_password');
   }
   
   //------------------------------------------
@@ -129,33 +146,41 @@ class Main extends React.Component {
   // Call `connect` on the SDK session. If we get an error back, clear out the client,
   // as we cannot connect.
   connectSession(data=this.state) {
-    this.wait("Trying to contact your Lattice");
-    this.state.session.connect(data.deviceID, data.password, (err, isPaired) => {
-      this.unwait();
-      if (err) {
-        // If we failed to connect, clear out the SDK session. This component will
-        // prompt the user for new login data and will try to create one.
-        this.setError({ 
-          msg: err, 
-          cb: () => { this.connectSession(data); } 
-        });
-      } else {
-        // We connected!
-        // 1. Save these credentials to localStorage
-        window.localStorage.setItem('gridplus_web_wallet_id', data.deviceID);
-        window.localStorage.setItem('gridplus_web_wallet_password', data.password);
-        // 2. Clear errors, alerts, and tick
-        this.setError();
-        this.setAlertMessage();
-        this.tick();
-        // 3. Are we already paired?
-        // If so, load addresses. If that completes successfully, also fetch updated
-        // blockchain state data.
-        if (isPaired) {
-          this.fetchAddresses(this.fetchData);
+    const { deviceID, password } = data;
+      // Sanity check -- this should never get hit
+    if (!deviceID || !password) {
+      return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
+    }
+    this.connect(deviceID, password, () => {
+      // Create a new session with the deviceID and password provided.
+      this.wait("Trying to contact your Lattice");
+      this.state.session.connect(deviceID, password, (err, isPaired) => {
+        this.unwait();
+        if (err) {
+          // If we failed to connect, clear out the SDK session. This component will
+          // prompt the user for new login data and will try to create one.
+          this.setError({ 
+            msg: err, 
+            cb: () => { this.connectSession(data); } 
+          });
+        } else {
+          // We connected!
+          // 1. Save these credentials to localStorage
+          window.localStorage.setItem('gridplus_web_wallet_id', deviceID);
+          window.localStorage.setItem('gridplus_web_wallet_password', password);
+          // 2. Clear errors, alerts, and tick
+          this.setError();
+          this.setAlertMessage();
+          this.tick();
+          // 3. Are we already paired?
+          // If so, load addresses. If that completes successfully, also fetch updated
+          // blockchain state data.
+          if (isPaired) {
+            this.fetchAddresses(this.fetchData);
+          }
         }
-      }
-    }, CONSTANTS.SHORT_TIMEOUT); // Use the short timeout since connecting should just be an http message
+      }, CONSTANTS.SHORT_TIMEOUT); // Use the short timeout since connecting should just be an http message
+    })
   }
 
   // Fetch up-to-date blockchain state data for the addresses stored in our
@@ -166,7 +191,8 @@ class Main extends React.Component {
       this.unwait();
       if (err) {
         this.setError({ 
-          msg: `Failed to sync history for ${this.state.currency}`, 
+          // msg: `Failed to sync history for ${this.state.currency}`,
+          msg: err, 
           cb: () => { this.fetchData(cb) } 
         });
       } else if (cb) {
@@ -242,7 +268,7 @@ class Main extends React.Component {
   //------------------------------------------
 
   renderSidebar() {
-    if (this.state.session.isConnected()) {
+    if (this.isConnected()) {
       return (
         <Sider>
           <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
@@ -268,7 +294,7 @@ class Main extends React.Component {
 
   renderHeader() {
     let extra = [];
-    if (this.state.session.isConnected()) {
+    if (this.isConnected()) {
       extra = [
         (<Select key="currency-select" defaultValue="ETH" onChange={this.handleCurrencyChange}>
           <Option value="ETH">ETH</Option>
@@ -340,7 +366,7 @@ class Main extends React.Component {
       return (
         <Loading msg={this.state.pendingMsg} /> 
       );
-    } else if (!this.state.session.isConnected()) {
+    } else if (!this.isConnected()) {
       // Connect to the Lattice via the SDK
       return (
         <Connect submitCb={this.connectSession}/>
