@@ -151,7 +151,7 @@ class SDKSession {
     const wallet_uid = this.client.activeWallet.uid;
     if (!wallet_uid.equals(EMPTY_WALLET_UID)) {
       // If we have a non-null wallet UID, rehydrate the data
-      const walletData = this.storageSession.getWalletData(wallet_uid);
+      const walletData = this.storageSession.getWalletData(wallet_uid) || {};
       this.addresses = walletData.addresses || {};
     }
     // If we do have a non-null wallet UID, we don't need to do anything

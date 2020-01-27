@@ -34,6 +34,7 @@ class Main extends React.Component {
     this.connectSession = this.connectSession.bind(this);
     this.handlePair = this.handlePair.bind(this);
     this.fetchAddresses = this.fetchAddresses.bind(this);
+    this.fetchData = this.fetchData.bind(this);
 
     // Bind wrappers
     this.retry = this.retry.bind(this);
@@ -80,6 +81,8 @@ class Main extends React.Component {
 
   setError(data) {
     if (data) {
+      if (data.msg instanceof Error)         data.msg = String(data.msg);
+      else if (typeof data.msg !== 'string') data.msg = JSON.stringify(data.msg);
       this.setState({ error: data });
     } else {
       this.setState({ error: { msg: null, cb: null }});
@@ -132,7 +135,10 @@ class Main extends React.Component {
       if (err) {
         // If we failed to connect, clear out the SDK session. This component will
         // prompt the user for new login data and will try to create one.
-        this.setState({ errMsg: 'Failed to find to your Lattice. Please ensure your device is online and that you entered the correct DeviceID.' })
+        this.setError({ 
+          msg: err, 
+          cb: () => { this.connectSession(data); } 
+        });
       } else {
         // We connected!
         // 1. Save these credentials to localStorage

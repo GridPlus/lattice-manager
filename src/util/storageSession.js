@@ -2,12 +2,12 @@
 class StorageSession {
   constructor(device_id, pass) {
     this.data = null;
-    this.store = JSON.parse(window.localStorage.getItem('gridplus') || {});
+    this.store = JSON.parse(window.localStorage.getItem('gridplus') || '{}');
   }
 
   save(deviceID, data) {
     // Get the data for this deviceID
-    const _data = this.store[deviceID];
+    const _data = this.store[deviceID] || {};
     // Update relevant keys without overwriting anything else
     Object.keys(data).forEach((k) => {
       _data[k] = data[k];
