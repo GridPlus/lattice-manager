@@ -13,11 +13,10 @@ class Main extends React.Component {
     this.state = {
       currency: 'ETH',
       menuItem: 'menu-wallet',
-      session: new SDKSession(),
+      session: null,
       errMsg: null,
       error: { msg: null, cb: null },
       pendingMsg: null,
-      hasClient: false,
       waiting: false, // Waiting on asynchronous data, usually from the Lattice
       // Tick state in order to force a re-rendering of the `Wallet` component
       stateTick: 0,
@@ -34,7 +33,8 @@ class Main extends React.Component {
     // Bind callbacks whose calls may originate elsewhere
     this.connectSession = this.connectSession.bind(this);
     this.handlePair = this.handlePair.bind(this);
-    this.loadAddresses = this.loadAddresses.bind(this);
+    this.fetchAddresses = this.fetchAddresses.bind(this);
+    this.fetchData = this.fetchData.bind(this);
 
     // Bind wrappers
     this.retry = this.retry.bind(this);
@@ -46,9 +46,24 @@ class Main extends React.Component {
     const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
     const password = window.localStorage.getItem('gridplus_web_wallet_password');
     if (deviceID && password) {
-      this.setState({ deviceID, password })
-      this.connectSession({ deviceID, password})
+      this.connect(deviceID, password, () => {
+        this.connectSession();
+      });
     }
+  }
+
+  connect(deviceID, password, cb) {
+    const updates = { deviceID, password };
+    if (!this.state.session) {
+      // Create a new session if we don't have one.
+      updates.session =  new SDKSession(deviceID);
+    }
+    this.setState(updates, cb);
+  }
+
+  isConnected() {
+    if (!this.state.session) return false;
+    return this.state.session.isConnected();
   }
 
   //------------------------------------------
@@ -81,23 +96,12 @@ class Main extends React.Component {
 
   setError(data) {
     if (data) {
+      if (data.msg instanceof Error)         data.msg = String(data.msg);
+      else if (typeof data.msg !== 'string') data.msg = JSON.stringify(data.msg);
       this.setState({ error: data });
     } else {
       this.setState({ error: { msg: null, cb: null }});
     }
-  }
-
-  // Let this component know that we do/not have a client session
-  // If we do not have a client, we should disconnect the session.
-  // If we do have a client (i.e. a new connection), set that
-  updateHasClient(hasClient=false) {
-    if (!hasClient) {
-      this.state.session.disconnect();
-    }
-    this.setState({ hasClient })
-    // Clear out alert messages and tick, just in case
-    this.setAlertMessage();
-    this.tick();
   }
 
   //------------------------------------------
@@ -110,7 +114,14 @@ class Main extends React.Component {
 
   handleCurrencyChange(value) {
     this.setAlertMessage();
-    this.setState({ currency: value })
+    this.setState({ currency: value, error: { msg: null, cb: null } }, function() {
+      // Load addresses for new currency once it is updated
+      // If we get a callback, this worked (i.e. we either already)
+      // had the necessary addresses or we fetched them properly.
+      if (this.isConnected()) {
+        this.fetchAddresses(this.fetchData);
+      }
+    })
   }
 
   handleMenuChange({key}) {
@@ -118,9 +129,10 @@ class Main extends React.Component {
   }
 
   handleLogout() {
-    this.updateHasClient(false);
     this.state.session.disconnect();
-    window.localStorage.clear();
+    this.setState({ session: null });
+    window.localStorage.removeItem('gridplus_web_wallet_id');
+    window.localStorage.removeItem('gridplus_web_wallet_password');
   }
   
   //------------------------------------------
@@ -134,52 +146,80 @@ class Main extends React.Component {
   // Call `connect` on the SDK session. If we get an error back, clear out the client,
   // as we cannot connect.
   connectSession(data=this.state) {
-    this.wait("Trying to contact your Lattice");
-    const timeout = this.state.hasClient ? CONSTANTS.ASYNC_SDK_TIMEOUT : CONSTANTS.SHORT_TIMEOUT;
-    this.state.session.connect(data.deviceID, data.password, (err, isPaired) => {
+    const { deviceID, password } = data;
+      // Sanity check -- this should never get hit
+    if (!deviceID || !password) {
+      return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
+    }
+    this.connect(deviceID, password, () => {
+      // Create a new session with the deviceID and password provided.
+      this.wait("Trying to contact your Lattice");
+      this.state.session.connect(deviceID, password, (err, isPaired) => {
+        this.unwait();
+        if (err) {
+          // If we failed to connect, clear out the SDK session. This component will
+          // prompt the user for new login data and will try to create one.
+          this.setError({ 
+            msg: err, 
+            cb: () => { this.connectSession(data); } 
+          });
+        } else {
+          // We connected!
+          // 1. Save these credentials to localStorage
+          window.localStorage.setItem('gridplus_web_wallet_id', deviceID);
+          window.localStorage.setItem('gridplus_web_wallet_password', password);
+          // 2. Clear errors, alerts, and tick
+          this.setError();
+          this.setAlertMessage();
+          this.tick();
+          // 3. Are we already paired?
+          // If so, load addresses. If that completes successfully, also fetch updated
+          // blockchain state data.
+          if (isPaired) {
+            this.fetchAddresses(this.fetchData);
+          }
+        }
+      }, CONSTANTS.SHORT_TIMEOUT); // Use the short timeout since connecting should just be an http message
+    })
+  }
+
+  // Fetch up-to-date blockchain state data for the addresses stored in our
+  // SDKSession. Called after we load addresses for the first time
+  fetchData(cb=null) {
+    this.wait("Syncing chain data");
+    this.state.session.fetchData(this.state.currency, (err) => {
       this.unwait();
       if (err) {
-        // If we failed to connect, clear out the SDK session. This component will
-        // prompt the user for new login data and will try to create one.
-        this.updateHasClient();
-        this.setState({ errMsg: 'Failed to find to your Lattice. Please ensure your device is online and that you entered the correct DeviceID.' })
-      } else {
-        // We connected!
-        // 1. Set this as the client
-        this.updateHasClient(true);
-        // 2. Save these credentials to localStorage
-        window.localStorage.setItem('gridplus_web_wallet_id', data.deviceID);
-        window.localStorage.setItem('gridplus_web_wallet_password', data.password);
-        // 3. Clear error data
-        this.setError();
-        // Are we already paired?
-        // If so, load addresses
-        if (isPaired) {
-          this.loadAddresses();
-        }
+        this.setError({ 
+          // msg: `Failed to sync history for ${this.state.currency}`,
+          msg: err, 
+          cb: () => { this.fetchData(cb) } 
+        });
+      } else if (cb) {
+        return cb(null);
       }
-    }, timeout);
+    });
   }
 
   // Asynchronously load addresses from the client session using
-  // the currently selected currency
-  loadAddresses() {
+  // the currently selected currency. Once we have the addresses,
+  // attempt to fetch updated blockchain state data.
+  // NOTE: If we don't need additional addresses, no request will be
+  // made to the Lattice and we will proceed to fetchData immediately.
+  fetchAddresses(cb=null) {
     this.wait("Loading addresses")
     this.state.session.loadAddresses(this.state.currency, (err) => {
       this.unwait();
       // Catch an error if there is one
       if (err) {
-        this.setError({ msg: err, cb: this.loadAddresses })
-        return;
+        // If we catch an error, do a recursive call (preserving the callback)
+        this.setError({ 
+          msg: err, 
+          cb: () => { this.fetchAddresses(cb) } 
+        });
+      } else if (cb) {
+        return cb(null);
       }
-      // If there is no error, get the data
-      this.wait("Syncing chain data");
-      this.state.session.fetchData(this.state.currency, (err) => {
-        this.unwait();
-        if (err) {
-          this.setError({ msg: `Failed to sync history for ${this.state.currency}`,})
-        }
-      });
     });
   }
 
@@ -214,7 +254,7 @@ class Main extends React.Component {
         this.setError({ msg: 'Secret was incorrect. Please try again.', cb: this.connectSession });
       } else {
         // Success! Load our addresses from this wallet.
-        this.loadAddresses();
+        this.fetchAddresses(this.fetchData);
       }
     })
   }
@@ -228,39 +268,42 @@ class Main extends React.Component {
   //------------------------------------------
 
   renderSidebar() {
-    return (
-      <Sider>
-        <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
-          <Menu.Item key="menu-wallet">
-            <Icon type="wallet" />
-            <span>Wallet</span>
-          </Menu.Item>
-          <Menu.Item key="menu-send">
-            <Icon type="arrow-up" />
-            <span>Send</span>
-          </Menu.Item>
-          <Menu.Item key="menu-receive">
-            <Icon type="arrow-down" />
-            <span>Receive</span>
-          </Menu.Item>
-        </Menu>
-      </Sider>
-    )
+    if (this.isConnected()) {
+      return (
+        <Sider>
+          <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
+            <Menu.Item key="menu-wallet">
+              <Icon type="wallet" />
+              <span>Wallet</span>
+            </Menu.Item>
+            <Menu.Item key="menu-send">
+              <Icon type="arrow-up" />
+              <span>Send</span>
+            </Menu.Item>
+            <Menu.Item key="menu-receive">
+              <Icon type="arrow-down" />
+              <span>Receive</span>
+            </Menu.Item>
+          </Menu>
+        </Sider>
+      )
+    } else {
+      return;
+    }
   }
 
   renderHeader() {
-    const extra = [
-      <Select key="currency-select" defaultValue="ETH" onChange={this.handleCurrencyChange}>
-        <Option value="ETH">ETH</Option>
-        <Option value="BTC">BTC</Option>
-      </Select>
-    ];
-    if (this.state.hasClient) {
-      extra.push(
-        <Button key="logout-button" type="primary" onClick={this.handleLogout}>
+    let extra = [];
+    if (this.isConnected()) {
+      extra = [
+        (<Select key="currency-select" defaultValue="ETH" onChange={this.handleCurrencyChange}>
+          <Option value="ETH">ETH</Option>
+          <Option value="BTC">BTC</Option>
+        </Select>),
+        ( <Button key="logout-button" type="primary" onClick={this.handleLogout}>
           Logout
-        </Button>
-      )
+        </Button>)
+      ]
     }
     return (
       <PageHeader
@@ -323,7 +366,7 @@ class Main extends React.Component {
       return (
         <Loading msg={this.state.pendingMsg} /> 
       );
-    } else if (!this.state.hasClient) {
+    } else if (!this.isConnected()) {
       // Connect to the Lattice via the SDK
       return (
         <Connect submitCb={this.connectSession}/>

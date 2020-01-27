@@ -1,10 +1,13 @@
 import { Client } from 'gridplus-sdk';
 import { CONSTANTS } from '../constants';
+import { harden } from '../util/helpers';
+import { default as StorageSession } from '../util/storageSession';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
+const EMPTY_WALLET_UID = Buffer.alloc(32).toString('hex');
 
 class SDKSession {
-  constructor() {
+  constructor(deviceID) {
     this.client = null;
     this.crypto = null;
     // Cached list of addresses, indexed by currency
@@ -14,10 +17,18 @@ class SDKSession {
     this.usdValues = {};
     // Cached list of transactions, indexed by currency
     this.txs = {};
+    // Make use of localstorage to persist wallet data
+    this.storageSession = null;
+    // Save the device ID for the session
+    this.deviceID = deviceID;
+    this.initStorage();
   }
 
   disconnect() {
     this.client = null;
+    this.saveStorage();
+    this.storageSession = null;
+    this.deviceId = null;
   }
 
   isConnected() {
@@ -59,10 +70,12 @@ class SDKSession {
     const url = `${CONSTANTS.GRIDPLUS_CLOUD_API}/v2/accounts/get-data`
     fetch(url, data)
     .then((response) => response.json())
-    .then((r) => {
-      this.balances[currency] = r.data[0].balance.value;
-      this.usdValues[currency] = r.data[0].balance.dollarAmount;
-      this.txs[currency ] = r.data[0].transactions;
+    .then((resp) => {
+      const r = resp.data[0];
+      if (r.error) return cb(r.error);
+      this.balances[currency] = r.balance.value;
+      this.usdValues[currency] = r.balance.dollarAmount;
+      this.txs[currency ] = r.transactions;
       return cb(null);
     })
     .catch((err) => {
@@ -70,13 +83,87 @@ class SDKSession {
     });
   }
 
+
+  // Load a set of addresses based on the currency and also based on the current
+  // list of addresses we hold. Note that we are operating under a specific walletUID.
+  // The walletUID maps 1:1 to a wallet seed and therefore the addresses of any provided
+  // indices will ALWAYS be the same. Thus, we don't need to re-request them unless
+  // we lose localStorage, which is also captured via a StorageSession.
+  // Therefore, we can always assume that the addresses we have are "immutable" given
+  // current state params (walletUID and StorageSession).
   loadAddresses(currency, cb) {
-    // Dummy code
-    setTimeout(() => {
-      this.addresses[currency] = ['0xb91BcFD9D30178E962F0d6c204cE7Fd09C05D84C']
+    if (!this.client) return cb('No client connected');
+    const opts = {};
+
+    // Get the current address list for this currency
+    let currentAddresses = this.addresses[currency];
+    if (!currentAddresses) currentAddresses = [];
+    const nextIdx = currentAddresses.length;
+
+    switch(currency) {
+      case 'BTC':
+        // TODO: Bitcoin syncing logic. We need to consider a gap limit of 20
+        // for regular addresses and a gap limit of 1 for change addresses.
+        if (nextIdx > 0) return cb(null); // Temporary to avoid reloading all the time
+        opts.startPath = [ harden(44), harden(0), harden(0), 0, nextIdx ];
+        opts.n = 1;
+        break;
+      case 'ETH':
+        // Do not load addresses if we already have the first ETH one.
+        // We will only ever use one ETH address, so callback success here.
+        if (nextIdx > 0) return cb(null);
+        // If we don't have any addresses here, let's get the first one
+        opts.startPath = [ harden(44), harden(60), harden(0), 0, nextIdx ];
+        opts.n = 1;
+        break;
+      default:
+        return cb('Invalid currency to request addresses');
+    }
+    this.client.getAddresses(opts, (err, addresses) => {
+      if (err) return cb(err);
+      // Save the addresses to memory and also update them in localStorage
+      // Note that we do need to track index here
+      this.addresses[currency] = addresses;
+      this.saveStorage();
       return cb(null);
-      // return cb("Failed to load addresses");
-    }, 3000)
+    })
+  }
+
+  saveStorage() {
+    // This function should never be called without a deviceID 
+    // or StorageSession
+    if (!this.deviceID || !this.storageSession) return;
+
+    // Package data and save it
+    // NOTE: We are only storing addresses at this point, as
+    // the blockchain state needs to be up-to-date and is therefore
+    // not very useful to store.
+    const walletData = {
+      addresses: this.addresses,
+    };
+    if (this.client) {
+      const wallet_uid = this.client.activeWallet.uid.toString('hex');
+      this.storageSession.save(this.deviceID, wallet_uid, walletData);
+    }
+  }
+
+  initStorage() {
+    // Create a storage session only if we have a deviceID and don't
+    // have a current storage session
+    if (this.deviceID && !this.storageSession)
+      this.storageSession = new StorageSession(this.deviceID);
+
+    if (this.client) {
+      // If we have a client and if it has a non-zero active wallet UID,
+      // lookup the addresses corresponding to that wallet UID in storage.
+      const wallet_uid = this.client.activeWallet.uid.toString('hex');
+      if (wallet_uid !== EMPTY_WALLET_UID) {
+        // If we have a non-null wallet UID, rehydrate the data
+        const walletData = this.storageSession.getWalletData(this.deviceID, wallet_uid) || {};
+        this.addresses = walletData.addresses || {};
+      }
+      // If we do have a non-null wallet UID, we don't need to do anything
+    }
   }
 
   connect(deviceID, pw, cb, initialTimeout=CONSTANTS.ASYNC_SDK_TIMEOUT) {
@@ -86,7 +173,6 @@ class SDKSession {
     // enter a reasonably strong password to prevent unwanted requests
     // from nefarious actors.
     const key = this._genPrivKey(deviceID, pw);
-
     // If no client exists in this session, create a new one and
     // attach it.
     const client = new Client({ 
@@ -101,6 +187,11 @@ class SDKSession {
       // Update the timeout to a longer one for future async requests
       client.timeout = CONSTANTS.ASYNC_SDK_TIMEOUT;
       this.client = client;
+      // Setup a new storage session if these are new credentials.
+      // (This call will be bypassed if the credentials are already saved
+      // in localStorage because initStorage is also called in the constructor)
+      this.deviceID = deviceID;
+      this.initStorage();
       return cb(null, client.isPaired);
     });
   }
