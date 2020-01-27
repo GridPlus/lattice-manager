@@ -1,5 +1,0 @@
-exports.CONSTANTS = {
-  ASYNC_SDK_TIMEOUT: 60000,
-  SHORT_TIMEOUT: 15000,
-  GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3000',
-}

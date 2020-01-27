@@ -1,7 +1,8 @@
 import { Client } from 'gridplus-sdk';
-import { CONSTANTS } from '../constants';
-import { harden } from '../util/helpers';
+import { harden, fetchStateData, constants } from '../util/helpers';
 import { default as StorageSession } from '../util/storageSession';
+import worker from '../stateWorker.js';
+import WebWorker from '../WebWorker';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
 const EMPTY_WALLET_UID = Buffer.alloc(32).toString('hex');
@@ -55,32 +56,35 @@ class SDKSession {
     return this.addresses[currency] || [];
   }
 
+  // Setup a web worker to periodically lookup state data
+  setupWorker() {
+    this.worker = new WebWorker(worker);
+    this.worker.addEventListener('message', e => {
+      switch (e.data.type) {
+        case 'dataResp':
+          this.fetchDataHandler(e.data.data);
+          break;
+        default:
+          break;
+      }
+    })
+    this.worker.postMessage({ type: 'newAddresses', data: this.addresses });
+  }
+
+  fetchDataHandler(data) {
+    const { currency, balance, transactions } = data;
+    console.log('fetchDataHandler:', currency, balance, transactions)
+    this.balances[currency] = balance.value;
+    this.usdValues[currency] = balance.dollarAmount;
+    this.txs[currency ] = transactions;
+  }
+
   fetchData(currency, cb) {
-    const data = {
-        method: 'POST',
-        body: JSON.stringify([{
-          currency,
-          addresses: this.getAddresses(currency),
-        }]),
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-        }
-    }
-    const url = `${CONSTANTS.GRIDPLUS_CLOUD_API}/v2/accounts/get-data`
-    fetch(url, data)
-    .then((response) => response.json())
-    .then((resp) => {
-      const r = resp.data[0];
-      if (r.error) return cb(r.error);
-      this.balances[currency] = r.balance.value;
-      this.usdValues[currency] = r.balance.dollarAmount;
-      this.txs[currency ] = r.transactions;
+    fetchStateData(currency, this.addresses, (err, data) => {
+      if (err) return cb(err);
+      this.fetchDataHandler(data);
       return cb(null);
     })
-    .catch((err) => {
-      return cb(err);
-    });
   }
 
 
@@ -104,6 +108,8 @@ class SDKSession {
       case 'BTC':
         // TODO: Bitcoin syncing logic. We need to consider a gap limit of 20
         // for regular addresses and a gap limit of 1 for change addresses.
+        // TODO: Call the webworker when we get new addresses so that it can sync
+        // over the new ones too
         if (nextIdx > 0) return cb(null); // Temporary to avoid reloading all the time
         opts.startPath = [ harden(44), harden(0), harden(0), 0, nextIdx ];
         opts.n = 1;
@@ -166,7 +172,7 @@ class SDKSession {
     }
   }
 
-  connect(deviceID, pw, cb, initialTimeout=CONSTANTS.ASYNC_SDK_TIMEOUT) {
+  connect(deviceID, pw, cb, initialTimeout=constants.ASYNC_SDK_TIMEOUT) {
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
@@ -185,13 +191,14 @@ class SDKSession {
     client.connect(deviceID, (err) => {
       if (err) return cb(err);
       // Update the timeout to a longer one for future async requests
-      client.timeout = CONSTANTS.ASYNC_SDK_TIMEOUT;
+      client.timeout = constants.ASYNC_SDK_TIMEOUT;
       this.client = client;
       // Setup a new storage session if these are new credentials.
       // (This call will be bypassed if the credentials are already saved
       // in localStorage because initStorage is also called in the constructor)
       this.deviceID = deviceID;
       this.initStorage();
+      this.setupWorker();
       return cb(null, client.isPaired);
     });
   }

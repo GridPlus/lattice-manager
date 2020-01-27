@@ -3,7 +3,8 @@ import 'antd/dist/antd.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
-import { CONSTANTS } from '../constants'
+import { constants } from '../util/helpers'
+
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
 
@@ -13,11 +14,15 @@ class Main extends React.Component {
     this.state = {
       currency: 'ETH',
       menuItem: 'menu-wallet',
+      // GridPlusSDK session object
       session: null,
+      // WebWorker that will periodically lookup state on available addrs
+      worker: null, 
       errMsg: null,
       error: { msg: null, cb: null },
       pendingMsg: null,
-      waiting: false, // Waiting on asynchronous data, usually from the Lattice
+      // Waiting on asynchronous data, usually from the Lattice
+      waiting: false, 
       // Tick state in order to force a re-rendering of the `Wallet` component
       stateTick: 0,
       // Login info stored in localstorage. Can be cleared out at any time by the `logout` func
@@ -179,7 +184,7 @@ class Main extends React.Component {
             this.fetchAddresses(this.fetchData);
           }
         }
-      }, CONSTANTS.SHORT_TIMEOUT); // Use the short timeout since connecting should just be an http message
+      }, constants.SHORT_TIMEOUT); // Use the short timeout since connecting should just be an http message
     })
   }
 
