@@ -8,7 +8,7 @@ const ReactCrypto = require('gridplus-react-crypto').default;
 const EMPTY_WALLET_UID = Buffer.alloc(32).toString('hex');
 
 class SDKSession {
-  constructor(deviceID) {
+  constructor(deviceID, stateUpdateHandler) {
     this.client = null;
     this.crypto = null;
     // Cached list of addresses, indexed by currency
@@ -22,6 +22,8 @@ class SDKSession {
     this.storageSession = null;
     // Save the device ID for the session
     this.deviceID = deviceID;
+    // Handler to call when we get state updates
+    this.stateUpdateHandler = stateUpdateHandler;
     this.initStorage();
   }
 
@@ -77,6 +79,8 @@ class SDKSession {
     this.balances[currency] = balance.value;
     this.usdValues[currency] = balance.dollarAmount;
     this.txs[currency ] = transactions;
+    if (this.stateUpdateHandler)
+      this.stateUpdateHandler();
   }
 
   fetchData(currency, cb) {

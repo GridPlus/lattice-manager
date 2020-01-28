@@ -28,6 +28,8 @@ class Main extends React.Component {
       // Login info stored in localstorage. Can be cleared out at any time by the `logout` func
       deviceID: null,
       password: null,
+      // Last time the state was updated (comes from webwork setup by SdkSession)
+      lastUpdated: new Date(),
     };
 
     // Bind local state updaters
@@ -40,6 +42,7 @@ class Main extends React.Component {
     this.handlePair = this.handlePair.bind(this);
     this.fetchAddresses = this.fetchAddresses.bind(this);
     this.fetchData = this.fetchData.bind(this);
+    this.handleStateUpdate = this.handleStateUpdate.bind(this);
 
     // Bind wrappers
     this.retry = this.retry.bind(this);
@@ -61,7 +64,7 @@ class Main extends React.Component {
     const updates = { deviceID, password };
     if (!this.state.session) {
       // Create a new session if we don't have one.
-      updates.session =  new SDKSession(deviceID);
+      updates.session =  new SDKSession(deviceID, this.handleStateUpdate);
     }
     this.setState(updates, cb);
   }
@@ -138,6 +141,10 @@ class Main extends React.Component {
     this.setState({ session: null });
     window.localStorage.removeItem('gridplus_web_wallet_id');
     window.localStorage.removeItem('gridplus_web_wallet_password');
+  }
+
+  handleStateUpdate() {
+    this.setState({ lastUpdated: new Date() })
   }
   
   //------------------------------------------
@@ -344,6 +351,7 @@ class Main extends React.Component {
                   session={this.state.session}
                   msgHandler={this.setAlertMessage}
                   tick={this.state.tick}
+                  lastUpdated={this.state.lastUpdated}
           />
         );
       case 'menu-receive':
