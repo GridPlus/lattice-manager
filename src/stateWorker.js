@@ -2,11 +2,14 @@
 export default () => {
     let addresses = {};
     let interval = null;
-    const LOOKUP_DELAY = 10000 //180000; // Lookup every 3 minutes
-
+    let BASE_URL = 'localhost:3000'; // Should never use the default
+    const LOOKUP_DELAY = 180000; // Lookup every 3 minutes
     self.addEventListener('message', e => { // eslint-disable-line no-restricted-globals
         if (!e) return;
         switch (e.data.type) {
+            case 'setup':
+                BASE_URL = e.data.data;
+                break;
             case 'newAddresses':
                 const addrs = e.data.data;
                 Object.keys(addrs).forEach((k) => {
@@ -33,6 +36,7 @@ export default () => {
             function lookupData(currencies=Object.keys(addresses)) {
                 if (currencies.length > 0) {
                     const currency = currencies.pop();
+                    // fetchStateDataCopyPasta(currency, addresses, (err, data) => {
                     fetchStateDataCopyPasta(currency, addresses, (err, data) => {
                         if (err) {
                             // Log the error if it arises
@@ -58,9 +62,6 @@ export default () => {
     // WEBWORKER COPYPASTA //
     //---------------------//
 
-    // Can't import constants, so we copypasta the relevant one
-    const GRIDPLUS_CLOUD_API_COPYPASTA = 'https://pay.gridplus.io:3000';
-
     // We also have to copypasta this helper grrrr
     function fetchStateDataCopyPasta(currency, addresses, cb) {
         if (!addresses[currency] || addresses[currency].length === 0) return cb(null);
@@ -76,7 +77,7 @@ export default () => {
                 'Content-Type': 'application/json',
             }
         }
-        const url = `${GRIDPLUS_CLOUD_API_COPYPASTA}/v2/accounts/get-data`
+        const url = `${BASE_URL}/v2/accounts/get-data`
         fetch(url, data)
         .then((response) => response.json())
         .then((resp) => {

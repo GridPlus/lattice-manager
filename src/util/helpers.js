@@ -1,10 +1,15 @@
-// import { CONSTANTS } from '../constants';
-
 const constants = {
   HARDENED_OFFSET: 0x80000000,
   ASYNC_SDK_TIMEOUT: 60000,
   SHORT_TIMEOUT: 15000,
   GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3000',
+  ROOT_STORE: 'gridplus',
+  BTC_COIN: 0x80000000,
+}
+if (process.env.REACT_APP_ENV === 'dev') {
+    constants.GRIDPLUS_CLOUD_API = 'https://pay.gridplus.io:3333';
+    constants.ROOT_STORE = 'gridplus-dev';
+    constants.BTC_COIN = 0x80000000 + 1; // Use testnet
 }
 exports.constants = constants;
 
@@ -43,3 +48,5 @@ exports.fetchStateData = function(currency, addresses, cb) {
         return cb(err);
     });
 }
+
+

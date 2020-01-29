@@ -1,9 +1,8 @@
-
+import { constants } from './helpers';
 class StorageSession {
   constructor(device_id, pass) {
     this.data = null;
-    this.store = JSON.parse(window.localStorage.getItem('gridplus') || '{}');
-    console.log('store', this.store)
+    this.store = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}');
   }
 
   save(deviceID, wallet_uid, data) {
@@ -15,7 +14,7 @@ class StorageSession {
       this.store[deviceID][wallet_uid][k] = data[k];
     })
     // Update the store itself
-    window.localStorage.setItem('gridplus', JSON.stringify(this.store));
+    window.localStorage.setItem(constants.ROOT_STORE, JSON.stringify(this.store));
   }
 
   getWalletData(deviceID, wallet_uid) {

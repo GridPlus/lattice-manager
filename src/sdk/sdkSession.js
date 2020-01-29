@@ -82,6 +82,7 @@ class SDKSession {
           break;
       }
     })
+    this.worker.postMessage({ type: 'setup', data: constants.GRIDPLUS_CLOUD_API })
     this.worker.postMessage({ type: 'newAddresses', data: this.addresses });
   }
 
@@ -125,7 +126,7 @@ class SDKSession {
         // TODO: Call the webworker when we get new addresses so that it can sync
         // over the new ones too
         if (nextIdx > 0) return cb(null); // Temporary to avoid reloading all the time
-        opts.startPath = [ harden(44), harden(0), harden(0), 0, nextIdx ];
+        opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 0, nextIdx ];
         opts.n = 1;
         break;
       case 'ETH':
