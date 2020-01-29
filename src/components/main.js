@@ -3,7 +3,8 @@ import 'antd/dist/antd.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
-import { CONSTANTS } from '../constants'
+import { constants } from '../util/helpers'
+
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
 
@@ -13,16 +14,23 @@ class Main extends React.Component {
     this.state = {
       currency: 'ETH',
       menuItem: 'menu-wallet',
+      // GridPlusSDK session object
       session: null,
+      // WebWorker that will periodically lookup state on available addrs
+      worker: null, 
       errMsg: null,
+      alertMsg: null,
       error: { msg: null, cb: null },
       pendingMsg: null,
-      waiting: false, // Waiting on asynchronous data, usually from the Lattice
+      // Waiting on asynchronous data, usually from the Lattice
+      waiting: false, 
       // Tick state in order to force a re-rendering of the `Wallet` component
       stateTick: 0,
       // Login info stored in localstorage. Can be cleared out at any time by the `logout` func
       deviceID: null,
       password: null,
+      // Last time the state was updated (comes from webwork setup by SdkSession)
+      lastUpdated: new Date(),
     };
 
     // Bind local state updaters
@@ -35,6 +43,7 @@ class Main extends React.Component {
     this.handlePair = this.handlePair.bind(this);
     this.fetchAddresses = this.fetchAddresses.bind(this);
     this.fetchData = this.fetchData.bind(this);
+    this.handleStateUpdate = this.handleStateUpdate.bind(this);
 
     // Bind wrappers
     this.retry = this.retry.bind(this);
@@ -56,7 +65,7 @@ class Main extends React.Component {
     const updates = { deviceID, password };
     if (!this.state.session) {
       // Create a new session if we don't have one.
-      updates.session =  new SDKSession(deviceID);
+      updates.session =  new SDKSession(deviceID, this.handleStateUpdate);
     }
     this.setState(updates, cb);
   }
@@ -134,6 +143,16 @@ class Main extends React.Component {
     window.localStorage.removeItem('gridplus_web_wallet_id');
     window.localStorage.removeItem('gridplus_web_wallet_password');
   }
+
+  handleStateUpdate(data={err:null, currency:null, cb:null}) {
+    if (data.err && data.currency === this.state.currency) {
+      // We shouldn't assume we have updated state if we got an error message.
+      // Most likely, the request failed.
+      this.setAlertMessage({ errMsg: data.err })
+    } else {
+      this.setState({ lastUpdated: new Date() })
+    }
+  }
   
   //------------------------------------------
   // END HEADER HANDLERS
@@ -179,7 +198,7 @@ class Main extends React.Component {
             this.fetchAddresses(this.fetchData);
           }
         }
-      }, CONSTANTS.SHORT_TIMEOUT); // Use the short timeout since connecting should just be an http message
+      }, constants.SHORT_TIMEOUT); // Use the short timeout since connecting should just be an http message
     })
   }
 
@@ -190,12 +209,14 @@ class Main extends React.Component {
     this.state.session.fetchData(this.state.currency, (err) => {
       this.unwait();
       if (err) {
-        this.setError({ 
-          // msg: `Failed to sync history for ${this.state.currency}`,
-          msg: err, 
-          cb: () => { this.fetchData(cb) } 
-        });
-      } else if (cb) {
+        // Failed to fetch -- update state and set the alert
+        return this.handleStateUpdate({err, currency: this.state.currency, cb});
+      } else {
+        // Successfully fetched -- update state
+        this.handleStateUpdate();
+      }
+      // If this succeeded and we have a callback, go ahead and use it.
+      if (cb) {
         return cb(null);
       }
     });
@@ -319,7 +340,13 @@ class Main extends React.Component {
   renderAlert() {
     if (this.state.errMsg) {
       return (
-        <Alert message={this.state.errMsg} type={"error"} showIcon closable />
+        <Alert message={"Error"} 
+               description={this.state.errMsg} 
+               type={"error"} 
+               showIcon 
+               closable 
+               onClose={() => { this.setAlertMessage()}}
+        />
       )
     } else {
       return;
@@ -339,6 +366,7 @@ class Main extends React.Component {
                   session={this.state.session}
                   msgHandler={this.setAlertMessage}
                   tick={this.state.tick}
+                  lastUpdated={this.state.lastUpdated}
           />
         );
       case 'menu-receive':

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Button, Avatar, Divider, Statistic, List, Row, Col, Card, Icon } from 'antd';
+import { Button, Avatar, Divider, Statistic, List, Row, Col, Card, Icon, Tag } from 'antd';
 const GREEN = "#00FF00";
 const RED = "#FF0000";
 
@@ -14,6 +14,8 @@ class Wallet extends React.Component {
       balance: 0,
       usdValue: 0,
       txs: [],
+      lastUpdated: null,
+      tick: 0,
     }
   }
 
@@ -22,7 +24,23 @@ class Wallet extends React.Component {
       balance: this.props.session.getBalance(this.props.currency),
       usdValue: this.props.session.getUSDValue(this.props.currency),
       txs: this.props.session.getTxs(this.props.currency),
+      lastUpdated: this.props.lastUpdated,
     })
+    // Tick every 15 seconds to force a re-rendering of the lastUpdated tag
+    setInterval(() => {
+      this.setState({ tick: this.state.tick + 1 })
+    }, 2000)
+  }
+
+  componentDidUpdate() {
+    if (this.props.lastUpdated !== this.state.lastUpdated) {
+      this.setState({
+        balance: this.props.session.getBalance(this.props.currency),
+        usdValue: this.props.session.getUSDValue(this.props.currency),
+        txs: this.props.session.getTxs(this.props.currency),
+        lastUpdated: this.props.lastUpdated,
+      })
+    }
   }
 
   // Render a transaction in a list
@@ -76,6 +94,31 @@ class Wallet extends React.Component {
     )
   }
 
+  renderLastUpdatedTag() {
+    const elapsedSec = Math.floor((new Date() - this.state.lastUpdated) / 1000);
+    let elapsed, timeType, color;
+    if (elapsedSec < 60) {
+      // Just display that it was updated "seconds" ago if we're under a minute
+      elapsed = '';
+      timeType = 'seconds';
+      color = 'green';
+    } else if (elapsedSec < 3600) {
+      // A couple minutes is fine, but more than 10 and there's probably a connectivity
+      // problem -- display orange warning tag
+      elapsed = Math.floor(elapsedSec / 60);
+      timeType = 'min';
+      color = elapsed > 10 ? 'orange' : 'green';
+    } else { 
+      // Red means there's def a connectivity issue. We probably won't ever get here
+      elapsed = '>1';
+      timeType = 'hour';
+      color = 'red';
+    }
+    return (
+      <Tag color={color}>{`${elapsed} ${timeType} ago`}</Tag>
+    )
+  }
+
   renderList() {
     return (
        <List
@@ -93,12 +136,17 @@ class Wallet extends React.Component {
       <div>
         <Row gutter={16}>
           <Card title={`${this.props.currency} Wallet`} bordered={true}>
-            <Col span={12}>
-              <Statistic title="Balance" value={`${this.state.balance} ${this.props.currency}`} />
-            </Col>
-            <Col span={12}>
-              <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
-            </Col>
+            <Row>
+              Last Updated {this.renderLastUpdatedTag()}
+            </Row>
+            <Row style={{margin: "20px 0 0 0"}}>
+              <Col span={12}>
+                <Statistic title="Balance" value={`${this.state.balance} ${this.props.currency}`} />
+              </Col>
+              <Col span={12}>
+                <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
+              </Col>
+            </Row>
           </Card>
         </Row>
         <Divider/>
