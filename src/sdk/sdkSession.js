@@ -24,6 +24,8 @@ class SDKSession {
     this.deviceID = deviceID;
     // Handler to call when we get state updates
     this.stateUpdateHandler = stateUpdateHandler;
+    // Web worker to sync blockchain data in the background
+    this.worker = null;
     this.initStorage();
   }
 
@@ -32,6 +34,8 @@ class SDKSession {
     this.saveStorage();
     this.storageSession = null;
     this.deviceId = null;
+    this.worker.postMessage({ type: 'stop' });
+    this.worker = null;
   }
 
   isConnected() {
@@ -64,7 +68,15 @@ class SDKSession {
     this.worker.addEventListener('message', e => {
       switch (e.data.type) {
         case 'dataResp':
+          // Got data; update state here and let the main component know
           this.fetchDataHandler(e.data.data);
+          if (this.stateUpdateHandler)
+            this.stateUpdateHandler();
+          break;
+        case 'error':
+          // Error requesting data, report it to the main component.
+          if (this.stateUpdateHandler)
+            this.stateUpdateHandler({ err: e.data.data, currency: e.data.currency });
           break;
         default:
           break;
@@ -79,8 +91,6 @@ class SDKSession {
     this.balances[currency] = balance.value;
     this.usdValues[currency] = balance.dollarAmount;
     this.txs[currency ] = transactions;
-    if (this.stateUpdateHandler)
-      this.stateUpdateHandler();
   }
 
   fetchData(currency, cb) {

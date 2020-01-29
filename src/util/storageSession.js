@@ -19,6 +19,8 @@ class StorageSession {
   }
 
   getWalletData(deviceID, wallet_uid) {
+    if (!this.store[deviceID]) this.store[deviceID] = {};
+    if (!this.store[deviceID][wallet_uid]) this.store[deviceID][wallet_uid] = {};
     return this.store[deviceID][wallet_uid];
   }
 }

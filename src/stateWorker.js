@@ -2,7 +2,7 @@
 export default () => {
     let addresses = {};
     let interval = null;
-    const LOOKUP_DELAY = 180000; // Lookup every 3 minutes
+    const LOOKUP_DELAY = 10000 //180000; // Lookup every 3 minutes
 
     self.addEventListener('message', e => { // eslint-disable-line no-restricted-globals
         if (!e) return;
@@ -13,6 +13,9 @@ export default () => {
                     addresses[k] = addrs[k];
                 })
                 tick();
+                break;
+            case 'stop':
+                clearInterval(interval);
                 break;
             default:
                 break;
@@ -35,10 +38,11 @@ export default () => {
                             // Log the error if it arises
                             // TODO: Handle errors
                             console.error('Error fetching state data for', currency, err);
+                            postMessage({ type: "error", currency, data: err });
                         } else {
                             // If we got a non-error response, post the data back to the
                             // main thread.
-                            postMessage({ type: "dataResp", data })
+                            postMessage({ type: "dataResp", currency, data })
                         }
                         lookupData(currencies);
                     })

@@ -30,6 +30,7 @@ exports.fetchStateData = function(currency, addresses, cb) {
             'Content-Type': 'application/json',
         }
     }
+    console.log('data', data)
     const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/get-data`
     fetch(url, data)
     .then((response) => response.json())
