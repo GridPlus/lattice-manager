@@ -247,7 +247,6 @@ class Main extends React.Component {
 
   refreshWallets() {
     this.wait("Refreshing wallets")
-    console.log('main: refreshing wallets')
     this.state.session.refreshWallets((err) => {
       this.unwait();
       if (err) {
@@ -399,6 +398,7 @@ class Main extends React.Component {
           <Wallet currency={this.state.currency} 
                   session={this.state.session}
                   msgHandler={this.setAlertMessage}
+                  refreshData={this.fetchData}
                   tick={this.state.tick}
                   lastUpdated={this.state.lastUpdated}
           />
