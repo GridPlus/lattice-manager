@@ -339,6 +339,10 @@ class Main extends React.Component {
         walletTag = (
           <Button type="primary" ghost onClick={this.refreshWallets}>Using SafeCard</Button>
         )
+      } else if (activeWallet.internal === true) {
+        walletTag = (
+          <Button type="primary" ghost onClick={this.refreshWallets}>Using Lattice1</Button>
+        )
       }
       if (walletTag) extra.push((
         <Tooltip title="Refresh" key="WalletTagTooltip">{walletTag}</Tooltip>));
