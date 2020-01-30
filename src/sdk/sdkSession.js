@@ -104,11 +104,11 @@ class SDKSession {
     this.txs[currency ] = transactions;
   }
 
-  fetchData(currency, cb) {
+  fetchData(currency, cb=null) {
     fetchStateData(currency, this.addresses, (err, data) => {
       if (err) return cb(err);
       this.fetchDataHandler(data);
-      return cb(null);
+      if (cb) return cb(null);
     })
   }
 

@@ -137,7 +137,7 @@ class Wallet extends React.Component {
         <Row gutter={16}>
           <Card title={`${this.props.currency} Wallet`} bordered={true}>
             <Row>
-              Last Updated {this.renderLastUpdatedTag()}
+              Last Updated {this.renderLastUpdatedTag()}<Button size="small" type="link" icon="reload" onClick={() => {this.props.refreshData(null)}}></Button>
             </Row>
             <Row style={{margin: "20px 0 0 0"}}>
               <Col span={12}>
