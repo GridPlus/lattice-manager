@@ -10,7 +10,7 @@ const { Option } = Select;
 
 class Main extends React.Component {
   constructor(props) {
-    super(props)    
+    super(props)
     this.state = {
       currency: 'ETH',
       menuItem: 'menu-wallet',
@@ -447,7 +447,7 @@ class Main extends React.Component {
         <Pair submit={this.handlePair}/>
       );
     } else if (!hasActiveWallet) {
-      const retry = this.state.session ? this.state.session.refreshWallets : null;
+      const retry = this.state.session ? this.refreshWallets : null;
       return (
         <Error msg={"No active wallet present for device!"}
                retryCb={retry} 
