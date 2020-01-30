@@ -3,18 +3,30 @@ export default () => {
     let addresses = {};
     let interval = null;
     let BASE_URL = 'localhost:3000'; // Should never use the default
-    const LOOKUP_DELAY = 180000; // Lookup every 3 minutes
+    const LOOKUP_DELAY = 120000; // Lookup every 2 minutes
     self.addEventListener('message', e => { // eslint-disable-line no-restricted-globals
         if (!e) return;
         switch (e.data.type) {
             case 'setup':
                 BASE_URL = e.data.data;
                 break;
-            case 'newAddresses':
+            case 'setAddresses':
+                // This will get called either when the wallet boots up or when we get
+                // a refreshed wallet state.
+                // NOTE: If there is no active wallet (and no addresses), we will still
+                // tick, but no http requests will be made in the iteration
                 const addrs = e.data.data;
-                Object.keys(addrs).forEach((k) => {
-                    addresses[k] = addrs[k];
-                })
+                const currencies = Object.keys(addrs) || [];
+                if (currencies.length === 0) {
+                    // If we didn't get any data from `addrs`, it means we got an empty
+                    // active wallet and had to clear out the addresses in the SDK session.
+                    // We should do the same here.
+                    addresses = {};
+                } else {
+                    // Otherwise, update addresses for the currencies provided.
+                    // NOTE: We leave the other currencies alone.
+                    Object.keys(addrs).forEach((k) => { addresses[k] = addrs[k]; });
+                }
                 tick();
                 break;
             case 'stop':
@@ -50,6 +62,9 @@ export default () => {
                         }
                         lookupData(currencies);
                     })
+                } else {
+                    // We are done looping through currencies
+                    postMessage({ type: "iterationDone" })
                 }
             }
         

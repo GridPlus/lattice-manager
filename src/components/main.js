@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag } from 'antd';
+import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
 import { constants } from '../util/helpers'
@@ -44,6 +44,7 @@ class Main extends React.Component {
     this.fetchAddresses = this.fetchAddresses.bind(this);
     this.fetchData = this.fetchData.bind(this);
     this.handleStateUpdate = this.handleStateUpdate.bind(this);
+    this.refreshWallets = this.refreshWallets.bind(this);
 
     // Bind wrappers
     this.retry = this.retry.bind(this);
@@ -244,6 +245,17 @@ class Main extends React.Component {
     });
   }
 
+  refreshWallets() {
+    this.wait("Refreshing wallets")
+    console.log('main: refreshing wallets')
+    this.state.session.refreshWallets((err) => {
+      this.unwait();
+      if (err) {
+        this.setError({ msg: err, cb: this.refreshWallets })
+      }
+    })
+  }
+
   //------------------------------------------
   // END SDK HOOKS
   //------------------------------------------
@@ -316,15 +328,37 @@ class Main extends React.Component {
   renderHeader() {
     let extra = [];
     if (this.isConnected()) {
-      extra = [
+      // Display a tag if there is a SafeCard inserted
+      let walletTag = null;
+      const activeWallet = this.state.session.getActiveWallet()
+      if (activeWallet === null) {
+        walletTag = ( 
+          <Button type="danger" ghost onClick={this.refreshWallets}>No Active Wallet!</Button>
+        )
+      } else if (activeWallet.external === true) {
+        walletTag = (
+          <Button type="primary" ghost onClick={this.refreshWallets}>Using SafeCard</Button>
+        )
+      } else if (activeWallet.internal === true) {
+        walletTag = (
+          <Button type="primary" ghost onClick={this.refreshWallets}>Using Lattice1</Button>
+        )
+      }
+      if (walletTag) extra.push((
+        <Tooltip title="Refresh" key="WalletTagTooltip">{walletTag}</Tooltip>));
+
+      // Add the currency switch
+      extra.push(
         (<Select key="currency-select" defaultValue="ETH" onChange={this.handleCurrencyChange}>
           <Option value="ETH">ETH</Option>
           <Option value="BTC">BTC</Option>
-        </Select>),
+        </Select>)
+      );
+      extra.push(
         ( <Button key="logout-button" type="primary" onClick={this.handleLogout}>
           Logout
         </Button>)
-      ]
+      );
     }
     return (
       <PageHeader
@@ -390,6 +424,7 @@ class Main extends React.Component {
 
   renderContent() {
     const hasError = this.state.error.msg && this.state.error.cb;
+    const hasActiveWallet = this.state.session ? this.state.session.getActiveWallet() !== null : false;
     if (this.state.waiting) {
       return (
         <Loading msg={this.state.pendingMsg} /> 
@@ -411,6 +446,13 @@ class Main extends React.Component {
       return (
         <Pair submit={this.handlePair}/>
       );
+    } else if (!hasActiveWallet) {
+      const retry = this.state.session ? this.state.session.refreshWallets : null;
+      return (
+        <Error msg={"No active wallet present for device!"}
+               retryCb={retry} 
+        />
+      )
     } else {
       return this.renderMenuItem();
     }
