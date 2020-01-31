@@ -5,6 +5,8 @@ const constants = {
   GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3000',
   ROOT_STORE: 'gridplus',
   BTC_COIN: 0x80000000,
+  BTC_MAIN_GAP_LIMIT: 20,
+  BTC_ADDR_BLOCK_LEN: 10,
 }
 if (process.env.REACT_APP_ENV === 'dev') {
     constants.GRIDPLUS_CLOUD_API = 'https://pay.gridplus.io:3333';
@@ -35,7 +37,6 @@ exports.fetchStateData = function(currency, addresses, cb) {
             'Content-Type': 'application/json',
         }
     }
-    console.log('data', data)
     const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/get-data`
     fetch(url, data)
     .then((response) => response.json())

@@ -183,7 +183,12 @@ class Wallet extends React.Component {
         <Row gutter={16}>
           <Card title={`${this.props.currency} Wallet`} bordered={true}>
             <Row>
-              Last Updated {this.renderLastUpdatedTag()}<Button size="small" type="link" icon="reload" onClick={() => {this.props.refreshData(null)}}></Button>
+              Last Updated {this.renderLastUpdatedTag()}
+              {this.props.stillSyncingAddresses === true ? (
+                <Tag color="orange">Still Fetching Addresses...</Tag> 
+              ): (
+                <Button size="small" type="link" icon="reload" onClick={() => {this.props.refreshData(null)}}></Button>
+              )}
             </Row>
             <Row style={{margin: "20px 0 0 0"}}>
               {this.renderHeader()}

@@ -22,6 +22,8 @@ class Main extends React.Component {
       alertMsg: null,
       error: { msg: null, cb: null },
       pendingMsg: null,
+      // State variable to track if we are fetching new addresses in the background
+      stillSyncingAddresses: false, 
       // Waiting on asynchronous data, usually from the Lattice
       waiting: false, 
       // Tick state in order to force a re-rendering of the `Wallet` component
@@ -169,7 +171,10 @@ class Main extends React.Component {
       // Most likely, the request failed.
       this.setAlertMessage({ errMsg: data.err })
     } else {
-      this.setState({ lastUpdated: new Date() })
+      const st = { lastUpdated: new Date() };
+      if (data.stillSyncingAddresses !== undefined) 
+        st.stillSyncingAddresses = data.stillSyncingAddresses;
+      this.setState(st);
     }
   }
   
@@ -319,7 +324,6 @@ class Main extends React.Component {
 
   renderSidebar() {
     if (this.isConnected()) {
-      console.log('width', this.state.windowWidth)
       return (
         <Sider collapsed={this.isMobile()}>
           <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
@@ -421,6 +425,7 @@ class Main extends React.Component {
                   refreshData={this.fetchData}
                   tick={this.state.tick}
                   lastUpdated={this.state.lastUpdated}
+                  stillSyncingAddresses={this.state.stillSyncingAddresses}
           />
         );
       case 'menu-receive':

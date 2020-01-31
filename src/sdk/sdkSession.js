@@ -98,10 +98,34 @@ class SDKSession {
   }
 
   fetchDataHandler(data) {
-    const { currency, balance, transactions } = data;
+    const { currency, balance, transactions, firstUnused, lastUnused } = data;
+   
+    // Handle a case where the user logged out while requesting addresses. This return
+    // prevents an infinite loop of looking up state data for the same set of addresses
+    if (!this.client) return;
+   
+    // Determine if we need to fetch new addresses and are therefore still syncing
+    // We need to fetch new BTC addresses up to the gap limit (20), meaning we need
+    // GAP_LIMIT unused addresses in a row.
+    const needNewBtcAddresses = lastUnused === this.addresses[currency].length - 1 &&
+                                lastUnused - firstUnused < constants.BTC_MAIN_GAP_LIMIT - 1;
+    const stillSyncingAddresses = (currency === 'BTC' && needNewBtcAddresses === true);
+
+    // Dispatch updated data for the UI
     this.balances[currency] = balance.value;
     this.usdValues[currency] = balance.dollarAmount;
     this.txs[currency ] = transactions;
+    this.stateUpdateHandler({ stillSyncingAddresses });
+
+    // If we are still syncing, get the new addresses we need
+    if (stillSyncingAddresses) {
+      setTimeout(() => {
+        // Request the addresses -- the device needs ~2s per address to recover from the last one
+        // due to the fact that it may start caching new addresses based on our requests.
+        const fetchWrapper = () => {this.fetchData(currency)};
+        this.loadAddresses(currency, fetchWrapper, true);
+      }, constants.BTC_ADDR_BLOCK_LEN * 2000)
+    }
   }
 
   fetchData(currency, cb=null) {
@@ -120,24 +144,22 @@ class SDKSession {
   // we lose localStorage, which is also captured via a StorageSession.
   // Therefore, we can always assume that the addresses we have are "immutable" given
   // current state params (walletUID and StorageSession).
-  loadAddresses(currency, cb) {
+  loadAddresses(currency, cb, force=false) {
     if (!this.client) return cb('No client connected');
     const opts = {};
-
     // Get the current address list for this currency
-    let currentAddresses = this.addresses[currency];
+    let currentAddresses = this.addresses[currency] || [];
     if (!currentAddresses) currentAddresses = [];
     const nextIdx = currentAddresses.length;
 
     switch(currency) {
       case 'BTC':
-        // TODO: Bitcoin syncing logic. We need to consider a gap limit of 20
-        // for regular addresses and a gap limit of 1 for change addresses.
-        // TODO: Call the webworker when we get new addresses so that it can sync
-        // over the new ones too
-        if (nextIdx > 0) return cb(null); // Temporary to avoid reloading all the time
+        // Skip the initial sync if we have GAP_LIMIT addresses -- we will assume we have
+        // already synced and this function will get called if we discover <20 unused addresses
+        // (via `fetchDataHandler`)
+        if (force !== true && nextIdx >= constants.BTC_MAIN_GAP_LIMIT) return cb(null);
         opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 0, nextIdx ];
-        opts.n = 1;
+        opts.n = constants.BTC_ADDR_BLOCK_LEN;
         break;
       case 'ETH':
         // Do not load addresses if we already have the first ETH one.
@@ -154,7 +176,7 @@ class SDKSession {
       if (err) return cb(err);
       // Save the addresses to memory and also update them in localStorage
       // Note that we do need to track index here
-      this.addresses[currency] = addresses;
+      this.addresses[currency] = currentAddresses.concat(addresses);
       this.saveStorage();
       return cb(null);
     })
