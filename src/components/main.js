@@ -31,6 +31,8 @@ class Main extends React.Component {
       password: null,
       // Last time the state was updated (comes from webwork setup by SdkSession)
       lastUpdated: new Date(),
+      // Width of the current window
+      windowWidth: window.innerWidth,
     };
 
     // Bind local state updaters
@@ -49,9 +51,13 @@ class Main extends React.Component {
     // Bind wrappers
     this.retry = this.retry.bind(this);
 
+    // Bind listener callbacks
+    this.updateWidth = this.updateWidth.bind(this);
   }
 
   componentDidMount() {
+    // Listen for window resize
+    window.addEventListener('resize', this.updateWidth);
     // Lookup deviceID and pw from storage
     const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
     const password = window.localStorage.getItem('gridplus_web_wallet_password');
@@ -60,6 +66,18 @@ class Main extends React.Component {
         this.connectSession();
       });
     }
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.updateWidth);
+  }
+
+  updateWidth() {
+    this.setState({ windowWidth:  window.innerWidth });
+  }
+
+  isMobile() {
+    return this.state.windowWidth < 800;
   }
 
   connect(deviceID, password, cb) {
@@ -301,8 +319,9 @@ class Main extends React.Component {
 
   renderSidebar() {
     if (this.isConnected()) {
+      console.log('width', this.state.windowWidth)
       return (
-        <Sider>
+        <Sider collapsed={this.isMobile()}>
           <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
             <Menu.Item key="menu-wallet">
               <Icon type="wallet" />
@@ -329,18 +348,19 @@ class Main extends React.Component {
     if (this.isConnected()) {
       // Display a tag if there is a SafeCard inserted
       let walletTag = null;
+      const size = this.isMobile() ? 'small' : 'default';
       const activeWallet = this.state.session.getActiveWallet()
       if (activeWallet === null) {
         walletTag = ( 
-          <Button type="danger" ghost onClick={this.refreshWallets}>No Active Wallet!</Button>
+          <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Active Wallet!</Button>
         )
       } else if (activeWallet.external === true) {
         walletTag = (
-          <Button type="primary" ghost onClick={this.refreshWallets}>Using SafeCard</Button>
+          <Button type="primary" ghost onClick={this.refreshWallets} size={size}>Using SafeCard</Button>
         )
       } else if (activeWallet.internal === true) {
         walletTag = (
-          <Button type="primary" ghost onClick={this.refreshWallets}>Using Lattice1</Button>
+          <Button type="primary" ghost onClick={this.refreshWallets} size={size}>Using Lattice1</Button>
         )
       }
       if (walletTag) extra.push((
@@ -348,13 +368,13 @@ class Main extends React.Component {
 
       // Add the currency switch
       extra.push(
-        (<Select key="currency-select" defaultValue="ETH" onChange={this.handleCurrencyChange}>
+        (<Select key="currency-select" defaultValue="ETH" onChange={this.handleCurrencyChange} size={size}>
           <Option value="ETH">ETH</Option>
           <Option value="BTC">BTC</Option>
         </Select>)
       );
       extra.push(
-        ( <Button key="logout-button" type="primary" onClick={this.handleLogout}>
+        ( <Button key="logout-button" type="primary" onClick={this.handleLogout} size={size}>
           Logout
         </Button>)
       );
@@ -362,7 +382,7 @@ class Main extends React.Component {
     return (
       <PageHeader
         tags={<Tag>GridPlus Web Wallet</Tag>}
-        // avatar={{src: "/logo.png"}}
+        avatar={{src: "/logo_square.png"}}
         style={{background: "#001529", "fontColor": "#fff"}}
         ghost={false}
         extra={extra}
@@ -468,12 +488,12 @@ class Main extends React.Component {
     return (
       <Layout style={{ minHeight: '100vh' }}>
         {this.renderHeader()}
-        <Layout>
+        <Layout id="main-content-outer">
           {this.renderSidebar()}
-          <Layout>
-            <Content style={{ margin: '20px 16px' }}>
+          <Layout id="main-content-inner">
+            <Content style={{ margin: '20px 0 0 0' }}>
               {this.renderAlert()}
-              <div style={{ margin: '50px 0 0 0'}}>
+              <div style={{ margin: '30px 0 0 0'}}>
                 {this.renderContent()}        
               </div>
             </Content>

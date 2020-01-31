@@ -11,7 +11,7 @@ class Receive extends React.Component {
 
     this.state = {
       address: null,
-      windowWidth: window.innerWidth,
+      windowWidth: document.getElementById('main-content-inner').offsetWidth,
     }
 
     this.updateWidth = this.updateWidth.bind(this);
@@ -27,8 +27,7 @@ class Receive extends React.Component {
   }
 
   updateWidth() {
-    this.setState({ windowWidth: window.innerWidth });
-
+    this.setState({ windowWidth:  document.getElementById('main-content-inner').offsetWidth });
   }
 
 
@@ -50,7 +49,7 @@ class Receive extends React.Component {
         <div>
           <p>Your {this.props.currency} receiving address:</p>
           <QRCode value={this.state.address} 
-                  size={0.2 * this.state.windowWidth}
+                  size={0.8 * this.getCardWidth()}
                   style={{margin: "30px 0 0 0"}}
           />
           <Search type="text" 
@@ -72,17 +71,23 @@ class Receive extends React.Component {
     }
   }
 
+  getCardWidth() {
+    if (this.state.windowWidth > 500) {
+      return 500;
+    } else if (this.state.windowWidth > 300) {
+      return 300;
+    } else {
+      return this.state.windowWidth - 10;
+    }
+  }
+
   render() {
     return (
-      <Row>
-        <Col span={8} offset={8}>
-          <center>
-            <Card title="Receive" bordered={true}>
-              {this.renderCard()}
-            </Card>
-          </center>
-        </Col>
-      </Row>
+      <center>
+        <Card title="Receive" bordered={true} style={{width: this.getCardWidth()}}>
+          {this.renderCard()}
+        </Card>
+      </center>
     )
   }
 }
