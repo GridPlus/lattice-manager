@@ -16,7 +16,10 @@ class Wallet extends React.Component {
       txs: [],
       lastUpdated: null,
       tick: 0,
+      windowWidth: document.getElementById('main-content-inner').offsetWidth,
     }
+
+    this.updateWidth = this.updateWidth.bind(this);
   }
 
   componentDidMount() {
@@ -30,6 +33,7 @@ class Wallet extends React.Component {
     setInterval(() => {
       this.setState({ tick: this.state.tick + 1 })
     }, 2000)
+    window.addEventListener('resize', this.updateWidth);
   }
 
   componentDidUpdate() {
@@ -41,6 +45,22 @@ class Wallet extends React.Component {
         lastUpdated: this.props.lastUpdated,
       })
     }
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.updateWidth);
+  }
+
+  updateWidth() {
+    this.setState({ windowWidth:  document.getElementById('main-content-inner').offsetWidth });
+  }
+
+  // Make sure text doesn't overflow on smaller screens. We need to trim larger strings
+  ensureTrimmedText(text) {
+    if (this.state.windowWidth > 500) return text;
+    const maxChars = this.state.windowWidth / 30;
+    if (text.length > maxChars) return `${text.slice(0, maxChars)}...`
+    return text;
   }
 
   // Render a transaction in a list
@@ -65,7 +85,7 @@ class Wallet extends React.Component {
     lastUpdated: 1578858115022
     */
     const title = `${item.value.toFixed(8)} ${item.currency}`;
-    const subtitle = item.incoming ? `From: ${item.from}` : `To: ${item.to}`;
+    const subtitle = item.incoming ? `From: ${this.ensureTrimmedText(item.from)}` : `To: ${this.ensureTrimmedText(item.to)}`;
     const label = (
       <div align="right">
         <p>
@@ -131,21 +151,42 @@ class Wallet extends React.Component {
     )
   }
 
+  renderHeader() {
+    if (this.state.windowWidth > 500) {
+      return (
+        <Row style={{margin: "20px 0 0 0"}}>
+          <Col span={12}>
+            <Statistic title="Balance" value={`${this.state.balance} ${this.props.currency}`} />
+          </Col>
+          <Col span={12}>
+            <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
+          </Col>
+        </Row>
+      )
+    } else {
+      return (
+        <div>
+          <Row style={{margin: "20px 0 0 0"}}>
+            <Statistic title="Balance" value={`${this.state.balance} ${this.props.currency}`} />
+          </Row>
+          <Row style={{margin: "10px 0 0 0"}}>
+            <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
+          </Row>
+        </div>
+      )
+    }
+  }
+
   render() {
     return (
-      <div>
+      <div style={{width: this.state.windowWidth - 10}}>
         <Row gutter={16}>
           <Card title={`${this.props.currency} Wallet`} bordered={true}>
             <Row>
               Last Updated {this.renderLastUpdatedTag()}<Button size="small" type="link" icon="reload" onClick={() => {this.props.refreshData(null)}}></Button>
             </Row>
             <Row style={{margin: "20px 0 0 0"}}>
-              <Col span={12}>
-                <Statistic title="Balance" value={`${this.state.balance} ${this.props.currency}`} />
-              </Col>
-              <Col span={12}>
-                <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
-              </Col>
+              {this.renderHeader()}
             </Row>
           </Card>
         </Row>
