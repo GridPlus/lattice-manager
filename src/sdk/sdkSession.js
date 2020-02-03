@@ -17,6 +17,10 @@ class SDKSession {
     this.usdValues = {};
     // Cached list of transactions, indexed by currency
     this.txs = {};
+    // Cached list of unused addresses. These indicate the next available
+    // address for each currency. Currently only contains a Bitcoin address
+    this.firstUnusedAddresses = {};
+
     // Make use of localstorage to persist wallet data
     this.storageSession = null;
     // Save the device ID for the session
@@ -71,10 +75,27 @@ class SDKSession {
     return this.txs[currency] || [];
   }
 
-  getAddresses(currency) {
-    if (typeof this.addressees[`${currency}_CHANGE`] === 'object')
-      return this.addressees[currency].concat(this.addressees[`${currency}_CHANGE`]);
-    return this.addressees[currency] || [];
+  getDisplayAddress(currency) {
+    if (!this.addresses[currency]) 
+      return null;
+    
+    switch (currency) {
+      case 'BTC':
+        // If we have set the next address to use, display that.
+        // Otherwise, fallback on the first address.
+        // In reality, we should never hit that fallback as this
+        // function should not get called until after we have synced
+        // at least a few addresses.
+        if (this.firstUnusedAddresses[currency])
+          return this.firstUnusedAddresses[currency];
+        else
+          return this.addresses[currency][0];
+      case 'ETH':
+        // We only ever use the first ETH address
+        return this.addresses[currency][0];
+      default:
+        return null;
+    }
   }
 
   getActiveWallet() {
@@ -141,6 +162,8 @@ class SDKSession {
       const gapLimit = usingChange === true ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
       const needNewBtcAddresses = lastUnused === this.addresses[currency].length - 1 &&
                                   lastUnused - firstUnused < gapLimit - 1;
+      // Save this
+      this.firstUnusedAddresses[currency] = this.addresses[currency][firstUnused];
       
       if (needNewBtcAddresses === true) {
         // If we need more addresses of our currency (regular OR change), just continue on.
