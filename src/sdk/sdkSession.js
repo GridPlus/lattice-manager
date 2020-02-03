@@ -25,13 +25,15 @@ class SDKSession {
     this.stateUpdateHandler = stateUpdateHandler;
     // Web worker to sync blockchain data in the background
     this.worker = null;
-    this.updateStorage();
 
-    // Use this flag to determine if we need to check on change addrsses.
-    // Without this flag, we are not aware of the `BTC_CHANGE` address
-    // set. This will only get updated once.
-    this.hasSyncedBtcChange = false;
-    
+    // When we sync state on BTC for the first time, also check on
+    // the change addresses if we have captured those addresses previously.
+    // This way we can simply check state on change rather than pulling new
+    // addresses.
+    this.hasCheckedBtcChange = false
+  
+    // Go time
+    this.updateStorage();
   }
 
   disconnect() {
@@ -52,19 +54,27 @@ class SDKSession {
   }
 
   getBalance(currency) {
+    if (typeof this.balances[`${currency}_CHANGE`] === 'number')
+      return this.balances[currency] + this.balances[`${currency}_CHANGE`];
     return this.balances[currency] || 0;
   }
 
   getUSDValue(currency) {
+    if (typeof this.usdValues[`${currency}_CHANGE`] === 'number')
+      return this.usdValues[currency] + this.usdValues[`${currency}_CHANGE`];
     return this.usdValues[currency] || 0;
   }
 
   getTxs(currency) {
+    if (typeof this.txs[`${currency}_CHANGE`] === 'object')
+      return this.txs[currency].concat(this.txs[`${currency}_CHANGE`]);
     return this.txs[currency] || [];
   }
 
   getAddresses(currency) {
-    return this.addresses[currency] || [];
+    if (typeof this.addressees[`${currency}_CHANGE`] === 'object')
+      return this.addressees[currency].concat(this.addressees[`${currency}_CHANGE`]);
+    return this.addressees[currency] || [];
   }
 
   getActiveWallet() {
@@ -102,74 +112,93 @@ class SDKSession {
     this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
   }
 
-  fetchDataHandler(data, isChange=false) {
-    let { currency } = data;
+  fetchDataHandler(data, usingChange=false) {
+    let { currency } = data; // Will be adjusted if this is a change addresses request
     const { balance, transactions, firstUnused, lastUnused } = data;
+    let switchToChange = false;
+    const changeCurrency = `${currency}_CHANGE`;
    
     // Handle a case where the user logged out while requesting addresses. This return
     // prevents an infinite loop of looking up state data for the same set of addresses
     if (!this.client) return;
 
     // BITCOIN SPECIFIC LOGIC:
-    let stillSyncingAddresses = false;
-    let fullCurrency = currency; // Will be adjusted if this is a change addresses request
+    // Determine if we need to request additional addresses and/or state data:
     //---------
+    let stillSyncingAddresses = false;
     // Determine if we need to fetch new addresses and are therefore still syncing
     // We need to fetch new BTC addresses up to the gap limit (20), meaning we need
     // GAP_LIMIT unused addresses in a row.
     if (currency === 'BTC') {
-      // Account for change addresses
-      if (isChange === true) {
-        // Tell `loadAddresses` we are looking for change addresses
-        fullCurrency = `${currency}_CHANGE`;
-        // Ensure we don't enter this function again for change addresses unless we bump into the change gapLimit
-        this.hasSyncedBtcChange = true;
+      // If we are told to switch to using change addresses, update the currency
+      if (usingChange === true) {
+        currency = changeCurrency;
+        this.hasCheckedBtcChange = true; // Capture the first switch to change
       }
       
       // Determine if we need new addresses or if we are fully synced. This is based on the gap
       // limit (20 for regular addresses, 1 for change)
-      const gapLimit = isChange === true ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
+      const gapLimit = usingChange === true ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
       const needNewBtcAddresses = lastUnused === this.addresses[currency].length - 1 &&
                                   lastUnused - firstUnused < gapLimit - 1;
       
-      // Finally, cpature all of this in a condition that determines if we need to sync new addresses
       if (needNewBtcAddresses === true) {
-        // If we have encroached on the gap limit, continue with regular addresses
+        // If we need more addresses of our currency (regular OR change), just continue on.
         stillSyncingAddresses = true;
-      } else if (!this.hasSyncedBtcChange) {
-        // If we no longer need new regular addresses and we haven't checked on change addresses this session,
-        // go ahead 
-        // If we have not yet synced change addresses in this session, let's do that now.
+        switchToChange = false;
+      } else if (!this.addresses[changeCurrency]) {
+        // If we're up to speed with the regular ones but we don't have any change addresses,
+        // we need to switch to those.
         stillSyncingAddresses = true;
-        fullCurrency = `${currency}_CHANGE`;
-        isChange = true;
+        switchToChange = true;
+      } else if (!this.hasCheckedBtcChange) {
+        // If we haven't checked change and we *do* have addresses, do the switch and update
+        // currency to change.
+        switchToChange = true;
+      } else {
+        switchToChange = false;
       }
     }
-    console.log('fetchDataHandler: stillSyncing:', stillSyncingAddresses, 'fullCurrency', fullCurrency, 'isChange', isChange);
-    console.log('this.addresses', this.addresses)
     //---------
 
     // Dispatch updated data for the UI
     this.balances[currency] = balance.value;
     this.usdValues[currency] = balance.dollarAmount;
-    this.txs[currency ] = transactions;
-    this.stateUpdateHandler({ stillSyncingAddresses });
+    this.txs[currency] = transactions;
 
-    // If we are still syncing, get the new addresses we need
+    // Tell the main component if we are done syncing. Note that this also captures the case
+    // where we are switching to syncing change addresses/data
+    const stillSyncingIndicator = stillSyncingAddresses === true || switchToChange === true;
+    this.stateUpdateHandler({ stillSyncingAddresses: stillSyncingIndicator });
+
+    // Set params for continuation calls
+    let useChange = false;
+    let requestCurrency = currency;
+    if (switchToChange === true) {
+      useChange = true;
+      requestCurrency = changeCurrency;
+    }
+
+    // Continue syncing data and/or fetching addresses
     if (stillSyncingAddresses) {
+      // If we are still syncing, get the new addresses we need
       setTimeout(() => {
         // Request the addresses -- the device needs ~2s per address to recover from the last one
         // due to the fact that it may start caching new addresses based on our requests.
-        const fetchWrapper = () => {this.fetchData(currency, null, isChange)};
-        this.loadAddresses(fullCurrency, fetchWrapper, true);
+        const fetchWrapper = () => {this.fetchData(requestCurrency, null, useChange)};
+        this.loadAddresses(requestCurrency, fetchWrapper, true);
       }, constants.BTC_ADDR_BLOCK_LEN * 2000)
+    } else if (switchToChange === true) {
+      // If we don't necessarily need new addresses but we do need to check on
+      // change addresses, call `fetchData` directly (i.e. don't call `loadAddresses`)
+      this.fetchData(requestCurrency, null, useChange);
     }
   }
 
-  fetchData(currency, cb=null, isChange=false) {
+  fetchData(currency, cb=null, switchToChange=false) {
     fetchStateData(currency, this.addresses, (err, data) => {
       if (err) return cb(err);
-      this.fetchDataHandler(data, isChange);
+      this.fetchDataHandler(data, switchToChange);
       if (cb) return cb(null);
     })
   }
@@ -223,6 +252,7 @@ class SDKSession {
       // Note that we do need to track index here
       this.addresses[currency] = currentAddresses.concat(addresses);
       this.saveStorage();
+      this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
       return cb(null);
     })
   }

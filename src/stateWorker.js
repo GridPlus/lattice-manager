@@ -82,13 +82,22 @@ export default () => {
 
     // We also have to copypasta this helper grrrr
     function fetchStateDataCopyPasta(currency, addresses, cb) {
-        if (!addresses[currency] || addresses[currency].length === 0) return cb(null);
+        const reqAddresses = addresses[currency];
 
+        // Exit if we don't have addresses to use in the request
+        if (!reqAddresses || reqAddresses.length === 0) 
+            return cb(null);
+
+        // Slice out the 'change' portion of the currency name for the request itself
+        if (currency.indexOf('_CHANGE') > -1)
+            currency = currency.slice(0, currency.indexOf('_CHANGE'));
+
+        // Build the request  
         const data = {
             method: 'POST',
             body: JSON.stringify([{
-                currency,
-                addresses: addresses[currency],
+            currency,
+            addresses: reqAddresses,
             }]),
             headers: {
                 'Accept': 'application/json',
