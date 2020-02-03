@@ -48,12 +48,15 @@ export default () => {
             function lookupData(currencies=Object.keys(addresses)) {
                 if (currencies.length > 0) {
                     const currency = currencies.pop();
-                    // fetchStateDataCopyPasta(currency, addresses, (err, data) => {
-                    fetchStateDataCopyPasta(currency, addresses, (err, data) => {
+                    // Account for change addresses
+                    let baseCurrency = currency;
+                    if (currency.indexOf('_CHANGE') > -1) {
+                        baseCurrency = currency.slice(0, currency.indexOf('_CHANGE'));
+                    }
+                    // Fetch the state data with our set of addresses for this currency
+                    fetchStateDataCopyPasta(baseCurrency, addresses, (err, data) => {
                         if (err) {
                             // Log the error if it arises
-                            // TODO: Handle errors
-                            console.error('Error fetching state data for', currency, err);
                             postMessage({ type: "error", currency, data: err });
                         } else {
                             // If we got a non-error response, post the data back to the

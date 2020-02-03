@@ -160,7 +160,7 @@ class Main extends React.Component {
 
   handleLogout() {
     this.state.session.disconnect();
-    this.setState({ session: null });
+    this.setState({ session: null, currency: 'ETH' });
     window.localStorage.removeItem('gridplus_web_wallet_id');
     window.localStorage.removeItem('gridplus_web_wallet_password');
   }

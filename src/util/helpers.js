@@ -7,6 +7,8 @@ const constants = {
   BTC_COIN: 0x80000000,
   BTC_MAIN_GAP_LIMIT: 20,
   BTC_ADDR_BLOCK_LEN: 10,
+  BTC_CHANGE_GAP_LIMIT: 1,
+  BTC_CHANGE_ADDR_BLOCK_LEN: 1,
 }
 if (process.env.REACT_APP_ENV === 'dev') {
     constants.GRIDPLUS_CLOUD_API = 'https://pay.gridplus.io:3333';

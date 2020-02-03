@@ -26,6 +26,11 @@ class SDKSession {
     // Web worker to sync blockchain data in the background
     this.worker = null;
     this.updateStorage();
+
+    // Use this flag to determine if we need to check on change addrsses.
+    // Without this flag, we are not aware of the `BTC_CHANGE` address
+    // set. This will only get updated once.
+    this.hasSyncedBtcChange = false;
     
   }
 
@@ -97,19 +102,52 @@ class SDKSession {
     this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
   }
 
-  fetchDataHandler(data) {
-    const { currency, balance, transactions, firstUnused, lastUnused } = data;
+  fetchDataHandler(data, isChange=false) {
+    let { currency } = data;
+    const { balance, transactions, firstUnused, lastUnused } = data;
    
     // Handle a case where the user logged out while requesting addresses. This return
     // prevents an infinite loop of looking up state data for the same set of addresses
     if (!this.client) return;
-   
+
+    // BITCOIN SPECIFIC LOGIC:
+    let stillSyncingAddresses = false;
+    let fullCurrency = currency; // Will be adjusted if this is a change addresses request
+    //---------
     // Determine if we need to fetch new addresses and are therefore still syncing
     // We need to fetch new BTC addresses up to the gap limit (20), meaning we need
     // GAP_LIMIT unused addresses in a row.
-    const needNewBtcAddresses = lastUnused === this.addresses[currency].length - 1 &&
-                                lastUnused - firstUnused < constants.BTC_MAIN_GAP_LIMIT - 1;
-    const stillSyncingAddresses = (currency === 'BTC' && needNewBtcAddresses === true);
+    if (currency === 'BTC') {
+      // Account for change addresses
+      if (isChange === true) {
+        // Tell `loadAddresses` we are looking for change addresses
+        fullCurrency = `${currency}_CHANGE`;
+        // Ensure we don't enter this function again for change addresses unless we bump into the change gapLimit
+        this.hasSyncedBtcChange = true;
+      }
+      
+      // Determine if we need new addresses or if we are fully synced. This is based on the gap
+      // limit (20 for regular addresses, 1 for change)
+      const gapLimit = isChange === true ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
+      const needNewBtcAddresses = lastUnused === this.addresses[currency].length - 1 &&
+                                  lastUnused - firstUnused < gapLimit - 1;
+      
+      // Finally, cpature all of this in a condition that determines if we need to sync new addresses
+      if (needNewBtcAddresses === true) {
+        // If we have encroached on the gap limit, continue with regular addresses
+        stillSyncingAddresses = true;
+      } else if (!this.hasSyncedBtcChange) {
+        // If we no longer need new regular addresses and we haven't checked on change addresses this session,
+        // go ahead 
+        // If we have not yet synced change addresses in this session, let's do that now.
+        stillSyncingAddresses = true;
+        fullCurrency = `${currency}_CHANGE`;
+        isChange = true;
+      }
+    }
+    console.log('fetchDataHandler: stillSyncing:', stillSyncingAddresses, 'fullCurrency', fullCurrency, 'isChange', isChange);
+    console.log('this.addresses', this.addresses)
+    //---------
 
     // Dispatch updated data for the UI
     this.balances[currency] = balance.value;
@@ -122,16 +160,16 @@ class SDKSession {
       setTimeout(() => {
         // Request the addresses -- the device needs ~2s per address to recover from the last one
         // due to the fact that it may start caching new addresses based on our requests.
-        const fetchWrapper = () => {this.fetchData(currency)};
-        this.loadAddresses(currency, fetchWrapper, true);
+        const fetchWrapper = () => {this.fetchData(currency, null, isChange)};
+        this.loadAddresses(fullCurrency, fetchWrapper, true);
       }, constants.BTC_ADDR_BLOCK_LEN * 2000)
     }
   }
 
-  fetchData(currency, cb=null) {
+  fetchData(currency, cb=null, isChange=false) {
     fetchStateData(currency, this.addresses, (err, data) => {
       if (err) return cb(err);
-      this.fetchDataHandler(data);
+      this.fetchDataHandler(data, isChange);
       if (cb) return cb(null);
     })
   }
@@ -152,6 +190,7 @@ class SDKSession {
     if (!currentAddresses) currentAddresses = [];
     const nextIdx = currentAddresses.length;
 
+
     switch(currency) {
       case 'BTC':
         // Skip the initial sync if we have GAP_LIMIT addresses -- we will assume we have
@@ -160,6 +199,12 @@ class SDKSession {
         if (force !== true && nextIdx >= constants.BTC_MAIN_GAP_LIMIT) return cb(null);
         opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 0, nextIdx ];
         opts.n = constants.BTC_ADDR_BLOCK_LEN;
+        break;
+      case 'BTC_CHANGE':
+        // Skip the initial sync if we have at least one change address (GAP_LIMIT=1)
+        if (force !== true && nextIdx >= constants.BTC_CHANGE_GAP_LIMIT) return cb(null);
+        opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 1, nextIdx ];
+        opts.n = constants.BTC_CHANGE_GAP_LIMIT;
         break;
       case 'ETH':
         // Do not load addresses if we already have the first ETH one.
