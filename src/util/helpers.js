@@ -5,6 +5,10 @@ const constants = {
   GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3000',
   ROOT_STORE: 'gridplus',
   BTC_COIN: 0x80000000,
+  BTC_MAIN_GAP_LIMIT: 20,
+  BTC_ADDR_BLOCK_LEN: 10,
+  BTC_CHANGE_GAP_LIMIT: 1,
+  BTC_CHANGE_ADDR_BLOCK_LEN: 1,
 }
 if (process.env.REACT_APP_ENV === 'dev') {
     constants.GRIDPLUS_CLOUD_API = 'https://pay.gridplus.io:3333';
@@ -22,20 +26,28 @@ exports.harden = function(x) {
 // @param addresses {object}   -- objecty containing arrays of addresses, indexed by currency
 // @param cb        {function} -- callback function of form cb(err, data)
 exports.fetchStateData = function(currency, addresses, cb) {
-    if (!addresses[currency] || addresses[currency].length === 0) return cb(null);
+    const reqAddresses = addresses[currency];
 
+    // Exit if we don't have addresses to use in the request
+    if (!reqAddresses || reqAddresses.length === 0) 
+        return cb(null);
+
+    // Slice out the 'change' portion of the currency name for the request itself
+    if (currency.indexOf('_CHANGE') > -1)
+        currency = currency.slice(0, currency.indexOf('_CHANGE'));
+
+    // Build the request  
     const data = {
         method: 'POST',
         body: JSON.stringify([{
         currency,
-        addresses: addresses[currency],
+        addresses: reqAddresses,
         }]),
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
         }
     }
-    console.log('data', data)
     const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/get-data`
     fetch(url, data)
     .then((response) => response.json())

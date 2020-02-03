@@ -32,9 +32,8 @@ class Receive extends React.Component {
 
 
   updateDisplayAddress() {
-    const addrs = this.props.session.getAddresses(this.props.currency);
-    const displayAddr = addrs[addrs.length - 1] || null;
-    if (addrs) this.setState({ address:  displayAddr });
+    const displayAddr = this.props.session.getDisplayAddress(this.props.currency);
+    if (displayAddr) this.setState({ address:  displayAddr });
   }
 
   copyAddress() {

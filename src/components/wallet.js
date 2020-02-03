@@ -1,7 +1,7 @@
 
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Button, Avatar, Divider, Statistic, List, Row, Col, Card, Icon, Tag } from 'antd';
+import { Button, Avatar, Divider, Statistic, List, Row, Col, Card, Icon, Tag, Spin} from 'antd';
 const GREEN = "#00FF00";
 const RED = "#FF0000";
 
@@ -183,7 +183,15 @@ class Wallet extends React.Component {
         <Row gutter={16}>
           <Card title={`${this.props.currency} Wallet`} bordered={true}>
             <Row>
-              Last Updated {this.renderLastUpdatedTag()}<Button size="small" type="link" icon="reload" onClick={() => {this.props.refreshData(null)}}></Button>
+              Last Updated {this.renderLastUpdatedTag()}
+              {this.props.stillSyncingAddresses === true ? (
+                <div>
+                  <Tag color="orange">Still Fetching Addresses</Tag> 
+                  <Spin size={"small"}/>
+                </div>
+              ): (
+                <Button size="small" type="link" icon="reload" onClick={() => {this.props.refreshData(null)}}></Button>
+              )}
             </Row>
             <Row style={{margin: "20px 0 0 0"}}>
               {this.renderHeader()}
