@@ -29,7 +29,7 @@ class Connect extends React.Component {
     return (
       <div>
         <Row>
-          <Input placeholder="DeviceID" id="deviceIdInput" style={{ margin: '20px 0 0 0', width: "50%"}} />
+          <Input placeholder="DeviceID" id="deviceIdInput" style={{ margin: '10px 0 0 0', width: "50%"}} />
         </Row>
         <Row>
           <Input.Password placeholder="Password" id="passwordInput" onPressEnter={this.handleSubmit} style={{ margin: '20px 0 0 0', width: "50%"}} />
@@ -57,18 +57,28 @@ class Connect extends React.Component {
         <Col span={10} offset={7}>
           <center>
             {this.renderMsg()}
-            <Card title="Connect to Lattice1" bordered={true}>
+            <Card bordered={true} style={{"background-color": "#001529"}}>
+              <img alt="landing-logo" src="/logo.png"/>
+              <h1 style={{"font-size": "48px", "color": "#8c8c8c", margin:"20px 0 0 0"}}>Web Wallet</h1>
+            </Card>
+            <Card borded={true}>
               <p>
-                Please enter your Lattice's Device ID&nbsp;
+                With the GridPlus Web Wallet you can monitor balances and transactions for your Lattice1 device.
+                In order to connect to your device, find its <b>Device ID</b>&nbsp;
                 <Popover title={"Enter your DeviceID"} content={deviceIdContent}>
                   <Icon type="question-circle" />
                 </Popover>
-                &nbsp;and specify a password&nbsp;
+                &nbsp;by navigating to the Device Info screen on your Lattice1 device.
+                Once you have the Device ID, specify a <b>password</b>&nbsp;
                 <Popover title={"Enter a Password"} content={pwContent}>
                   <Icon type="question-circle" />
-                </Popover>
+                </Popover>.
+                This password is not stored on any server or locally so there is no way to reset it.
+                However, if you forget your password, you can always create a new one and reconnect to your Lattice1.
+                <br/><br/>Please ensure your Lattice1 is <b>online</b> before trying to connect.
               </p>
-              <p>Also ensure your Lattice1 is connected to the internet.</p>
+            </Card>
+            <Card bordered={true} style={{margin: "20px 0 0 0"}}>
               {this.renderForm()}
             </Card>
           </center>
