@@ -17,6 +17,8 @@ class SDKSession {
     this.usdValues = {};
     // Cached list of transactions, indexed by currency
     this.txs = {};
+    // Cached list of UTXOs, indexed by currency
+    this.utxos = {};
     // Cached list of unused addresses. These indicate the next available
     // address for each currency. Currently only contains a Bitcoin address
     this.firstUnusedAddresses = {};
@@ -73,6 +75,12 @@ class SDKSession {
     if (typeof this.txs[`${currency}_CHANGE`] === 'object')
       return this.txs[currency].concat(this.txs[`${currency}_CHANGE`]);
     return this.txs[currency] || [];
+  }
+
+  getUtxos(currency) {
+    if (typeof this.utxos[`${currency}_CHANGE`] === 'object')
+      return this.utxos[currency].concat(this.utxos[`${currency}_CHANGE`]);
+    return this.utxos[currency] || [];
   }
 
   getDisplayAddress(currency) {
@@ -135,7 +143,7 @@ class SDKSession {
 
   fetchDataHandler(data, usingChange=false) {
     let { currency } = data; // Will be adjusted if this is a change addresses request
-    const { balance, transactions, firstUnused, lastUnused } = data;
+    const { balance, transactions, firstUnused, lastUnused, transactionCount, utxos } = data;
     let switchToChange = false;
     const changeCurrency = `${currency}_CHANGE`;
    
@@ -181,6 +189,11 @@ class SDKSession {
       } else {
         switchToChange = false;
       }
+
+      // Grab the UTXOs as well
+      this.utxos[currency] = utxos;
+    } else if (currency === 'ETH') {
+      this.ethNonce = transactionCount;
     }
     //---------
 
@@ -365,6 +378,27 @@ class SDKSession {
 
   pair(secret, cb) {
     this.client.pair(secret, cb);
+  }
+
+  sign(req, cb) {
+    // Get the tx payload to broadcast
+    this.client.sign(req, (err, res) => {
+      if (err) return cb(err);
+      // Broadcast
+      const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/broadcast`;
+      // Req should have the serialized payload WITH signature in the `tx` param
+      const data = { currency: req.currency, hex: req.tx };
+      fetch(url, data)
+      .then((response) => response.json())
+      .then((resp) => {
+          if (resp.error) return cb(resp.error);
+          // Return the transaction hash
+          return cb(null, resp.data);
+      })
+      .catch((err) => {
+          return cb(err);
+      });
+    })
   }
 
   _genPrivKey(deviceID, pw) {

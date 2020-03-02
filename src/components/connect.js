@@ -59,7 +59,7 @@ class Connect extends React.Component {
             {this.renderMsg()}
             <Card bordered={true} style={{"background-color": "#001529"}}>
               <img alt="landing-logo" src="/logo.png"/>
-              <h1 style={{"font-size": "48px", "color": "#8c8c8c", margin:"20px 0 0 0"}}>Web Wallet</h1>
+              <h1 style={{"fontSize": "48px", "color": "#8c8c8c", margin:"20px 0 0 0"}}>Web Wallet</h1>
             </Card>
             <Card borded={true}>
               <p>

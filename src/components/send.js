@@ -1,7 +1,8 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
+import { Alert, Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
 import { allChecks } from '../util/sendChecks';
+import { constants, buildBtcTxReq } from '../util/helpers'
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
 
@@ -14,9 +15,13 @@ class Send extends React.Component {
       value: null,
       recipientCheck: null,
       valueCheck: null,
+      error: null,
     }
 
+    this.renderError = this.renderError.bind(this);
     this.submit = this.submit.bind(this);
+    this.buildEthRequest = this.buildEthRequest.bind(this);
+    this.buildBtcrequest = this.buildBtcRequest.bind(this);
   }
 
   updateRecipient(evt) {
@@ -59,19 +64,72 @@ class Send extends React.Component {
     });
   }
 
+  buildEthRequest() {
+    const txData = {
+      nonce: this.props.session.ethNonce,
+      gasPrice: 1200000000, // dummy val
+      gasLimit: 122000, // dummy val
+      to: this.state.recipient,
+      value: this.state.value,
+      data: null // dummy val
+    };
+    const req = {
+      currency: 'ETH',
+      data: {
+        signerPath: [
+          constants.HARDENED_OFFSET+44, 
+          constants.HARDENED_OFFSET+60, 
+          constants.HARDENED_OFFSET, 
+          0, 
+          0
+        ],
+        ...txData,
+        chainId: 'rinkeby', // Rinkeby does not use EIP155
+      }
+    };
+    return req;
+  }
+
+  buildBtcRequest() {
+    const req = buildBtcTxReq(this.state.recipient, 
+                              this.state.value, 
+                              this.props.session.getUtxos('BTC'), 
+                              this.props.session.addrsses['BTC'],  
+                              this.props.session.addrsses['BTC_CHANGE']);
+    if (req.error) {
+      this.setState({ error: req.error });
+      return null;
+    } else if (!req.data) {
+      this.setState({ error: 'Invalid response when building BTC transaction request. '});
+      return null;
+    }
+    return req.data;
+  }
+
   submit() {
-    let checks, isValid;
-    const check = allChecks[this.props.currency].full;
+    let req;
     switch (this.props.currency) {
       case 'ETH':
-        checks = check(this.state);
+        req = this.buildEthRequest();
+        break;
+      case 'BTC':
+        req = this.buildBtcRequest();
         break;
       default:
-        break;
+        console.error('Invalid currency in props.')
+        return;
     }
-
-    isValid = checks.recipient && checks.value;
- 
+    if (req) {
+      this.props.session.sign(req, (err, txHash) => {
+        if (err) {
+          // Display an error banner
+          this.setState({ error: err })
+        } else {
+          // Start watching this new tx hash for confirmation
+          console.log('Got tx hash:', txHash)
+        }
+      })
+    }
   }
 
   renderIcon(id) {
@@ -83,6 +141,20 @@ class Send extends React.Component {
       return (<Icon type="close-circle" theme="filled" style={{color: 'red'}}/>)
     } else {
       return;
+    }
+  }
+
+  renderError() {
+    if (this.state.error) {
+      return (
+          <Alert
+            message="Failed to Send Transaction"
+            description={this.state.error}
+            type="error"
+            closable
+            onClose={() => { this.setState({ error: null })}}
+          />
+      )
     }
   }
 
@@ -120,7 +192,10 @@ class Send extends React.Component {
               </div>
             </Col>
           </Row>
-          <Button type="primary" onClick={this.submit} style={{ margin: '30px 0 0 0'}}>
+          <Button type="primary" 
+                  onClick={this.submit} 
+                  hidden={() => { return false === allChecks[this.props.currency].full(this.state); }} 
+                  style={{ margin: '30px 0 0 0'}}>
             Send
           </Button>
         </div>
@@ -140,6 +215,7 @@ class Send extends React.Component {
       <Row justify={'center'} type={'flex'}>
         <Col style={{width: '600px'}}>
           <center>
+            {this.renderError()}
             <Card title="Send" bordered={true}>
               {this.renderCard()}
             </Card>
