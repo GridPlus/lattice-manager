@@ -1,10 +1,13 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Spin, notification } from 'antd'
+import { Alert, Button, Card, Col, Form, Row, Input, Icon, Empty, Collapse, notification, Select } from 'antd'
 import { allChecks } from '../util/sendChecks';
 import { constants, buildBtcTxReq } from '../util/helpers'
+import './styles.css'
+
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
+const GWEI_FACTOR = Math.pow(10, 12); // 1 GWei = 10**12 wei 
 
 class Send extends React.Component {
   constructor(props) {
@@ -18,6 +21,13 @@ class Send extends React.Component {
       error: null,
       isLoading: false,
       txHash: null,
+      ethExtraData: {
+        gasPrice: 5,
+        gasLimit: 23000,
+        data: '',
+        useErc20: false,
+        erc20Token: null,
+      }
     }
 
     this.renderBanner = this.renderBanner.bind(this);
@@ -69,11 +79,11 @@ class Send extends React.Component {
   buildEthRequest() {
     const txData = {
       nonce: this.props.session.ethNonce,
-      gasPrice: 1200000000, // dummy val
-      gasLimit: 122000, // dummy val
+      gasPrice: Number(this.state.ethExtraData.gasPrice) * GWEI_FACTOR,
+      gasLimit: this.state.ethExtraData.gasLimit,
       to: this.state.recipient,
       value: this.state.value * Math.pow(10, 18),
-      data: null // dummy val
+      data: this.state.ethExtraData.data,
     };
     const req = {
       currency: 'ETH',
@@ -154,6 +164,56 @@ class Send extends React.Component {
     }
   }
 
+  renderValueLabel() {
+    const input = (
+      <Input type="text" 
+                id={VALUE_ID} 
+                value={this.state.value} 
+                onChange={this.updateValue.bind(this)}
+      />
+    );
+    if (this.props.currency === 'BTC') {
+      // For BTC, we don't need to worry about other assets
+      return (
+        <Col span={14} offset={2}>
+          <p style={{textAlign: 'left'}}><b>Value</b></p>
+          {input}
+        </Col>
+      );
+    } else if (this.props.currency === 'ETH') {
+      // For ETH, account for ERC20s in the form of a dropdown
+      const tmpTokens = [
+        { currency: "FOO", address: "0xsdlkgjsjlkag" },
+      ];
+      const tokensList = tmpTokens.map((token) =>
+        <Select.Option value={token.address}>
+          {token.currency}
+        </Select.Option>
+      );
+      
+      return (
+        <div>
+          <Col span={12} offset={2}>
+            <p style={{textAlign: 'left'}}><b>Value</b></p>
+            <Input type="text" 
+                    id={VALUE_ID} 
+                    value={this.state.value} 
+                    onChange={this.updateValue.bind(this)}
+            />
+          </Col>
+          <Col span={4} offset={1}>
+            <p style={{textAlign: 'left'}}><b>&nbsp;</b></p>
+            <Select defaultValue="ETH" style={{align: "left"}}>
+              <Select.Option value="ETH">ETH</Select.Option>
+              {tokensList}
+            </Select>
+          </Col>
+        </div>
+      );
+    }
+           
+  }
+
   renderIcon(id) {
     const name = `${id}Check`;
     const isValid = this.state[name];
@@ -201,6 +261,59 @@ class Send extends React.Component {
       )
     } else {
       return;
+    }
+  }
+
+  updateEthExtraData(evt) {
+    console.log('evt.target', evt.target.value)
+    const extraDataCopy = JSON.parse(JSON.stringify(this.state.ethExtraData));
+    switch (evt.target.id) {
+      case 'ethGasPrice':
+        if (!isNaN(evt.target.value))
+          extraDataCopy.gasPrice = evt.target.value;
+        break;
+      case 'ethGasLimit':
+        if (!isNaN(evt.target.value) && Number(evt.target.value) < 10000000)
+          extraDataCopy.gasLimit = evt.target.value;
+        break;
+      case 'ethData':
+        extraDataCopy.data = evt.target.value.slice(2); // Remove the 0x-prefix
+        break;
+      default:
+        break;
+    }
+    this.setState({ ethExtraData: extraDataCopy })
+  }
+
+  renderExtra() {
+    if (this.props.currency === 'ETH') {
+      return (
+        <Collapse accordion className="site-collapse-custom-collapse">
+          <Collapse.Panel header="Advanced" key="advanceData" className="site-collapse-custom-panel">
+            <Row>
+              <p style={{textAlign: 'left'}}><b>Gas Price (GWei)</b></p>
+              <Input type="text" 
+                id={"ethGasPrice"}
+                value={this.state.ethExtraData.gasPrice}
+                onChange={this.updateEthExtraData.bind(this)}/>
+            </Row>
+            <Row style={{margin: "20px 0 0 0"}}>
+              <p style={{textAlign: 'left'}}><b>Gas Limit</b></p>
+              <Input type="text" 
+                id={"ethGasLimit"} 
+                value={this.state.ethExtraData.gasLimit}
+                onChange={this.updateEthExtraData.bind(this)}/>
+            </Row>
+            <Row style={{margin: "20px 0 0 0"}}>
+              <p style={{textAlign: 'left'}}><b>Data</b></p>
+              <Input.TextArea rows={4} 
+                              id={"ethData"}
+                              value={`0x${this.state.ethExtraData.data}`}
+                              onChange={this.updateEthExtraData.bind(this)}/>
+            </Row>
+          </Collapse.Panel>
+        </Collapse>
+      )
     }
   }
 
@@ -253,18 +366,16 @@ class Send extends React.Component {
             </Col>
           </Row>
           <Row style={{margin: "20px 0 0 0"}}>
-            <Col span={18} offset={2}>
-              <p style={{textAlign: 'left'}}><b>Value</b></p>
-              <Input type="text" 
-                      id={VALUE_ID} 
-                      value={this.state.value} 
-                      onChange={this.updateValue.bind(this)}
-              />
-            </Col>
+            {this.renderValueLabel()}
             <Col offset={20}>
               <div style={{margin: "30px 0 0 0", fontSize: "24px"}}>
                 {this.renderIcon(VALUE_ID)}
               </div>
+            </Col>
+          </Row>
+          <Row style={{margin: "20px 0 0 0"}}>
+            <Col span={18} offset={2}>
+              {this.renderExtra()}
             </Col>
           </Row>
           {this.renderSubmitButton()}
