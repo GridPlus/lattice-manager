@@ -143,7 +143,7 @@ class SDKSession {
 
   fetchDataHandler(data, usingChange=false) {
     let { currency } = data; // Will be adjusted if this is a change addresses request
-    const { balance, transactions, firstUnused, lastUnused, transactionCount, utxos } = data;
+    const { balance, transactions, firstUnused, lastUnused, utxos } = data;
     let switchToChange = false;
     const changeCurrency = `${currency}_CHANGE`;
    
@@ -193,7 +193,15 @@ class SDKSession {
       // Grab the UTXOs as well
       this.utxos[currency] = utxos;
     } else if (currency === 'ETH') {
-      this.ethNonce = transactionCount;
+      // Count the number of transactions
+      let count = 0;
+      transactions.forEach((t) => {
+        if (t.incoming === false)
+          count += 1;
+      })
+      console.log(transactions)
+      console.log('setting nonce to', count)
+      this.ethNonce = count;
     }
     //---------
 
@@ -317,7 +325,7 @@ class SDKSession {
     // have a current storage session
     if (this.deviceID && !this.storageSession)
       this.storageSession = new StorageSession(this.deviceID);
-    if (this.client) {
+    if (this.client && this.worker) {
       // If we have a client and if it has a non-zero active wallet UID,
       // lookup the addresses corresponding to that wallet UID in storage.
       const activeWallet = this.getActiveWallet();
@@ -387,15 +395,29 @@ class SDKSession {
       // Broadcast
       const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/broadcast`;
       // Req should have the serialized payload WITH signature in the `tx` param
-      const data = { currency: req.currency, hex: req.tx };
+      const body = { currency: req.currency, hex: res.tx };
+      console.log('broadcasting', body)
+      const data = {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      }
       fetch(url, data)
-      .then((response) => response.json())
+      .then((response) => {
+        console.log('response', response)
+        return response.json()
+      })
       .then((resp) => {
+          console.log('resp', resp)
           if (resp.error) return cb(resp.error);
           // Return the transaction hash
           return cb(null, resp.data);
       })
       .catch((err) => {
+        console.log('err', err)
           return cb(err);
       });
     })

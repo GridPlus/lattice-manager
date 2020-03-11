@@ -10,11 +10,15 @@ const constants = {
   BTC_CHANGE_GAP_LIMIT: 1,
   BTC_CHANGE_ADDR_BLOCK_LEN: 1,
   BTC_DEFAULT_FEE_RATE: 5, // 5 sat/byte
+  ETH_TX_BASE_URL: 'https://etherscan.io/tx/',
+  BTC_TX_BASE_URL: 'https://www.blockchain.com/btc/tx/'
 }
 if (process.env.REACT_APP_ENV === 'dev') {
     constants.GRIDPLUS_CLOUD_API = 'https://pay.gridplus.io:3333';
     constants.ROOT_STORE = 'gridplus-dev';
     constants.BTC_COIN = 0x80000000 + 1; // Use testnet
+    constants.ETH_TX_BASE_URL = 'https://rinkeby.etherscan.io/tx/';
+    constants.BTC_TX_BASE_URL = 'https://www.blockchain.com/btctest/tx/';
 }
 exports.constants = constants;
 
@@ -145,5 +149,4 @@ exports.buildBtcTxReq = function(recipient, totalValue, utxos, addrs, changeAddr
     };
     return { data: req }
 }
-
 

@@ -96,8 +96,8 @@ export default () => {
         const data = {
             method: 'POST',
             body: JSON.stringify([{
-            currency,
-            addresses: reqAddresses,
+                currency,
+                addresses: reqAddresses,
             }]),
             headers: {
                 'Accept': 'application/json',

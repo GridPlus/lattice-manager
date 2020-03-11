@@ -55,10 +55,10 @@ function checkBtcRecipient(recipient) {
 }
 
 function checkNumericValue(value) {
-  if (value === '') return null;
+  if (value === '') return false;
   try {
     const num = Number(value);
-    return !isNaN(num);
+    return !isNaN(num) && num > 0;
   } catch (e) {
     return false;
   }

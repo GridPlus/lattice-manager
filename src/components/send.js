@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
+import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Spin, notification } from 'antd'
 import { allChecks } from '../util/sendChecks';
 import { constants, buildBtcTxReq } from '../util/helpers'
 const RECIPIENT_ID = "recipient";
@@ -16,9 +16,12 @@ class Send extends React.Component {
       recipientCheck: null,
       valueCheck: null,
       error: null,
+      isLoading: false,
+      txHash: null,
     }
 
-    this.renderError = this.renderError.bind(this);
+    this.renderBanner = this.renderBanner.bind(this);
+    this.renderSubmitButton = this.renderSubmitButton.bind(this);
     this.submit = this.submit.bind(this);
     this.buildEthRequest = this.buildEthRequest.bind(this);
     this.buildBtcrequest = this.buildBtcRequest.bind(this);
@@ -57,7 +60,6 @@ class Send extends React.Component {
     } else {
       return;
     }
-
     this.setState({ 
       value: val,
       valueCheck: check(val) 
@@ -70,7 +72,7 @@ class Send extends React.Component {
       gasPrice: 1200000000, // dummy val
       gasLimit: 122000, // dummy val
       to: this.state.recipient,
-      value: this.state.value,
+      value: this.state.value * Math.pow(10, 18),
       data: null // dummy val
     };
     const req = {
@@ -120,13 +122,33 @@ class Send extends React.Component {
         return;
     }
     if (req) {
+      notification.open({
+        message: "Waiting for signature...",
+        key: 'signNotification',
+        description: `We have sent the transaction to your Lattice for signing. 
+                      You must approve the transaction on your Lattice screen. 
+                      After approval, the transaction will be broadcast.`,
+        duration: 0,
+      });
+      this.setState({ isLoading: true });
       this.props.session.sign(req, (err, txHash) => {
+        notification.close('signNotification');
         if (err) {
           // Display an error banner
-          this.setState({ error: err })
+          this.setState({ 
+            error: 'Failed to submit transaction', 
+            isLoading: false, 
+            txHash: null 
+          })
         } else {
           // Start watching this new tx hash for confirmation
-          console.log('Got tx hash:', txHash)
+          this.setState({ 
+            recipient: '',
+            value: null,
+            txHash: txHash, 
+            error: null, 
+            isLoading: false 
+          })
         }
       })
     }
@@ -144,16 +166,69 @@ class Send extends React.Component {
     }
   }
 
-  renderError() {
+  getUrl() {
+    switch (this.props.currency) {
+      case 'ETH':
+        return `${constants.ETH_TX_BASE_URL}/${this.state.txHash}`;
+      case 'BTC':
+        return `${constants.BTC_TX_BASE_URL}/${this.state.txHash}`;
+      default:
+        return '';
+    }
+  }
+
+  renderBanner() {
     if (this.state.error) {
       return (
-          <Alert
-            message="Failed to Send Transaction"
-            description={this.state.error}
-            type="error"
-            closable
-            onClose={() => { this.setState({ error: null })}}
-          />
+        <Alert
+          message="Failed to Send Transaction"
+          description={this.state.error}
+          type="error"
+          closable
+          onClose={() => { this.setState({ error: null })}}
+        />
+      )
+    } else if (this.state.txHash) {
+      return (
+        <Alert
+          type="success"
+          message="Success"
+          description={(
+            <p>Your transaction was signed and broadcast successfully. 
+            Your hash is: <a target={"_blank"} href={this.getUrl()}>{this.state.txHash}</a></p>
+          )}
+        />
+      )
+    } else {
+      return;
+    }
+  }
+
+  renderSubmitButton() {
+    // If all checks have passed, display the button
+    if (this.state.isLoading) {
+      return (
+        <Button type="primary"
+                style={{ margin: '30px 0 0 0'}}
+                loading>
+          Waiting...
+        </Button>
+      )
+    } else if (allChecks[this.props.currency].full(this.state)) {
+      return (
+        <Button type="primary" 
+                onClick={this.submit} 
+                style={{ margin: '30px 0 0 0'}}>
+          Send
+        </Button>
+      )
+    } else {
+      return (
+        <Button type="primary"
+                style={{ margin: '30px 0 0 0'}}
+                disabled>
+          Send
+        </Button>
       )
     }
   }
@@ -192,12 +267,7 @@ class Send extends React.Component {
               </div>
             </Col>
           </Row>
-          <Button type="primary" 
-                  onClick={this.submit} 
-                  hidden={() => { return false === allChecks[this.props.currency].full(this.state); }} 
-                  style={{ margin: '30px 0 0 0'}}>
-            Send
-          </Button>
+          {this.renderSubmitButton()}
         </div>
       )
     } else {
@@ -215,7 +285,7 @@ class Send extends React.Component {
       <Row justify={'center'} type={'flex'}>
         <Col style={{width: '600px'}}>
           <center>
-            {this.renderError()}
+            {this.renderBanner()}
             <Card title="Send" bordered={true}>
               {this.renderCard()}
             </Card>

@@ -198,6 +198,7 @@ class Main extends React.Component {
       // Create a new session with the deviceID and password provided.
       this.wait("Trying to contact your Lattice");
       this.state.session.connect(deviceID, password, (err, isPaired) => {
+        console.log('err', err, 'isPaired', isPaired)
         this.unwait();
         if (err) {
           // If we failed to connect, clear out the SDK session. This component will
