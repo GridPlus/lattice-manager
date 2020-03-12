@@ -2,7 +2,7 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Card, Col, Form, Row, Input, Icon, Empty, Collapse, notification, Select } from 'antd'
 import { allChecks } from '../util/sendChecks';
-import { constants, buildBtcTxReq } from '../util/helpers'
+import { constants, buildBtcTxReq, buildERC20Data } from '../util/helpers'
 import './styles.css'
 
 const RECIPIENT_ID = "recipient";
@@ -21,17 +21,18 @@ class Send extends React.Component {
       error: null,
       isLoading: false,
       txHash: null,
+      erc20Addr: null, // null = use ETH
       ethExtraData: {
         gasPrice: 5,
         gasLimit: 23000,
         data: '',
-        useErc20: false,
         erc20Token: null,
       }
     }
 
     this.renderBanner = this.renderBanner.bind(this);
     this.renderSubmitButton = this.renderSubmitButton.bind(this);
+    this.renderValueLabel = this.renderValueLabel.bind(this);
     this.submit = this.submit.bind(this);
     this.buildEthRequest = this.buildEthRequest.bind(this);
     this.buildBtcrequest = this.buildBtcRequest.bind(this);
@@ -77,14 +78,27 @@ class Send extends React.Component {
   }
 
   buildEthRequest() {
+    let _value, _data, _recipient;
+    let decimals = 12; // placeholder, dummy value
+
+    if (this.state.erc20Addr !== null) {
+      _value = 0;
+      _recipient = this.state.erc20Addr;
+      _data = buildERC20Data(this.state.recipient, this.state.value, decimals);
+    } else {
+      _value = this.state.value * Math.pow(10, 18);
+      _recipient = this.state.recipient;
+      _data = this.state.ethExtraData.data;
+    }
     const txData = {
       nonce: this.props.session.ethNonce,
       gasPrice: Number(this.state.ethExtraData.gasPrice) * GWEI_FACTOR,
       gasLimit: this.state.ethExtraData.gasLimit,
-      to: this.state.recipient,
-      value: this.state.value * Math.pow(10, 18),
-      data: this.state.ethExtraData.data,
+      to: _recipient,
+      value: _value,
+      data: _data,
     };
+console.log('txData', txData)
     const req = {
       currency: 'ETH',
       data: {
@@ -164,12 +178,34 @@ class Send extends React.Component {
     }
   }
 
+  drawAddTokenModal() {
+    // Pop up a model that allows the user to add a token
+    // using INFURA and save it to local storage
+  }
+
+  selectToken(item) {
+    const extraCopy = JSON.parse(JSON.stringify(this.state.ethExtraData));
+    switch (item) {
+      case 'ETH':
+        extraCopy.gasLimit = 23000;
+        this.setState({ erc20Addr: null, ethExtraData: extraCopy });
+        break;
+      case 'add':
+        this.drawAddTokenModal();
+        break;
+      default:
+        extraCopy.gasLimit = 60000;
+        this.setState({ erc20Addr: item, ethExtraData: extraCopy});
+        break;
+    }
+  }
+
   renderValueLabel() {
     const input = (
-      <Input type="text" 
-                id={VALUE_ID} 
-                value={this.state.value} 
-                onChange={this.updateValue.bind(this)}
+      <Input type="text"
+              id={VALUE_ID} 
+              value={this.state.value} 
+              onChange={this.updateValue.bind(this)}
       />
     );
     if (this.props.currency === 'BTC') {
@@ -183,10 +219,12 @@ class Send extends React.Component {
     } else if (this.props.currency === 'ETH') {
       // For ETH, account for ERC20s in the form of a dropdown
       const tmpTokens = [
-        { currency: "FOO", address: "0xsdlkgjsjlkag" },
+        { currency: "ETH", address: "ETH" },
+        { currency: "GT", address: "0x4991c6b9a40173d1621e559514e1860fcf18fd2b" },
+        { currency: "Add Token", address: "add" }
       ];
       const tokensList = tmpTokens.map((token) =>
-        <Select.Option value={token.address}>
+        <Select.Option value={token.address} key={`token_${token.address}`}>
           {token.currency}
         </Select.Option>
       );
@@ -203,8 +241,7 @@ class Send extends React.Component {
           </Col>
           <Col span={4} offset={1}>
             <p style={{textAlign: 'left'}}><b>&nbsp;</b></p>
-            <Select defaultValue="ETH" style={{align: "left"}}>
-              <Select.Option value="ETH">ETH</Select.Option>
+            <Select defaultValue="ETH" onSelect={this.selectToken.bind(this)} style={{align: "left"}}>
               {tokensList}
             </Select>
           </Col>
@@ -304,13 +341,15 @@ class Send extends React.Component {
                 value={this.state.ethExtraData.gasLimit}
                 onChange={this.updateEthExtraData.bind(this)}/>
             </Row>
-            <Row style={{margin: "20px 0 0 0"}}>
-              <p style={{textAlign: 'left'}}><b>Data</b></p>
-              <Input.TextArea rows={4} 
-                              id={"ethData"}
-                              value={`0x${this.state.ethExtraData.data}`}
-                              onChange={this.updateEthExtraData.bind(this)}/>
-            </Row>
+            {this.state.erc20Addr === null ? (
+              <Row style={{margin: "20px 0 0 0"}}>
+                <p style={{textAlign: 'left'}}><b>Data</b></p>
+                <Input.TextArea rows={4} 
+                                id={"ethData"}
+                                value={`0x${this.state.ethExtraData.data}`}
+                                onChange={this.updateEthExtraData.bind(this)}/>
+              </Row>
+            ) : null}
           </Collapse.Panel>
         </Collapse>
       )

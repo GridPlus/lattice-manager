@@ -150,3 +150,15 @@ exports.buildBtcTxReq = function(recipient, totalValue, utxos, addrs, changeAddr
     return { data: req }
 }
 
+function leftPad(x, n) {
+    let y = '';
+    for (let i = 0; i < n - x.length; i++)
+        y = `0${y}`;
+    return `${y}${x}`;
+}
+
+exports.buildERC20Data = function(recipient, value, decimals) {
+    const decValue = value * Math.pow(10, decimals);
+    const strippedRec = recipient.indexOf('0x') > -1 ? recipient.slice(2) : recipient;
+    return `0xa9059cbb${leftPad(strippedRec, 64)}${leftPad(decValue.toString(16), 64)}`;
+}
