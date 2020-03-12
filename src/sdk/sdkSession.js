@@ -391,7 +391,11 @@ class SDKSession {
   sign(req, cb) {
     // Get the tx payload to broadcast
     this.client.sign(req, (err, res) => {
+      console.log('sign err', err)
       if (err) return cb(err);
+
+/*
+DISABLED FOR TESTING
       // Broadcast
       const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/broadcast`;
       // Req should have the serialized payload WITH signature in the `tx` param
@@ -420,6 +424,12 @@ class SDKSession {
         console.log('err', err)
           return cb(err);
       });
+*/
+    setTimeout(() => { // TESTING ONLY
+      return cb(null, "0x5ac9027e255c42c6dd9c013b2aef9ee3c2d68161c92bef705e9a59063cbff090")
+    }, 1000);
+
+
     })
   }
 

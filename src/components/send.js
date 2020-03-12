@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Form, Row, Input, Icon, Empty, Collapse, notification, Select } from 'antd'
+import { Alert, Button, Card, Col, Modal, Row, Input, Icon, Empty, Collapse, notification, Select } from 'antd'
 import { allChecks } from '../util/sendChecks';
 import { constants, buildBtcTxReq, buildERC20Data } from '../util/helpers'
 import './styles.css'
@@ -40,11 +40,13 @@ class Send extends React.Component {
   }
 
   componentDidMount() {
-    const erc20Tokens = this.props.session.storageSession ?
-                        this.props.session.storageSession.getERC20Tokens(constants.env) :
-                        [];
-    this.setState({ erc20Tokens });
+    // TODO: Fetch list of supported tokens from the cloud-api
+    // this.setState({ erc20Tokens });
   }
+
+  //========================================================
+  // STATE MANAGERS
+  //========================================================
 
   updateRecipient(evt) {
     const val = evt.target.value;
@@ -84,6 +86,30 @@ class Send extends React.Component {
       valueCheck: check(val) 
     });
   }
+
+  updateEthExtraData(evt) {
+    const extraDataCopy = JSON.parse(JSON.stringify(this.state.ethExtraData));
+    switch (evt.target.id) {
+      case 'ethGasPrice':
+        if (!isNaN(evt.target.value))
+          extraDataCopy.gasPrice = evt.target.value;
+        break;
+      case 'ethGasLimit':
+        if (!isNaN(evt.target.value) && Number(evt.target.value) < 10000000)
+          extraDataCopy.gasLimit = evt.target.value;
+        break;
+      case 'ethData':
+        extraDataCopy.data = evt.target.value.slice(2); // Remove the 0x-prefix
+        break;
+      default:
+        break;
+    }
+    this.setState({ ethExtraData: extraDataCopy })
+  }
+
+  //========================================================
+  // TRANSACTION-RELATED BUILDERS AND HOOKS
+  //========================================================
 
   buildEthRequest() {
     let _value, _data, _recipient;
@@ -185,9 +211,19 @@ class Send extends React.Component {
     }
   }
 
-  drawAddTokenModal() {
-    // Pop up a model that allows the user to add a token
-    // using INFURA and save it to local storage
+  //========================================================
+  // HELPERS
+  //========================================================
+
+  getUrl() {
+    switch (this.props.currency) {
+      case 'ETH':
+        return `${constants.ETH_TX_BASE_URL}/${this.state.txHash}`;
+      case 'BTC':
+        return `${constants.BTC_TX_BASE_URL}/${this.state.txHash}`;
+      default:
+        return '';
+    }
   }
 
   selectToken(item) {
@@ -206,6 +242,10 @@ class Send extends React.Component {
         break;
     }
   }
+
+  //========================================================
+  // RENDERERS
+  //========================================================
 
   renderValueLabel() {
     const input = (
@@ -251,13 +291,11 @@ class Send extends React.Component {
             <Select defaultValue="ETH" onSelect={this.selectToken.bind(this)} style={{align: "left"}}>
               <Select.Option value={'ETH'} key={'token_ETH'}>ETH</Select.Option>
               {tokensList}
-              <Select.Option value={'add'} key={'addtoken'}><Icon type="plus-circle"/> New</Select.Option>
             </Select>
           </Col>
         </div>
       );
-    }
-           
+    }    
   }
 
   renderIcon(id) {
@@ -269,17 +307,6 @@ class Send extends React.Component {
       return (<Icon type="close-circle" theme="filled" style={{color: 'red'}}/>)
     } else {
       return;
-    }
-  }
-
-  getUrl() {
-    switch (this.props.currency) {
-      case 'ETH':
-        return `${constants.ETH_TX_BASE_URL}/${this.state.txHash}`;
-      case 'BTC':
-        return `${constants.BTC_TX_BASE_URL}/${this.state.txHash}`;
-      default:
-        return '';
     }
   }
 
@@ -308,26 +335,6 @@ class Send extends React.Component {
     } else {
       return;
     }
-  }
-
-  updateEthExtraData(evt) {
-    const extraDataCopy = JSON.parse(JSON.stringify(this.state.ethExtraData));
-    switch (evt.target.id) {
-      case 'ethGasPrice':
-        if (!isNaN(evt.target.value))
-          extraDataCopy.gasPrice = evt.target.value;
-        break;
-      case 'ethGasLimit':
-        if (!isNaN(evt.target.value) && Number(evt.target.value) < 10000000)
-          extraDataCopy.gasLimit = evt.target.value;
-        break;
-      case 'ethData':
-        extraDataCopy.data = evt.target.value.slice(2); // Remove the 0x-prefix
-        break;
-      default:
-        break;
-    }
-    this.setState({ ethExtraData: extraDataCopy })
   }
 
   renderExtra() {
