@@ -1,19 +1,21 @@
 const constants = {
-  HARDENED_OFFSET: 0x80000000,
-  ASYNC_SDK_TIMEOUT: 60000,
-  SHORT_TIMEOUT: 15000,
-  GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3000',
-  ROOT_STORE: 'gridplus',
-  BTC_COIN: 0x80000000,
-  BTC_MAIN_GAP_LIMIT: 20,
-  BTC_ADDR_BLOCK_LEN: 10,
-  BTC_CHANGE_GAP_LIMIT: 1,
-  BTC_CHANGE_ADDR_BLOCK_LEN: 1,
-  BTC_DEFAULT_FEE_RATE: 5, // 5 sat/byte
-  ETH_TX_BASE_URL: 'https://etherscan.io/tx/',
-  BTC_TX_BASE_URL: 'https://www.blockchain.com/btc/tx/'
+    ENV: 'prod',
+    HARDENED_OFFSET: 0x80000000,
+    ASYNC_SDK_TIMEOUT: 60000,
+    SHORT_TIMEOUT: 15000,
+    GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3000',
+    ROOT_STORE: 'gridplus',
+    BTC_COIN: 0x80000000,
+    BTC_MAIN_GAP_LIMIT: 20,
+    BTC_ADDR_BLOCK_LEN: 10,
+    BTC_CHANGE_GAP_LIMIT: 1,
+    BTC_CHANGE_ADDR_BLOCK_LEN: 1,
+    BTC_DEFAULT_FEE_RATE: 5, // 5 sat/byte
+    ETH_TX_BASE_URL: 'https://etherscan.io/tx/',
+    BTC_TX_BASE_URL: 'https://www.blockchain.com/btc/tx/'
 }
 if (process.env.REACT_APP_ENV === 'dev') {
+    constants.ENV = 'dev';
     constants.GRIDPLUS_CLOUD_API = 'https://pay.gridplus.io:3333';
     constants.ROOT_STORE = 'gridplus-dev';
     constants.BTC_COIN = 0x80000000 + 1; // Use testnet

@@ -27,7 +27,8 @@ class Send extends React.Component {
         gasLimit: 23000,
         data: '',
         erc20Token: null,
-      }
+      },
+      erc20Tokens: [],
     }
 
     this.renderBanner = this.renderBanner.bind(this);
@@ -36,6 +37,13 @@ class Send extends React.Component {
     this.submit = this.submit.bind(this);
     this.buildEthRequest = this.buildEthRequest.bind(this);
     this.buildBtcrequest = this.buildBtcRequest.bind(this);
+  }
+
+  componentDidMount() {
+    const erc20Tokens = this.props.session.storageSession ?
+                        this.props.session.storageSession.getERC20Tokens(constants.env) :
+                        [];
+    this.setState({ erc20Tokens });
   }
 
   updateRecipient(evt) {
@@ -98,7 +106,6 @@ class Send extends React.Component {
       value: _value,
       data: _data,
     };
-console.log('txData', txData)
     const req = {
       currency: 'ETH',
       data: {
@@ -218,12 +225,12 @@ console.log('txData', txData)
       );
     } else if (this.props.currency === 'ETH') {
       // For ETH, account for ERC20s in the form of a dropdown
-      const tmpTokens = [
-        { currency: "ETH", address: "ETH" },
-        { currency: "GT", address: "0x4991c6b9a40173d1621e559514e1860fcf18fd2b" },
-        { currency: "Add Token", address: "add" }
-      ];
-      const tokensList = tmpTokens.map((token) =>
+      // const tmpTokens = [
+      //   { currency: "ETH", address: "ETH" },
+      //   { currency: "GT", address: "0x4991c6b9a40173d1621e559514e1860fcf18fd2b" },
+      //   { currency: "Add Token", address: "add" }
+      // ];
+      const tokensList = this.state.erc20Tokens.map((token) =>
         <Select.Option value={token.address} key={`token_${token.address}`}>
           {token.currency}
         </Select.Option>
@@ -242,7 +249,9 @@ console.log('txData', txData)
           <Col span={4} offset={1}>
             <p style={{textAlign: 'left'}}><b>&nbsp;</b></p>
             <Select defaultValue="ETH" onSelect={this.selectToken.bind(this)} style={{align: "left"}}>
+              <Select.Option value={'ETH'} key={'token_ETH'}>ETH</Select.Option>
               {tokensList}
+              <Select.Option value={'add'} key={'addtoken'}><Icon type="plus-circle"/> New</Select.Option>
             </Select>
           </Col>
         </div>
@@ -302,7 +311,6 @@ console.log('txData', txData)
   }
 
   updateEthExtraData(evt) {
-    console.log('evt.target', evt.target.value)
     const extraDataCopy = JSON.parse(JSON.stringify(this.state.ethExtraData));
     switch (evt.target.id) {
       case 'ethGasPrice':
