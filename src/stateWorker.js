@@ -54,7 +54,7 @@ export default () => {
                         baseCurrency = currency.slice(0, currency.indexOf('_CHANGE'));
                     }
                     // Fetch the state data with our set of addresses for this currency
-                    fetchStateDataCopyPasta(baseCurrency, addresses, (err, data) => {
+                    fetchStateData(baseCurrency, addresses, (err, data) => {
                         if (err) {
                             // Log the error if it arises
                             postMessage({ type: "error", currency, data: err });
@@ -80,8 +80,65 @@ export default () => {
     // WEBWORKER COPYPASTA //
     //---------------------//
 
-    // We also have to copypasta this helper grrrr
-    function fetchStateDataCopyPasta(currency, addresses, cb) {
+    //-------- GET DATA HELPER
+    const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+    };
+
+    function fetchERC20Data(currency, addresses) {
+        return new Promise((resolve, reject) => {
+            if (currency !== 'ETH')
+                return resolve(null);
+            const url = `${BASE_URL}/v2/accounts/get-erc20-transactions`
+            const data = {
+                method: 'POST',
+                body: JSON.stringify([{ currency, addresses }]),
+                headers,
+            }
+            fetch(url, data)
+            .then((response) => response.json())
+            .then((resp) => {
+                const data = resp.data[0];
+                if (data.error) return reject(data.error);
+                return resolve(data);
+            })
+            .catch((err) => {
+                return reject(err);
+            });
+        })
+    }
+
+    function fetchCurrencyData(currency, addresses) {
+        return new Promise((resolve, reject) => {
+            const url = `${BASE_URL}/v2/accounts/get-data`
+            const data = {
+                method: 'POST',
+                body: JSON.stringify([{ currency, addresses }]),
+                headers,
+            }
+            // Fetch currency balance and transaction history
+            fetch(url, data)
+            .then((response) => response.json())
+            .then((resp) => {
+                const mainData = resp.data[0];
+                if (mainData.error) {
+                    return reject(mainData.error);
+                } else {
+                    return resolve(mainData);
+                }
+            })
+            .catch((err) => {
+                return reject(err);
+            });
+        })
+    }
+
+    // Fetch state data for a set of addresses
+    // @param currency  {string}   -- abbreviation of the currency (e.g. ETH, BTC)
+    // @param addresses {object}   -- objecty containing arrays of addresses, indexed by currency
+    // @param cb        {function} -- callback function of form cb(err, data)
+    function fetchStateData(currency, addresses, cb) {
         const reqAddresses = addresses[currency];
 
         // Exit if we don't have addresses to use in the request
@@ -92,29 +149,49 @@ export default () => {
         if (currency.indexOf('_CHANGE') > -1)
             currency = currency.slice(0, currency.indexOf('_CHANGE'));
 
-        // Build the request  
-        const data = {
-            method: 'POST',
-            body: JSON.stringify([{
-                currency,
-                addresses: reqAddresses,
-            }]),
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
+        let stateData = {
+            currency,
+            transactions: [], // ETH + ERC20 transactions
+            balance: {}, // ETH balance
+            erc20Balances: [], // ERC20 balances
+        };
+
+        // Get ERC20 data if applicable
+        // We fetch this first because ERC20 transactions will appear as duplicates
+        // and we need to filter out the ETH-based dups
+        fetchERC20Data(currency, reqAddresses)
+        .then((erc20Data) => {
+            if (erc20Data !== null && erc20Data !== undefined) {
+                // Add ERC20 balances
+                stateData.erc20Balances = erc20Data.balanceData;
+                // Add the transactions
+                stateData.transactions = stateData.transactions.concat(erc20Data.transactions);
             }
-        }
-        const url = `${BASE_URL}/v2/accounts/get-data`
-        fetch(url, data)
-        .then((response) => response.json())
-        .then((resp) => {
-            const r = resp.data[0];
-            if (r.error) return cb(r.error);
-            return cb(null, r);
+            return fetchCurrencyData(currency, reqAddresses)
+        })
+        .then((mainData) => {
+            stateData.currency = mainData.currency;
+            stateData.balance = mainData.balance;
+            stateData.transactions = stateData.transactions.concat(mainData.transactions);
+            // Remove duplicates. Since the ERC20 transactions came first, they
+            // take precedence
+            let hashes = [];
+            stateData.transactions.forEach((t, i) => {
+                if (hashes.indexOf(t.hash.toLowerCase()) > -1)
+                    stateData.transactions.splice(i, 1);
+                else
+                    hashes.push(t.hash.toLowerCase())
+            })
+            // Now sort the transactions by block height
+            stateData.transactions = stateData.transactions.sort((a, b) => {
+                return a.height < b.height ? 1 : -1; 
+            })
+            return cb(null, stateData);
         })
         .catch((err) => {
             return cb(err);
         });
     }
+    //-------- END GET DATA
 
 }

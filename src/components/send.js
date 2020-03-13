@@ -7,7 +7,7 @@ import './styles.css'
 
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
-const GWEI_FACTOR = Math.pow(10, 12); // 1 GWei = 10**12 wei 
+const GWEI_FACTOR = Math.pow(10, 9); // 1 GWei = 10**9 wei 
 
 class Send extends React.Component {
   constructor(props) {
@@ -42,6 +42,14 @@ class Send extends React.Component {
   componentDidMount() {
     // TODO: Fetch list of supported tokens from the cloud-api
     // this.setState({ erc20Tokens });
+    fetch(`${constants.GRIDPLUS_CLOUD_API}/supported-erc20-tokens`)
+    .then((response) => response.json())
+    .then((resp) => {
+      this.setState({ erc20Tokens: resp.tokenList || [] })
+    })
+    .catch((err) => {
+      console.error('Failed to load ERC20 tokens', err);
+    })
   }
 
   //========================================================
@@ -111,11 +119,22 @@ class Send extends React.Component {
   // TRANSACTION-RELATED BUILDERS AND HOOKS
   //========================================================
 
+  getDecimals(addr) {
+    let decimals = null;
+    this.state.erc20Tokens.forEach((token) => {
+      if (token.contractAddress.toLowerCase() === addr.toLowerCase())
+        decimals = token.decimals;
+    })
+    return decimals;
+  }
+
   buildEthRequest() {
     let _value, _data, _recipient;
-    let decimals = 12; // placeholder, dummy value
-
     if (this.state.erc20Addr !== null) {
+      const decimals = this.getDecimals(this.state.erc20Addr);
+      // Sanity check -- should never happen
+      if (decimals === null)
+        throw new Error('Could not find token specified');
       _value = 0;
       _recipient = this.state.erc20Addr;
       _data = buildERC20Data(this.state.recipient, this.state.value, decimals);
@@ -127,7 +146,7 @@ class Send extends React.Component {
     const txData = {
       nonce: this.props.session.ethNonce,
       gasPrice: Number(this.state.ethExtraData.gasPrice) * GWEI_FACTOR,
-      gasLimit: this.state.ethExtraData.gasLimit,
+      gasLimit: Number(this.state.ethExtraData.gasLimit),
       to: _recipient,
       value: _value,
       data: _data,
@@ -193,7 +212,7 @@ class Send extends React.Component {
         if (err) {
           // Display an error banner
           this.setState({ 
-            error: 'Failed to submit transaction', 
+            error: 'Failed to submit transaction. Please try again.', 
             isLoading: false, 
             txHash: null 
           })
@@ -271,8 +290,8 @@ class Send extends React.Component {
       //   { currency: "Add Token", address: "add" }
       // ];
       const tokensList = this.state.erc20Tokens.map((token) =>
-        <Select.Option value={token.address} key={`token_${token.address}`}>
-          {token.currency}
+        <Select.Option value={token.contractAddress} key={`token_${token.contractAddress}`}>
+          {token.symbol}
         </Select.Option>
       );
       

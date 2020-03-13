@@ -199,8 +199,6 @@ class SDKSession {
         if (t.incoming === false)
           count += 1;
       })
-      console.log(transactions)
-      console.log('setting nonce to', count)
       this.ethNonce = count;
     }
     //---------
@@ -391,16 +389,14 @@ class SDKSession {
   sign(req, cb) {
     // Get the tx payload to broadcast
     this.client.sign(req, (err, res) => {
-      console.log('sign err', err)
-      if (err) return cb(err);
-
-/*
-DISABLED FOR TESTING
+      if (err) {
+        console.error('Signing error:', err);
+        return cb("Lattice failed to sign transaction. If you're sure it's correct, please try again.");
+      }
       // Broadcast
       const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/broadcast`;
       // Req should have the serialized payload WITH signature in the `tx` param
       const body = { currency: req.currency, hex: res.tx };
-      console.log('broadcasting', body)
       const data = {
         method: 'POST',
         body: JSON.stringify(body),
@@ -411,23 +407,25 @@ DISABLED FOR TESTING
       }
       fetch(url, data)
       .then((response) => {
-        console.log('response', response)
         return response.json()
       })
       .then((resp) => {
-          console.log('resp', resp)
-          if (resp.error) return cb(resp.error);
+          if (resp.error) {
+            console.error('Broadcasting error in response: ', resp.error);
+            return cb("Error broadcasting transaction. Please wait a bit and try again.");
+          }
           // Return the transaction hash
           return cb(null, resp.data);
       })
       .catch((err) => {
-        console.log('err', err)
-          return cb(err);
+          console.error('Broadcast error:', err);
+          return cb("Error broadcasting transaction. Please wait a bit and try again.");
       });
-*/
-    setTimeout(() => { // TESTING ONLY
-      return cb(null, "0x5ac9027e255c42c6dd9c013b2aef9ee3c2d68161c92bef705e9a59063cbff090")
-    }, 1000);
+// */
+
+    // setTimeout(() => { // TESTING ONLY
+    //   return cb(null, "0x5ac9027e255c42c6dd9c013b2aef9ee3c2d68161c92bef705e9a59063cbff090")
+    // }, 1000);
 
 
     })
