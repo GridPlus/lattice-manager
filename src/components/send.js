@@ -169,11 +169,13 @@ class Send extends React.Component {
   }
 
   buildBtcRequest() {
+    console.log('props.addresses', this.props.session.addresses)
     const req = buildBtcTxReq(this.state.recipient, 
                               this.state.value, 
                               this.props.session.getUtxos('BTC'), 
-                              this.props.session.addrsses['BTC'],  
-                              this.props.session.addrsses['BTC_CHANGE']);
+                              this.props.session.addresses['BTC'],  
+                              this.props.session.addresses['BTC_CHANGE']);
+    console.log('btc tx req', req)
     if (req.error) {
       this.setState({ error: req.error });
       return null;
@@ -181,7 +183,7 @@ class Send extends React.Component {
       this.setState({ error: 'Invalid response when building BTC transaction request. '});
       return null;
     }
-    return req.data;
+    return req;
   }
 
   submit() {

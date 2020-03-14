@@ -144,6 +144,7 @@ class SDKSession {
   fetchDataHandler(data, usingChange=false) {
     let { currency } = data; // Will be adjusted if this is a change addresses request
     const { balance, transactions, firstUnused, lastUnused, utxos } = data;
+    console.log('got utxos?', utxos)
     let switchToChange = false;
     const changeCurrency = `${currency}_CHANGE`;
    
@@ -172,7 +173,6 @@ class SDKSession {
                                   lastUnused - firstUnused < gapLimit - 1;
       // Save this
       this.firstUnusedAddresses[currency] = this.addresses[currency][firstUnused];
-      
       if (needNewBtcAddresses === true) {
         // If we need more addresses of our currency (regular OR change), just continue on.
         stillSyncingAddresses = true;
@@ -222,6 +222,13 @@ class SDKSession {
     }
 
     // Continue syncing data and/or fetching addresses
+
+    // TODO: Waiting this long is a problem. It seems to sometimes not load change addresses
+    // from storage. There is probably a race condition somewhere in here that is causing
+    // us to retrieve BTC addresses (specifically change) from the device rather than
+    // rehydrating storage. Perhaps they *are* getting loaded and are getting wiped?
+
+
     if (stillSyncingAddresses) {
       // If we are still syncing, get the new addresses we need
       setTimeout(() => {
@@ -366,8 +373,8 @@ class SDKSession {
       // (This call will be bypassed if the credentials are already saved
       // in localStorage because updateStorage is also called in the constructor)
       this.deviceID = deviceID;
-      this.updateStorage();
       this.setupWorker();
+      this.updateStorage();
       return cb(null, client.isPaired);
     });
   }
@@ -387,6 +394,7 @@ class SDKSession {
   }
 
   sign(req, cb) {
+    console.log('sign req', req)
     // Get the tx payload to broadcast
     this.client.sign(req, (err, res) => {
       if (err) {

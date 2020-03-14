@@ -60,6 +60,7 @@ function fetchERC20Data(currency, addresses) {
 
 function fetchCurrencyData(currency, addresses) {
     return new Promise((resolve, reject) => {
+        // Account for change addresses
         const url = `${BASE_URL}/v2/accounts/get-data`
         const data = {
             method: 'POST',
@@ -98,12 +99,10 @@ exports.fetchStateData = function(currency, addresses, cb) {
     if (currency.indexOf('_CHANGE') > -1)
         currency = currency.slice(0, currency.indexOf('_CHANGE'));
 
-    let stateData = {
-        currency,
-        transactions: [], // ETH + ERC20 transactions
-        balance: {}, // ETH balance
-        erc20Balances: [], // ERC20 balances
-    };
+    const secondaryData = {
+        erc20Balances: [],
+        transactions: [],
+    }
 
     // Get ERC20 data if applicable
     // We fetch this first because ERC20 transactions will appear as duplicates
@@ -112,30 +111,32 @@ exports.fetchStateData = function(currency, addresses, cb) {
     .then((erc20Data) => {
         if (erc20Data !== null && erc20Data !== undefined) {
             // Add ERC20 balances
-            stateData.erc20Balances = erc20Data.balanceData;
+            secondaryData.erc20Balances = erc20Data.balanceData;
             // Add the transactions
-            stateData.transactions = stateData.transactions.concat(erc20Data.transactions);
+            secondaryData.transactions = secondaryData.transactions.concat(erc20Data.transactions);
         }
         return fetchCurrencyData(currency, reqAddresses)
     })
     .then((mainData) => {
-        stateData.currency = mainData.currency;
-        stateData.balance = mainData.balance;
-        stateData.transactions = stateData.transactions.concat(mainData.transactions);
+        // Account for secondary data if applicable
+        const allTransactions = secondaryData.transactions.concat(mainData.transactions);
+        mainData.erc20Balances = secondaryData.erc20Balances;
         // Remove duplicates. Since the ERC20 transactions came first, they
         // take precedence
         let hashes = [];
-        stateData.transactions.forEach((t, i) => {
+        allTransactions.forEach((t, i) => {
             if (hashes.indexOf(t.hash.toLowerCase()) > -1)
-                stateData.transactions.splice(i, 1);
+                allTransactions.splice(i, 1);
             else
                 hashes.push(t.hash.toLowerCase())
         })
         // Now sort the transactions by block height
-        stateData.transactions = stateData.transactions.sort((a, b) => {
+        allTransactions.transactions = allTransactions.sort((a, b) => {
             return a.height < b.height ? 1 : -1; 
         })
-        return cb(null, stateData);
+        // Copy the transactions to the full data object
+        mainData.transactions = allTransactions.transactions;
+        return cb(null, mainData);
     })
     .catch((err) => {
         return cb(err);
@@ -159,6 +160,8 @@ exports.buildBtcTxReq = function(recipient, totalValue, utxos, addrs, changeAddr
             changeVersion = 'SEGWIT';
             break;
         case '2':
+            changeVersion = 'TESTNET_SEGWIT';
+            break;
         case 'm':
         case 'n':
             changeVersion = 'TESTNET';
@@ -213,18 +216,18 @@ exports.buildBtcTxReq = function(recipient, totalValue, utxos, addrs, changeAddr
 
     // Return the request (i.e. the whole object)
     const req = {
-      prevOuts,
-      recipient,
-      value: totalValue,
-      fee,
-      isSegwit: changeVersion === 'SEGWIT',
-      // Note we send change to the latest change address. Once this becomes used, the web worker
-      // should fetch a new change address and update state
-      changePath: BASE_SIGNER_PATH.concat([1, changeAddrs.length -1]),
-      changeVersion,
-      network,
+        prevOuts,
+        recipient,
+        value: totalValue,
+        fee,
+        isSegwit: changeVersion === 'SEGWIT',
+        // Note we send change to the latest change address. Once this becomes used, the web worker
+        // should fetch a new change address and update state
+        changePath: BASE_SIGNER_PATH.concat([1, changeAddrs.length -1]),
+        changeVersion,
+        network,
     };
-    return { data: req }
+    return { currency: 'BTC', data: req }
 }
 
 function leftPad(x, n) {
