@@ -5,6 +5,7 @@ import worker from '../stateWorker.js';
 import WebWorker from '../WebWorker';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
+const DEVICE_ADDR_SYNC_MS = 2000; // It takes roughly 2000 to sync a new address
 
 class SDKSession {
   constructor(deviceID, stateUpdateHandler) {
@@ -144,7 +145,6 @@ class SDKSession {
   fetchDataHandler(data, usingChange=false) {
     let { currency } = data; // Will be adjusted if this is a change addresses request
     const { balance, transactions, firstUnused, lastUnused, utxos } = data;
-    console.log('got utxos?', utxos)
     let switchToChange = false;
     const changeCurrency = `${currency}_CHANGE`;
    
@@ -222,21 +222,17 @@ class SDKSession {
     }
 
     // Continue syncing data and/or fetching addresses
-
-    // TODO: Waiting this long is a problem. It seems to sometimes not load change addresses
-    // from storage. There is probably a race condition somewhere in here that is causing
-    // us to retrieve BTC addresses (specifically change) from the device rather than
-    // rehydrating storage. Perhaps they *are* getting loaded and are getting wiped?
-
-
     if (stillSyncingAddresses) {
       // If we are still syncing, get the new addresses we need
       setTimeout(() => {
         // Request the addresses -- the device needs ~2s per address to recover from the last one
         // due to the fact that it may start caching new addresses based on our requests.
+        // Note that we are using 2s as a timeout here, but we will run into "Device Busy" errors
+        // if the device starts syncing a batch of new addresses (as opposed to one more).
+        // We will capture this in the callback.
         const fetchWrapper = () => {this.fetchData(requestCurrency, null, useChange)};
         this.loadAddresses(requestCurrency, fetchWrapper, true);
-      }, constants.BTC_ADDR_BLOCK_LEN * 2000)
+      }, DEVICE_ADDR_SYNC_MS)
     } else if (switchToChange === true) {
       // If we don't necessarily need new addresses but we do need to check on
       // change addresses, call `fetchData` directly (i.e. don't call `loadAddresses`)
@@ -276,13 +272,13 @@ class SDKSession {
         // (via `fetchDataHandler`)
         if (force !== true && nextIdx >= constants.BTC_MAIN_GAP_LIMIT) return cb(null);
         opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 0, nextIdx ];
-        opts.n = constants.BTC_ADDR_BLOCK_LEN;
+        opts.n = nextIdx >= constants.BTC_MAIN_GAP_LIMIT ? 1 : constants.BTC_ADDR_BLOCK_LEN;
         break;
       case 'BTC_CHANGE':
         // Skip the initial sync if we have at least one change address (GAP_LIMIT=1)
         if (force !== true && nextIdx >= constants.BTC_CHANGE_GAP_LIMIT) return cb(null);
         opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 1, nextIdx ];
-        opts.n = constants.BTC_CHANGE_GAP_LIMIT;
+        opts.n = nextIdx >= constants.BTC_CHANGE_GAP_LIMIT ? 1 : constants.BTC_CHANGE_GAP_LIMIT;
         break;
       case 'ETH':
         // Do not load addresses if we already have the first ETH one.
@@ -296,7 +292,16 @@ class SDKSession {
         return cb('Invalid currency to request addresses');
     }
     this.client.getAddresses(opts, (err, addresses) => {
-      if (err) return cb(err);
+      // Catch an error, but if the device is busy it probably means it is currently
+      // caching a batch of new addresses. Continue the loop through this request until
+      // it hits.
+      if (err && err !== 'Device Busy') 
+        return cb(err);
+      else if (err === 'Device Busy')
+        setTimeout(() => {
+          return this.loadAddresses(currency, cb, force);
+        }, DEVICE_ADDR_SYNC_MS);
+
       // Save the addresses to memory and also update them in localStorage
       // Note that we do need to track index here
       this.addresses[currency] = currentAddresses.concat(addresses);
@@ -339,11 +344,13 @@ class SDKSession {
         // for updates until we get an active wallet
         this.addresses = {};
         this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
+        this.worker.postMessage({ type: 'stop' });
       } else {
         const uid = activeWallet.uid.toString('hex')
         // Rehydrate the data
         const walletData = this.storageSession.getWalletData(this.deviceID, uid) || {};
         this.addresses = walletData.addresses || {};
+        this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
       }
     }
   }
@@ -394,7 +401,6 @@ class SDKSession {
   }
 
   sign(req, cb) {
-    console.log('sign req', req)
     // Get the tx payload to broadcast
     this.client.sign(req, (err, res) => {
       if (err) {
