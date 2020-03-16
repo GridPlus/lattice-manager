@@ -24,17 +24,10 @@ function checkBtc(data) {
   return fullCheck(data, checkBtcRecipient);
 }
 
+// Perform a check on the recipient and value
+// @returns bool -- true if params are both valid
 function fullCheck(data, recipientCheck) {
-  const checks = {
-    recipient: null,
-    value: null,
-  }
-  // Individual checks
-  if (data.recipient.value) checks.recipient = recipientCheck(data.recipient)
-  if (data.value.value) checks.value = checkNumericValue(data.value);
-
-  // Return summary
-  return checks;
+  return true === recipientCheck(data.recipient) && true === checkNumericValue(data.value);
 } 
 
 function checkEthRecipient(recipient) {
@@ -62,10 +55,10 @@ function checkBtcRecipient(recipient) {
 }
 
 function checkNumericValue(value) {
-  if (value === '') return null;
+  if (value === '') return false;
   try {
     const num = Number(value);
-    return !isNaN(num);
+    return !isNaN(num) && num >= 0;
   } catch (e) {
     return false;
   }

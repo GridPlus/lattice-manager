@@ -84,7 +84,7 @@ class Wallet extends React.Component {
     link: "https://rinkeby.etherscan.io/tx/0xf1bfe45aaf8dc8ca379aa6661bf3af9f2d71f27d90a64d618e7ba1cfdba66ca5"
     lastUpdated: 1578858115022
     */
-    const title = `${item.value.toFixed(8)} ${item.currency}`;
+    const title = `${item.value.toFixed(8)} ${item.asset}`;
     const subtitle = item.incoming ? `From: ${this.ensureTrimmedText(item.from)}` : `To: ${this.ensureTrimmedText(item.to)}`;
     const label = (
       <div align="right">
@@ -104,7 +104,7 @@ class Wallet extends React.Component {
       <List.Item key={item.hash}>
         <List.Item.Meta
           avatar={
-            <Avatar src={`/${this.props.currency}.png`} />
+            <Avatar src={`/${item.asset}.png`} />
           }
           title={title}
           description={subtitle}

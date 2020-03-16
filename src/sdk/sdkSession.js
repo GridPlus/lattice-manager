@@ -5,6 +5,7 @@ import worker from '../stateWorker.js';
 import WebWorker from '../WebWorker';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
+const DEVICE_ADDR_SYNC_MS = 2000; // It takes roughly 2000 to sync a new address
 
 class SDKSession {
   constructor(deviceID, stateUpdateHandler) {
@@ -17,6 +18,8 @@ class SDKSession {
     this.usdValues = {};
     // Cached list of transactions, indexed by currency
     this.txs = {};
+    // Cached list of UTXOs, indexed by currency
+    this.utxos = {};
     // Cached list of unused addresses. These indicate the next available
     // address for each currency. Currently only contains a Bitcoin address
     this.firstUnusedAddresses = {};
@@ -57,7 +60,9 @@ class SDKSession {
     return this.client.isPaired || false;
   }
 
-  getBalance(currency) {
+  getBalance(currency, erc20Token=null) {
+    if (currency === 'ETH' && erc20Token !== null)
+      return this.balances[erc20Token] || 0;
     if (typeof this.balances[`${currency}_CHANGE`] === 'number')
       return this.balances[currency] + this.balances[`${currency}_CHANGE`];
     return this.balances[currency] || 0;
@@ -70,9 +75,38 @@ class SDKSession {
   }
 
   getTxs(currency) {
-    if (typeof this.txs[`${currency}_CHANGE`] === 'object')
-      return this.txs[currency].concat(this.txs[`${currency}_CHANGE`]);
-    return this.txs[currency] || [];
+    const base = this.txs[currency] || [];
+    if (typeof this.txs[`${currency}_CHANGE`] === 'object') {
+      // Need to also include transactions to/from change addresses.
+      // Note that we need to cut out change receipt transactions, but we
+      // do need to display transactions that invole spending from change.
+      let allTxs = base.concat(this.txs[`${currency}_CHANGE`]).sort((a, b) => {
+        return a.height < b.height ? 1 : -1
+      });
+      // Remove all transactions where the sender and recipient are both
+      // our addresses (regular or change)
+      const baseAddrs = this.addresses[currency];
+      const changeAddrs = this.addresses[`${currency}_CHANGE`];
+      JSON.parse(JSON.stringify(allTxs)).forEach((t, i) => {
+        if (
+          (baseAddrs.indexOf(t.to) > -1 || changeAddrs.indexOf(t.to) > -1) &&
+          (baseAddrs.indexOf(t.from) > -1 || changeAddrs.indexOf(t.from) > -1)
+        ) 
+          allTxs = allTxs.splice(i, 1);
+      })
+      return allTxs;
+    } else {
+      return base;
+    }
+  }
+
+  getUtxos(currency) {
+    const base = this.utxos[currency] || [];
+    if (typeof this.utxos[`${currency}_CHANGE`] === 'object')
+      return base.concat(this.utxos[`${currency}_CHANGE`]).sort((a, b) => {
+        return a.value > b.value ? 1 : -1;
+      });
+    return base || [];
   }
 
   getDisplayAddress(currency) {
@@ -135,7 +169,7 @@ class SDKSession {
 
   fetchDataHandler(data, usingChange=false) {
     let { currency } = data; // Will be adjusted if this is a change addresses request
-    const { balance, transactions, firstUnused, lastUnused } = data;
+    const { balance, transactions, firstUnused, lastUnused, utxos, erc20Balances } = data;
     let switchToChange = false;
     const changeCurrency = `${currency}_CHANGE`;
    
@@ -164,7 +198,6 @@ class SDKSession {
                                   lastUnused - firstUnused < gapLimit - 1;
       // Save this
       this.firstUnusedAddresses[currency] = this.addresses[currency][firstUnused];
-      
       if (needNewBtcAddresses === true) {
         // If we need more addresses of our currency (regular OR change), just continue on.
         stillSyncingAddresses = true;
@@ -181,13 +214,26 @@ class SDKSession {
       } else {
         switchToChange = false;
       }
+    } else if (currency === 'ETH') {
+      // Count the number of transactions
+      let count = 0;
+      transactions.forEach((t) => {
+        if (t.incoming === false)
+          count += 1;
+      })
+      this.ethNonce = count;
+      // Record the ERC20 balances
+      erc20Balances.forEach((e) => {
+        this.balances[e.contractAddress] = e.balance;
+      })
     }
     //---------
 
     // Dispatch updated data for the UI
-    this.balances[currency] = balance.value;
-    this.usdValues[currency] = balance.dollarAmount;
-    this.txs[currency] = transactions;
+    this.balances[currency] = balance.value || 0;
+    this.usdValues[currency] = balance.dollarAmount || 0;
+    this.txs[currency] = transactions || [];
+    this.utxos[currency] = utxos || [];
 
     // Tell the main component if we are done syncing. Note that this also captures the case
     // where we are switching to syncing change addresses/data
@@ -208,9 +254,12 @@ class SDKSession {
       setTimeout(() => {
         // Request the addresses -- the device needs ~2s per address to recover from the last one
         // due to the fact that it may start caching new addresses based on our requests.
+        // Note that we are using 2s as a timeout here, but we will run into "Device Busy" errors
+        // if the device starts syncing a batch of new addresses (as opposed to one more).
+        // We will capture this in the callback.
         const fetchWrapper = () => {this.fetchData(requestCurrency, null, useChange)};
         this.loadAddresses(requestCurrency, fetchWrapper, true);
-      }, constants.BTC_ADDR_BLOCK_LEN * 2000)
+      }, DEVICE_ADDR_SYNC_MS)
     } else if (switchToChange === true) {
       // If we don't necessarily need new addresses but we do need to check on
       // change addresses, call `fetchData` directly (i.e. don't call `loadAddresses`)
@@ -250,13 +299,13 @@ class SDKSession {
         // (via `fetchDataHandler`)
         if (force !== true && nextIdx >= constants.BTC_MAIN_GAP_LIMIT) return cb(null);
         opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 0, nextIdx ];
-        opts.n = constants.BTC_ADDR_BLOCK_LEN;
+        opts.n = nextIdx >= constants.BTC_MAIN_GAP_LIMIT ? 1 : constants.BTC_ADDR_BLOCK_LEN;
         break;
       case 'BTC_CHANGE':
         // Skip the initial sync if we have at least one change address (GAP_LIMIT=1)
         if (force !== true && nextIdx >= constants.BTC_CHANGE_GAP_LIMIT) return cb(null);
         opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 1, nextIdx ];
-        opts.n = constants.BTC_CHANGE_GAP_LIMIT;
+        opts.n = nextIdx >= constants.BTC_CHANGE_GAP_LIMIT ? 1 : constants.BTC_CHANGE_GAP_LIMIT;
         break;
       case 'ETH':
         // Do not load addresses if we already have the first ETH one.
@@ -270,7 +319,16 @@ class SDKSession {
         return cb('Invalid currency to request addresses');
     }
     this.client.getAddresses(opts, (err, addresses) => {
-      if (err) return cb(err);
+      // Catch an error, but if the device is busy it probably means it is currently
+      // caching a batch of new addresses. Continue the loop through this request until
+      // it hits.
+      if (err && err !== 'Device Busy') 
+        return cb(err);
+      else if (err === 'Device Busy')
+        setTimeout(() => {
+          return this.loadAddresses(currency, cb, force);
+        }, DEVICE_ADDR_SYNC_MS);
+
       // Save the addresses to memory and also update them in localStorage
       // Note that we do need to track index here
       this.addresses[currency] = currentAddresses.concat(addresses);
@@ -304,7 +362,7 @@ class SDKSession {
     // have a current storage session
     if (this.deviceID && !this.storageSession)
       this.storageSession = new StorageSession(this.deviceID);
-    if (this.client) {
+    if (this.client && this.worker) {
       // If we have a client and if it has a non-zero active wallet UID,
       // lookup the addresses corresponding to that wallet UID in storage.
       const activeWallet = this.getActiveWallet();
@@ -313,11 +371,13 @@ class SDKSession {
         // for updates until we get an active wallet
         this.addresses = {};
         this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
+        this.worker.postMessage({ type: 'stop' });
       } else {
         const uid = activeWallet.uid.toString('hex')
         // Rehydrate the data
         const walletData = this.storageSession.getWalletData(this.deviceID, uid) || {};
         this.addresses = walletData.addresses || {};
+        this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
       }
     }
   }
@@ -347,8 +407,8 @@ class SDKSession {
       // (This call will be bypassed if the credentials are already saved
       // in localStorage because updateStorage is also called in the constructor)
       this.deviceID = deviceID;
-      this.updateStorage();
       this.setupWorker();
+      this.updateStorage();
       return cb(null, client.isPaired);
     });
   }
@@ -365,6 +425,53 @@ class SDKSession {
 
   pair(secret, cb) {
     this.client.pair(secret, cb);
+  }
+
+  sign(req, cb) {
+    // Get the tx payload to broadcast
+    this.client.sign(req, (err, res) => {
+      if (err) {
+        console.error('Signing error:', err);
+        return cb("Lattice failed to sign transaction. If you're sure it's correct, please try again.");
+      }
+// /*
+      // Broadcast
+      const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/broadcast`;
+      // Req should have the serialized payload WITH signature in the `tx` param
+      const body = { currency: req.currency, hex: res.tx };
+      const data = {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        }
+      }
+      console.log('broadcasting', body)
+      fetch(url, data)
+      .then((response) => {
+        return response.json()
+      })
+      .then((resp) => {
+          if (resp.error || resp.type === "RPCError") {
+            console.error('Broadcasting error in response: ', resp.error);
+            return cb("Error broadcasting transaction. Please wait a bit and try again.");
+          }
+          // Return the transaction hash
+          return cb(null, resp.data);
+      })
+      .catch((err) => {
+          console.error('Broadcast error:', err);
+          return cb("Error broadcasting transaction. Please wait a bit and try again.");
+      });
+// */
+
+    // setTimeout(() => { // TESTING ONLY
+    //   return cb(null, "5ac9027e255c42c6dd9c013b2aef9ee3c2d68161c92bef705e9a59063cbff090")
+    // }, 1000);
+
+
+    })
   }
 
   _genPrivKey(deviceID, pw) {

@@ -57,11 +57,11 @@ class Connect extends React.Component {
         <Col span={10} offset={7}>
           <center>
             {this.renderMsg()}
-            <Card bordered={true} style={{"background-color": "#001529"}}>
+            <Card bordered={true} style={{"backgroundColor": "#001529"}}>
               <img alt="landing-logo" src="/logo.png"/>
-              <h1 style={{"font-size": "48px", "color": "#8c8c8c", margin:"20px 0 0 0"}}>Web Wallet</h1>
+              <h1 style={{"fontSize": "48px", "color": "#8c8c8c", margin:"20px 0 0 0"}}>Web Wallet</h1>
             </Card>
-            <Card borded={true}>
+            <Card bordered={true}>
               <p>
                 With the GridPlus Web Wallet you can monitor balances and transactions for your Lattice1 device.
                 In order to connect to your device, find its <b>Device ID</b>&nbsp;
