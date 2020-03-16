@@ -178,7 +178,6 @@ class Send extends React.Component {
                               this.props.session.getUtxos('BTC'), 
                               this.props.session.addresses['BTC'],  
                               this.props.session.addresses['BTC_CHANGE']);
-    console.log('btc tx req', req)
     if (req.error) {
       this.setState({ error: req.error });
       return null;
