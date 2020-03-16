@@ -76,15 +76,36 @@ class SDKSession {
 
   getTxs(currency) {
     const base = this.txs[currency] || [];
-    if (typeof this.txs[`${currency}_CHANGE`] === 'object')
-      return base.concat(this.txs[`${currency}_CHANGE`]);
-    return base || [];
+    if (typeof this.txs[`${currency}_CHANGE`] === 'object') {
+      // Need to also include transactions to/from change addresses.
+      // Note that we need to cut out change receipt transactions, but we
+      // do need to display transactions that invole spending from change.
+      let allTxs = base.concat(this.txs[`${currency}_CHANGE`]).sort((a, b) => {
+        return a.height < b.height ? 1 : -1
+      });
+      // Remove all transactions where the sender and recipient are both
+      // our addresses (regular or change)
+      const baseAddrs = this.addresses[currency];
+      const changeAddrs = this.addresses[`${currency}_CHANGE`];
+      JSON.parse(JSON.stringify(allTxs)).forEach((t, i) => {
+        if (
+          (baseAddrs.indexOf(t.to) > -1 || changeAddrs.indexOf(t.to) > -1) &&
+          (baseAddrs.indexOf(t.from) > -1 || changeAddrs.indexOf(t.from) > -1)
+        ) 
+          allTxs = allTxs.splice(i, 1);
+      })
+      return allTxs;
+    } else {
+      return base;
+    }
   }
 
   getUtxos(currency) {
     const base = this.utxos[currency] || [];
     if (typeof this.utxos[`${currency}_CHANGE`] === 'object')
-      return base.concat(this.utxos[`${currency}_CHANGE`]);
+      return base.concat(this.utxos[`${currency}_CHANGE`]).sort((a, b) => {
+        return a.value > b.value ? 1 : -1;
+      });
     return base || [];
   }
 
@@ -193,9 +214,6 @@ class SDKSession {
       } else {
         switchToChange = false;
       }
-
-      // Grab the UTXOs as well
-      this.utxos[currency] = utxos;
     } else if (currency === 'ETH') {
       // Count the number of transactions
       let count = 0;
@@ -212,9 +230,10 @@ class SDKSession {
     //---------
 
     // Dispatch updated data for the UI
-    this.balances[currency] = balance.value;
-    this.usdValues[currency] = balance.dollarAmount;
-    this.txs[currency] = transactions;
+    this.balances[currency] = balance.value || 0;
+    this.usdValues[currency] = balance.dollarAmount || 0;
+    this.txs[currency] = transactions || [];
+    this.utxos[currency] = utxos || [];
 
     // Tell the main component if we are done syncing. Note that this also captures the case
     // where we are switching to syncing change addresses/data
@@ -415,6 +434,7 @@ class SDKSession {
         console.error('Signing error:', err);
         return cb("Lattice failed to sign transaction. If you're sure it's correct, please try again.");
       }
+// /*
       // Broadcast
       const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/broadcast`;
       // Req should have the serialized payload WITH signature in the `tx` param
@@ -447,7 +467,7 @@ class SDKSession {
 // */
 
     // setTimeout(() => { // TESTING ONLY
-    //   return cb(null, "0x5ac9027e255c42c6dd9c013b2aef9ee3c2d68161c92bef705e9a59063cbff090")
+    //   return cb(null, "5ac9027e255c42c6dd9c013b2aef9ee3c2d68161c92bef705e9a59063cbff090")
     // }, 1000);
 
 

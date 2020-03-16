@@ -96,8 +96,9 @@ exports.fetchStateData = function(currency, addresses, cb) {
         return cb(null);
 
     // Slice out the 'change' portion of the currency name for the request itself
+    let searchCurrency = currency;
     if (currency.indexOf('_CHANGE') > -1)
-        currency = currency.slice(0, currency.indexOf('_CHANGE'));
+        searchCurrency = currency.slice(0, currency.indexOf('_CHANGE'));
 
     const secondaryData = {
         erc20Balances: [],
@@ -107,7 +108,7 @@ exports.fetchStateData = function(currency, addresses, cb) {
     // Get ERC20 data if applicable
     // We fetch this first because ERC20 transactions will appear as duplicates
     // and we need to filter out the ETH-based dups
-    fetchERC20Data(currency, reqAddresses)
+    fetchERC20Data(searchCurrency, reqAddresses)
     .then((erc20Data) => {
         if (erc20Data !== null && erc20Data !== undefined) {
             // Add ERC20 balances
@@ -115,9 +116,11 @@ exports.fetchStateData = function(currency, addresses, cb) {
             // Add the transactions
             secondaryData.transactions = secondaryData.transactions.concat(erc20Data.transactions);
         }
-        return fetchCurrencyData(currency, reqAddresses)
+        return fetchCurrencyData(searchCurrency, reqAddresses)
     })
     .then((mainData) => {
+        // Include the CHANGE portion of the currency label if applicable
+        mainData.currency = currency;
         // Account for secondary data if applicable
         const allTransactions = secondaryData.transactions.concat(mainData.transactions);
         mainData.erc20Balances = secondaryData.erc20Balances;
@@ -186,7 +189,6 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
 
     // Calculate the fee
     let fee = (numInputs+1)*180 + 2*34 + 10;
-    console.log('fee', fee, 'satVal', satValue, 'sumInputs', sum)
     // If the fee tips us over our total value sum, add another utxo
     if (fee + satValue > sum) {
         // There's a chance that we just eclipsed the number of inputs we could support.
