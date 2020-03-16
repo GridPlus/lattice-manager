@@ -144,10 +144,13 @@ exports.fetchStateData = function(currency, addresses, cb) {
 }
 //-------- END GET DATA
 
-exports.buildBtcTxReq = function(recipient, totalValue, utxos, addrs, changeAddrs, feeRate=constants.BTC_DEFAULT_FEE_RATE) {
+exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs, feeRate=constants.BTC_DEFAULT_FEE_RATE) {
     if (!addrs || !changeAddrs || addrs.length < 1 || changeAddrs.length < 1) {
         return { error: 'No addresses (or change addresses). Please wait to sync.' };
     }
+    // Convert value to satoshis
+    const satValue = Math.round(Number(btcValue) * Math.pow(10, 8));
+
     // Determine if these are testnet or mainnet addresses
     const network = addrs[0].slice(0, 1) === '1' || addrs[0].slice(0, 1) === '3' ? 'MAINNET' : 'TESTNET';
     // Determine the change version
@@ -175,7 +178,7 @@ exports.buildBtcTxReq = function(recipient, totalValue, utxos, addrs, changeAddr
     let sum = 0;
     let numInputs = 0;
     sortedUtxos.forEach((utxo) => {
-        if (sum <= totalValue) {
+        if (sum <= satValue) {
             numInputs += 1;
             sum += utxo.value;
         }
@@ -183,9 +186,13 @@ exports.buildBtcTxReq = function(recipient, totalValue, utxos, addrs, changeAddr
 
     // Calculate the fee
     let fee = (numInputs+1)*180 + 2*34 + 10;
-    
+    console.log('fee', fee, 'satVal', satValue, 'sumInputs', sum)
     // If the fee tips us over our total value sum, add another utxo
-    if (fee + totalValue < sum) {
+    if (fee + satValue > sum) {
+        // There's a chance that we just eclipsed the number of inputs we could support.
+        // Handle the edge case.
+        if (utxos.length <= numInputs)
+            return { error: 'Not enough balance to handle network fee. Please send a smaller value.'}
         numInputs += 1;
         fee += 180;
     }
@@ -203,12 +210,13 @@ exports.buildBtcTxReq = function(recipient, totalValue, utxos, addrs, changeAddr
                 signerPath: BASE_SIGNER_PATH.concat([0, addrs.indexOf(utxo.address)]),
             })
         } else if (changeAddrs.indexOf(utxo.address) > -1) {
-            prevOuts.push({
+            const prevOut = {
                 txHash: utxo.txHash,
                 value: utxo.value,
                 index: utxo.index,
                 signerPath: BASE_SIGNER_PATH.concat([1, changeAddrs.indexOf(utxo.address)]),
-            })
+            };
+            prevOuts.push(prevOut);
         } else {
             return { error: 'Failed to find holder of UTXO. Syncing issue likely.' };
         }
@@ -218,7 +226,7 @@ exports.buildBtcTxReq = function(recipient, totalValue, utxos, addrs, changeAddr
     const req = {
         prevOuts,
         recipient,
-        value: totalValue,
+        value: satValue,
         fee,
         isSegwit: changeVersion === 'SEGWIT',
         // Note we send change to the latest change address. Once this becomes used, the web worker

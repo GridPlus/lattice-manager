@@ -60,7 +60,9 @@ class SDKSession {
     return this.client.isPaired || false;
   }
 
-  getBalance(currency) {
+  getBalance(currency, erc20Token=null) {
+    if (currency === 'ETH' && erc20Token !== null)
+      return this.balances[erc20Token] || 0;
     if (typeof this.balances[`${currency}_CHANGE`] === 'number')
       return this.balances[currency] + this.balances[`${currency}_CHANGE`];
     return this.balances[currency] || 0;
@@ -73,15 +75,17 @@ class SDKSession {
   }
 
   getTxs(currency) {
+    const base = this.txs[currency] || [];
     if (typeof this.txs[`${currency}_CHANGE`] === 'object')
-      return this.txs[currency].concat(this.txs[`${currency}_CHANGE`]);
-    return this.txs[currency] || [];
+      return base.concat(this.txs[`${currency}_CHANGE`]);
+    return base || [];
   }
 
   getUtxos(currency) {
+    const base = this.utxos[currency] || [];
     if (typeof this.utxos[`${currency}_CHANGE`] === 'object')
-      return this.utxos[currency].concat(this.utxos[`${currency}_CHANGE`]);
-    return this.utxos[currency] || [];
+      return base.concat(this.utxos[`${currency}_CHANGE`]);
+    return base || [];
   }
 
   getDisplayAddress(currency) {
@@ -144,7 +148,7 @@ class SDKSession {
 
   fetchDataHandler(data, usingChange=false) {
     let { currency } = data; // Will be adjusted if this is a change addresses request
-    const { balance, transactions, firstUnused, lastUnused, utxos } = data;
+    const { balance, transactions, firstUnused, lastUnused, utxos, erc20Balances } = data;
     let switchToChange = false;
     const changeCurrency = `${currency}_CHANGE`;
    
@@ -200,6 +204,10 @@ class SDKSession {
           count += 1;
       })
       this.ethNonce = count;
+      // Record the ERC20 balances
+      erc20Balances.forEach((e) => {
+        this.balances[e.contractAddress] = e.balance;
+      })
     }
     //---------
 
@@ -419,12 +427,13 @@ class SDKSession {
           'Content-Type': 'application/json',
         }
       }
+      console.log('broadcasting', body)
       fetch(url, data)
       .then((response) => {
         return response.json()
       })
       .then((resp) => {
-          if (resp.error) {
+          if (resp.error || resp.type === "RPCError") {
             console.error('Broadcasting error in response: ', resp.error);
             return cb("Error broadcasting transaction. Please wait a bit and try again.");
           }

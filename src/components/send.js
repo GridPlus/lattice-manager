@@ -26,7 +26,6 @@ class Send extends React.Component {
         gasPrice: 5,
         gasLimit: 23000,
         data: '',
-        erc20Token: null,
       },
       erc20Tokens: [],
     }
@@ -65,9 +64,14 @@ class Send extends React.Component {
     });
   }
 
+  checkValue(val) {
+    // Verify that it is smaller than the balance
+    const balance = this.props.session.getBalance(this.props.currency, this.state.erc20Addr);
+    return (Number(balance) >= Number(val));
+  }
+
   updateValue(evt) {
     let val = evt.target.value;
-    const check = allChecks[this.props.currency].value;
     let numberVal = Number(val);
     const isZeroPrefixed = val[0] === '0';
     const isLessThanOne = isZeroPrefixed && val[1] === '.';
@@ -91,7 +95,7 @@ class Send extends React.Component {
     }
     this.setState({ 
       value: val,
-      valueCheck: check(val) 
+      valueCheck: this.checkValue(val) 
     });
   }
 
@@ -169,7 +173,6 @@ class Send extends React.Component {
   }
 
   buildBtcRequest() {
-    console.log('props.addresses', this.props.session.addresses)
     const req = buildBtcTxReq(this.state.recipient, 
                               this.state.value, 
                               this.props.session.getUtxos('BTC'), 
@@ -286,11 +289,6 @@ class Send extends React.Component {
       );
     } else if (this.props.currency === 'ETH') {
       // For ETH, account for ERC20s in the form of a dropdown
-      // const tmpTokens = [
-      //   { currency: "ETH", address: "ETH" },
-      //   { currency: "GT", address: "0x4991c6b9a40173d1621e559514e1860fcf18fd2b" },
-      //   { currency: "Add Token", address: "add" }
-      // ];
       const tokensList = this.state.erc20Tokens.map((token) =>
         <Select.Option value={token.contractAddress} key={`token_${token.contractAddress}`}>
           {token.symbol}
