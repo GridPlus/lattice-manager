@@ -84,19 +84,23 @@ class Wallet extends React.Component {
     link: "https://rinkeby.etherscan.io/tx/0xf1bfe45aaf8dc8ca379aa6661bf3af9f2d71f27d90a64d618e7ba1cfdba66ca5"
     lastUpdated: 1578858115022
     */
+    const isPending = item.height === -1;
     const title = `${item.value.toFixed(8)} ${item.asset}`;
     const subtitle = item.incoming ? `From: ${this.ensureTrimmedText(item.from)}` : `To: ${this.ensureTrimmedText(item.to)}`;
     const label = (
       <div align="right">
-        <p>
-        {item.incoming ? 'Received ' : 'Sent '}
-        {getDateDiffStr(item.timestamp)} ago&nbsp; 
-        {item.incoming ? (
-          <Icon type="down-circle" style={{color: GREEN}}/>
-        ) : (
-          <Icon type="up-circle" style={{color: RED}}/>
-        )}
-        </p>
+        {!isPending ? (
+          <p>
+            {item.incoming ? 'Received ' : 'Sent '}
+            {getDateDiffStr(item.timestamp)} ago&nbsp; 
+            {item.incoming ? (
+              <Icon type="down-circle" style={{color: GREEN}}/>
+            ) : (
+              <Icon type="up-circle" style={{color: RED}}/>
+            )}
+          </p>) : (
+            <p><Spin indicator={(<Icon type="loading"/>)}/></p>
+          )}
         <Button size="small" href={item.link} target="_blank">View</Button>
       </div>
     );
@@ -106,8 +110,8 @@ class Wallet extends React.Component {
           avatar={
             <Avatar src={`/${item.asset}.png`} />
           }
-          title={title}
-          description={subtitle}
+          title={!isPending ? (<p>{`${title}`}</p>) : (<p><i>{`${title}`}</i></p>)}
+          description={!isPending ? (<p>{`${subtitle}`}</p>) : (<p><i>{`${subtitle}`}</i></p>)}
         />
         {label}
       </List.Item>
@@ -139,15 +143,45 @@ class Wallet extends React.Component {
     )
   }
 
+  separatePendingTxs() {
+    const pending = [];
+    const confirmed = [];
+    this.state.txs.forEach((tx) => {
+      if (tx.height === -1) pending.push(tx)
+      else                  confirmed.push(tx);
+    });
+    return {
+      pending, confirmed
+    }
+  }
+
   renderList() {
+    const txs = this.separatePendingTxs();
     return (
-       <List
-        itemLayout="horizontal"
-        dataSource={this.state.txs}
-        renderItem={item => (
-          this.renderListItem(item)
-        )}
-      />
+      <div>
+        {txs.pending.length > 0 ? (
+          <Card title={<p><Icon type="clock-circle"/> Pending</p>} 
+                bordered={true}
+                style={{ margin: '0 0 30px 0'}}>
+            <List
+              itemLayout="horizontal"
+              dataSource={txs.pending}
+              renderItem={item => (
+                this.renderListItem(item)
+              )}
+            />
+          </Card>
+        ): null}
+        <Card title="Transactions" bordered={true}>
+          <List
+            itemLayout="horizontal"
+            dataSource={txs.confirmed}
+            renderItem={item => (
+              this.renderListItem(item)
+            )}
+          />
+        </Card>
+      </div>
     )
   }
 
@@ -200,9 +234,7 @@ class Wallet extends React.Component {
         </Row>
         <Divider/>
         <Row>
-          <Card title="Transactions" bordered={true}>
-            {this.renderList()}
-          </Card>
+          {this.renderList()}
         </Row>
       </div>
     )
