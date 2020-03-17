@@ -10,7 +10,7 @@
     "bs58check": "^2.1.2",
     "buffer": "^5.4.3",
     "gridplus-react-crypto": "0.0.5",
-    "gridplus-sdk": "^0.3.2-dev",
+    "gridplus-sdk": "^0.3.3-dev",
     "gulp": "^4.0.2",
     "nanoid": "^2.1.10",
     "qrcode.react": "^1.0.0",
