@@ -1,5 +1,5 @@
 import { Client } from 'gridplus-sdk';
-import { harden, fetchStateData, constants } from '../util/helpers';
+import { harden, fetchStateData, constants, getBtcVersion } from '../util/helpers';
 import { default as StorageSession } from '../util/storageSession';
 import worker from '../stateWorker.js';
 import WebWorker from '../WebWorker';
@@ -38,9 +38,12 @@ class SDKSession {
     // This way we can simply check state on change rather than pulling new
     // addresses.
     this.hasCheckedBtcChange = false
+
+    // The type of Bitcoin addresses the lattice is currently providing us
+    this.btcAddrType = null;
   
     // Go time
-    this.updateStorage();
+    this.getStorage();
   }
 
   disconnect() {
@@ -290,8 +293,6 @@ class SDKSession {
     let currentAddresses = this.addresses[currency] || [];
     if (!currentAddresses) currentAddresses = [];
     const nextIdx = currentAddresses.length;
-
-
     switch(currency) {
       case 'BTC':
         // Skip the initial sync if we have GAP_LIMIT addresses -- we will assume we have
@@ -338,6 +339,33 @@ class SDKSession {
     })
   }
 
+  // Prepare addresses for caching in localStorage
+  dryAddresses() {
+    const driedAddrs = {
+      ETH: this.addresses.ETH || [],
+    };
+    const hasBTCAddrs = this.addresses.BTC && this.addresses.BTC.length > 0;
+    if (this.btcAddrType !== null && hasBTCAddrs) {
+      driedAddrs.BTC = {};
+      driedAddrs.BTC[this.btcAddrType] = this.addresses.BTC || [];
+      driedAddrs.BTC_CHANGE = {};
+      driedAddrs.BTC_CHANGE[this.btcAddrType] = this.addresses.BTC_CHANGE || [];
+    }
+    return driedAddrs;
+  }
+
+  // Pull addresses out of cached localStorage data
+  rehydrateAddresses(allAddrs) {
+    const rehydratedAddrs = {
+      ETH: allAddrs.ETH || [],
+    };
+    if (this.btcAddrType !== null) {
+      rehydratedAddrs.BTC = allAddrs.BTC[this.btcAddrType] || [];
+      rehydratedAddrs.BTC_CHANGE = allAddrs.BTC_CHANGE[this.btcAddrType] || [];
+    }
+    this.addresses = rehydratedAddrs;
+  }
+
   saveStorage() {
     // This function should never be called without a deviceID 
     // or StorageSession
@@ -348,7 +376,7 @@ class SDKSession {
     // the blockchain state needs to be up-to-date and is therefore
     // not very useful to store.
     const walletData = {
-      addresses: this.addresses,
+      addresses: this.dryAddresses(),
     };
     const activeWallet = this.client ? this.client.getActiveWallet() : null;
     if (this.client && activeWallet !== null) {
@@ -357,7 +385,7 @@ class SDKSession {
     }
   }
 
-  updateStorage() {
+  getStorage() {
     // Create a storage session only if we have a deviceID and don't
     // have a current storage session
     if (this.deviceID && !this.storageSession)
@@ -376,10 +404,26 @@ class SDKSession {
         const uid = activeWallet.uid.toString('hex')
         // Rehydrate the data
         const walletData = this.storageSession.getWalletData(this.deviceID, uid) || {};
-        this.addresses = walletData.addresses || {};
+        this.rehydrateAddresses(walletData.addresses);
         this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
       }
     }
+  }
+
+  // Request the first BTC address so we can know what data to rehydrate
+  loadBtcAddrType(cb) {
+    const opts = {
+      startPath: [ harden(44), constants.BTC_COIN, harden(0), 0, 0 ],
+      n: 1
+    };
+    this.client.getAddresses(opts, (err, addresses) => {
+      if (err) return cb(err);
+      const version = getBtcVersion(addresses[0]);
+      if (version === null) return cb('Failed to load addresses from the Lattice');
+      this.btcAddrType = version;
+      this.getStorage();
+      return cb(null);
+    })
   }
 
   connect(deviceID, pw, cb, initialTimeout=constants.ASYNC_SDK_TIMEOUT) {
@@ -405,10 +449,10 @@ class SDKSession {
       this.client = client;
       // Setup a new storage session if these are new credentials.
       // (This call will be bypassed if the credentials are already saved
-      // in localStorage because updateStorage is also called in the constructor)
+      // in localStorage because getStorage is also called in the constructor)
       this.deviceID = deviceID;
       this.setupWorker();
-      this.updateStorage();
+      this.getStorage();
       return cb(null, client.isPaired);
     });
   }
@@ -418,7 +462,7 @@ class SDKSession {
       this.client.refreshWallets((err) => {
         // Update storage. This will remap to a new localStorage key if the wallet UID
         // changed. If we didn't get an active wallet, it will just clear out the addresses
-        this.updateStorage();
+        this.getStorage();
         cb(err);
       })
   }
