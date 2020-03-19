@@ -252,20 +252,25 @@ class Main extends React.Component {
   // NOTE: If we don't need additional addresses, no request will be
   // made to the Lattice and we will proceed to fetchData immediately.
   fetchAddresses(cb=null) {
-    this.wait("Loading addresses")
-    this.state.session.loadAddresses(this.state.currency, (err) => {
-      this.unwait();
-      // Catch an error if there is one
-      if (err) {
-        // If we catch an error, do a recursive call (preserving the callback)
-        this.setError({ 
-          msg: err, 
-          cb: () => { this.fetchAddresses(cb) } 
-        });
-      } else if (cb) {
-        return cb(null);
-      }
-    });
+    this.wait("Syncing addresses")
+    // Load the first BTC address so we can rehydrate the correct set, if applicable
+    this.state.session.loadBtcAddrType((err) => {
+      if (err)
+        return this.setError({ msg: err, cb: () => { this.fetchAddresses(cb) } });
+      // Once we've recorded the address type for BTC, we can start fetching as we normally
+      // would. This involves rehydrating the localStorage addresses if possible.
+      this.state.session.loadAddresses(this.state.currency, (err) => {
+        this.unwait();
+        // Catch an error if there is one
+        if (err) {
+          // If we catch an error, do a recursive call (preserving the callback)
+          return this.setError({ msg: err, cb: () => { this.fetchAddresses(cb) } });
+        } else if (cb) {
+          return cb(null);
+        }
+      });
+
+    })
   }
 
   refreshWallets() {

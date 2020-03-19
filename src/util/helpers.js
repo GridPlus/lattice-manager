@@ -147,6 +147,23 @@ exports.fetchStateData = function(currency, addresses, cb) {
 }
 //-------- END GET DATA
 
+function getBtcVersion(addr) {
+    switch (addr.slice(0, 1)) {
+        case '1':
+            return 'LEGACY';
+        case '3':
+            return 'SEGWIT';
+        case '2':
+            return 'TESTNET_SEGWIT';
+        case 'm':
+        case 'n':
+            return 'TESTNET';
+        default:
+            return null;
+    }
+}
+exports.getBtcVersion = getBtcVersion;
+
 exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs, feeRate=constants.BTC_DEFAULT_FEE_RATE) {
     if (!addrs || !changeAddrs || addrs.length < 1 || changeAddrs.length < 1) {
         return { error: 'No addresses (or change addresses). Please wait to sync.' };
@@ -157,24 +174,9 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     // Determine if these are testnet or mainnet addresses
     const network = addrs[0].slice(0, 1) === '1' || addrs[0].slice(0, 1) === '3' ? 'MAINNET' : 'TESTNET';
     // Determine the change version
-    let changeVersion;
-    switch (changeAddrs[0].slice(0, 1)) {
-        case '1':
-            changeVersion = 'LEGACY';
-            break;
-        case '3':
-            changeVersion = 'SEGWIT';
-            break;
-        case '2':
-            changeVersion = 'TESTNET_SEGWIT';
-            break;
-        case 'm':
-        case 'n':
-            changeVersion = 'TESTNET';
-            break;
-        default:
-            return { error: 'Unrecognized change address.' };
-    }
+    const changeVersion = getBtcVersion(changeAddrs);
+    if (changeVersion === null)
+        return { error: 'Unrecognized change address.' };
 
     // Sort utxos by value
     const sortedUtxos = utxos.sort((a, b) => { return a.value-b.value });
