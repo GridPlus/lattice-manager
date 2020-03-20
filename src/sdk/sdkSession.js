@@ -458,13 +458,16 @@ class SDKSession {
   }
 
   refreshWallets(cb) {
-    if (this.client)
-      this.client.refreshWallets((err) => {
+    if (this.client) {
+      this.client.connect(this.deviceID, (err) => {
         // Update storage. This will remap to a new localStorage key if the wallet UID
         // changed. If we didn't get an active wallet, it will just clear out the addresses
         this.getStorage();
         cb(err);
       })
+    } else {
+      return cb('Lost connection to Lattice. Please refresh.');
+    }
   }
 
   pair(secret, cb) {
@@ -513,8 +516,6 @@ class SDKSession {
     // setTimeout(() => { // TESTING ONLY
     //   return cb(null, "5ac9027e255c42c6dd9c013b2aef9ee3c2d68161c92bef705e9a59063cbff090")
     // }, 1000);
-
-
     })
   }
 

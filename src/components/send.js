@@ -454,7 +454,7 @@ class Send extends React.Component {
             </Col>
           </Row>
           <Row style={{margin: "20px 0 0 0"}}>
-            <Col span={20} offset={1}>
+            <Col span={18} offset={2}>
               {this.renderExtra()}
             </Col>
           </Row>
@@ -482,7 +482,7 @@ class Send extends React.Component {
     )
     return this.props.isMobile() ? content : (
       <Row justify={'center'}>
-        <Col span={14} offset={5}>
+        <Col span={12} offset={6}>
           {content}
         </Col>
       </Row>

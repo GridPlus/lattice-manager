@@ -44,22 +44,27 @@ class Connect extends React.Component {
   }
 
   renderMsg() {
-    if (this.state.errMsg !== null) {
-      return (<Alert message={this.state.errMsg} type={"error"} closable />)
-    } else {
-      return;
-    }
+    let err;
+    if (this.state.errMsg)
+      err = this.state.errMsg;
+    else if (this.props.errMsg)
+      err = this.props.errMsg;
+
+    if (err)
+      return (<Alert  message={<p><b>Error:</b><br/>{err}</p>} 
+                      type={"error"} 
+                      style={{margin: "20px 0 0 0"}}
+                      closable />);
+    return;
   }
 
   render() {
-    console.log('this.props.isMobile', this.props.isMobile())
     const spanWidth = this.props.isMobile() ? 24 : 10;
     const spanOffset = this.props.isMobile() ? 0 : 7;
     return (
       <Row>
         <Col span={spanWidth} offset={spanOffset}>
           <center>
-            {this.renderMsg()}
             <Card bordered={true} style={{"backgroundColor": "#001529"}}>
               <h1 style={{"fontSize": "36px", "color": "#ffffff", margin:"20px 0 0 0"}}>GridPlus Web Wallet</h1>
             </Card>
@@ -80,7 +85,8 @@ class Connect extends React.Component {
                 <br/><br/>Please ensure your Lattice1 is <b>online</b> before trying to connect.
               </p>
             </Card>
-            <Card bordered={true} style={{margin: "20px 0 0 0"}}>
+            {this.renderMsg()}
+            <Card bordered={true}>
               {this.renderForm()}
             </Card>
           </center>
