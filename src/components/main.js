@@ -79,7 +79,7 @@ class Main extends React.Component {
   }
 
   isMobile() {
-    return this.state.windowWidth < 800;
+    return this.state.windowWidth < 500;
   }
 
   connect(deviceID, password, cb) {
@@ -195,9 +195,11 @@ class Main extends React.Component {
       return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
     }
     this.connect(deviceID, password, () => {
+      console.log('connecting')
       // Create a new session with the deviceID and password provided.
       this.wait("Trying to contact your Lattice");
       this.state.session.connect(deviceID, password, (err, isPaired) => {
+        console.log('connected?', err)
         this.unwait();
         if (err) {
           // If we failed to connect, clear out the SDK session. This component will
@@ -327,26 +329,45 @@ class Main extends React.Component {
   // RENDERERS
   //------------------------------------------
 
+  renderMenu() {
+    return this.isMobile() ? (
+      <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="horizontal" onSelect={this.handleMenuChange}>
+        <Menu.Item key="menu-wallet">
+          <Icon type="wallet" />
+          <span>Wallet</span>
+        </Menu.Item>
+        <Menu.Item key="menu-send">
+          <Icon type="arrow-up" />
+          <span>Send</span>
+        </Menu.Item>
+        <Menu.Item key="menu-receive">
+          <Icon type="arrow-down" />
+          <span>Receive</span>
+        </Menu.Item>
+      </Menu>
+    ) : (
+      <Sider collapsed={this.isMobile()}>
+        <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
+          <Menu.Item key="menu-wallet">
+            <Icon type="wallet" />
+            <span>Wallet</span>
+          </Menu.Item>
+          <Menu.Item key="menu-send">
+            <Icon type="arrow-up" />
+            <span>Send</span>
+          </Menu.Item>
+          <Menu.Item key="menu-receive">
+            <Icon type="arrow-down" />
+            <span>Receive</span>
+          </Menu.Item>
+        </Menu>
+      </Sider>
+    )
+  }
+
   renderSidebar() {
     if (this.isConnected()) {
-      return (
-        <Sider collapsed={this.isMobile()}>
-          <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
-            <Menu.Item key="menu-wallet">
-              <Icon type="wallet" />
-              <span>Wallet</span>
-            </Menu.Item>
-            <Menu.Item key="menu-send">
-              <Icon type="arrow-up" />
-              <span>Send</span>
-            </Menu.Item>
-            <Menu.Item key="menu-receive">
-              <Icon type="arrow-down" />
-              <span>Receive</span>
-            </Menu.Item>
-          </Menu>
-        </Sider>
-      )
+      return this.renderMenu();
     } else {
       return;
     }
@@ -425,6 +446,7 @@ class Main extends React.Component {
       case 'menu-wallet':
         return (
           <Wallet currency={this.state.currency} 
+                  isMobile={() => this.isMobile()}
                   session={this.state.session}
                   msgHandler={this.setAlertMessage}
                   refreshData={this.fetchData}
@@ -438,6 +460,7 @@ class Main extends React.Component {
           <Receive currency={this.state.currency}
                    session={this.state.session}
                    tick={this.state.tick}
+                   isMobile={() => this.isMobile()}
           />
         );
       case 'menu-send':
@@ -445,6 +468,7 @@ class Main extends React.Component {
           <Send currency={this.state.currency}
                 session={this.state.session}
                 tick={this.state.tick}
+                isMobile={() => this.isMobile()}
           />
         )
       default:
@@ -457,12 +481,14 @@ class Main extends React.Component {
     const hasActiveWallet = this.state.session ? this.state.session.getActiveWallet() !== null : false;
     if (this.state.waiting) {
       return (
-        <Loading msg={this.state.pendingMsg} /> 
+        <Loading  isMobile={() => this.isMobile()} 
+                  msg={this.state.pendingMsg} /> 
       );
     } else if (!this.isConnected()) {
       // Connect to the Lattice via the SDK
       return (
-        <Connect submitCb={this.connectSession}/>
+        <Connect  submitCb={this.connectSession} 
+                  isMobile={() => this.isMobile()}/>
       );
     } else if (hasError) {
       return (

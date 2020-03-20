@@ -340,14 +340,18 @@ class Send extends React.Component {
         />
       )
     } else if (this.state.txHash) {
+      const desc = this.props.isMobile() ? (
+        <p>Transaction signed and broadcast successfully.&nbsp;
+        <a target={"_blank"} href={this.getUrl()}>View</a></p>
+      ) : (
+        <p>Your transaction was signed and broadcast successfully. 
+        Your hash is: <a target={"_blank"} href={this.getUrl()}>{this.state.txHash}</a></p>
+      )
       return (
         <Alert
           type="success"
           message="Success"
-          description={(
-            <p>Your transaction was signed and broadcast successfully. 
-            Your hash is: <a target={"_blank"} href={this.getUrl()}>{this.state.txHash}</a></p>
-          )}
+          description={desc}
         />
       )
     } else {
@@ -358,8 +362,12 @@ class Send extends React.Component {
   renderExtra() {
     if (this.props.currency === 'ETH') {
       return (
-        <Collapse accordion className="site-collapse-custom-collapse">
-          <Collapse.Panel header="Advanced" key="advanceData" className="site-collapse-custom-panel">
+        <Collapse accordion 
+                  bordered={false}  
+                  className="site-collapse-custom-collapse">
+          <Collapse.Panel header="Advanced" 
+                          key="advanceData" 
+                          className="site-collapse-custom-panel">
             <Row>
               <p style={{textAlign: 'left'}}><b>Gas Price (GWei)</b></p>
               <Input type="text" 
@@ -446,7 +454,7 @@ class Send extends React.Component {
             </Col>
           </Row>
           <Row style={{margin: "20px 0 0 0"}}>
-            <Col span={18} offset={2}>
+            <Col span={20} offset={1}>
               {this.renderExtra()}
             </Col>
           </Row>
@@ -464,15 +472,18 @@ class Send extends React.Component {
   }
 
   render() {
-    return (
-      <Row justify={'center'} type={'flex'}>
-        <Col style={{width: '600px'}}>
-          <center>
-            {this.renderBanner()}
-            <Card title="Send" bordered={true}>
-              {this.renderCard()}
-            </Card>
-          </center>
+    const content = (
+      <center>
+        {this.renderBanner()}
+        <Card title="Send" bordered={true}>
+          {this.renderCard()}
+        </Card>
+      </center>      
+    )
+    return this.props.isMobile() ? content : (
+      <Row justify={'center'}>
+        <Col span={14} offset={5}>
+          {content}
         </Col>
       </Row>
     )

@@ -52,14 +52,16 @@ class Connect extends React.Component {
   }
 
   render() {
+    console.log('this.props.isMobile', this.props.isMobile())
+    const spanWidth = this.props.isMobile() ? 24 : 10;
+    const spanOffset = this.props.isMobile() ? 0 : 7;
     return (
       <Row>
-        <Col span={10} offset={7}>
+        <Col span={spanWidth} offset={spanOffset}>
           <center>
             {this.renderMsg()}
             <Card bordered={true} style={{"backgroundColor": "#001529"}}>
-              <img alt="landing-logo" src="/logo.png"/>
-              <h1 style={{"fontSize": "48px", "color": "#8c8c8c", margin:"20px 0 0 0"}}>Web Wallet</h1>
+              <h1 style={{"fontSize": "36px", "color": "#ffffff", margin:"20px 0 0 0"}}>GridPlus Web Wallet</h1>
             </Card>
             <Card bordered={true}>
               <p>

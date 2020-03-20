@@ -4,9 +4,11 @@ import { Card, Col, Row, Spin } from 'antd'
 
 class Loading extends React.Component {
   render() {
+    const spanLength = this.props.isMobile() ? 18 : 10;
+    const spanOffset = this.props.isMobile() ? 3 : 7; 
     return (
       <Row>
-        <Col span={10} offset={7}>
+        <Col span={spanLength} offset={spanOffset}>
           <center>
             <Card title="Loading" bordered={true}>
               <Spin/>

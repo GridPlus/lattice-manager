@@ -44,11 +44,12 @@ class Receive extends React.Component {
 
   renderCard() {
     if (this.state.address) {
+      const w = 0.8 * document.getElementById("receive-card").offsetWidth;
       return (
         <div>
           <p>Your {this.props.currency} receiving address:</p>
           <QRCode value={this.state.address} 
-                  size={0.8 * this.getCardWidth()}
+                  size={w}
                   style={{margin: "30px 0 0 0"}}
           />
           <Search type="text" 
@@ -81,12 +82,25 @@ class Receive extends React.Component {
   }
 
   render() {
-    return (
-      <center>
-        <Card title="Receive" bordered={true} style={{width: this.getCardWidth()}}>
+    return this.props.isMobile() ? (
+      <Card title="Receive" bordered={true} id="receive-card">
+        <center>
           {this.renderCard()}
-        </Card>
-      </center>
+        </center>
+      </Card>
+    ) : (
+      <Row justify={'center'} type={'flex'}>
+        <Col>
+          <center>
+            <Card title="Receive" 
+                  bordered={true} 
+                  id="receive-card"
+                  style={{width: this.getCardWidth()}}>
+              {this.renderCard()}
+            </Card>
+          </center>
+        </Col>
+      </Row>
     )
   }
 }

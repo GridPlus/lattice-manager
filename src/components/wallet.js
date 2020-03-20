@@ -16,10 +16,7 @@ class Wallet extends React.Component {
       txs: [],
       lastUpdated: null,
       tick: 0,
-      windowWidth: document.getElementById('main-content-inner').offsetWidth,
     }
-
-    this.updateWidth = this.updateWidth.bind(this);
   }
 
   componentDidMount() {
@@ -51,14 +48,14 @@ class Wallet extends React.Component {
     window.removeEventListener('resize', this.updateWidth);
   }
 
-  updateWidth() {
-    this.setState({ windowWidth:  document.getElementById('main-content-inner').offsetWidth });
+  getInnerWidth() {
+    return document.getElementById('main-content-inner').offsetWidth;
   }
 
   // Make sure text doesn't overflow on smaller screens. We need to trim larger strings
   ensureTrimmedText(text) {
-    if (this.state.windowWidth > 500) return text;
-    const maxChars = this.state.windowWidth / 30;
+    if (!this.props.isMobile()) return text;
+    const maxChars = this.getInnerWidth() / 22;
     if (text.length > maxChars) return `${text.slice(0, maxChars)}...`
     return text;
   }
@@ -88,7 +85,7 @@ class Wallet extends React.Component {
     const title = `${item.value.toFixed(8)} ${item.asset}`;
     const subtitle = item.incoming ? `From: ${this.ensureTrimmedText(item.from)}` : `To: ${this.ensureTrimmedText(item.to)}`;
     const label = (
-      <div align="right">
+      <div align={this.props.isMobile() ? "left" : "right"}>
         {!isPending ? (
           <p>
             {item.incoming ? 'Received ' : 'Sent '}
@@ -104,18 +101,30 @@ class Wallet extends React.Component {
         <Button size="small" href={item.link} target="_blank">View</Button>
       </div>
     );
-    return (
-      <List.Item key={item.hash}>
-        <List.Item.Meta
-          avatar={
-            <Avatar src={`/${item.asset}.png`} />
-          }
-          title={!isPending ? (<p>{`${title}`}</p>) : (<p><i>{`${title}`}</i></p>)}
-          description={!isPending ? (<p>{`${subtitle}`}</p>) : (<p><i>{`${subtitle}`}</i></p>)}
-        />
-        {label}
-      </List.Item>
+    const itemMeta = (
+      <List.Item.Meta
+        avatar={
+          <Avatar src={`/${item.asset}.png`} />
+        }
+        title={!isPending ? (<p>{`${title}`}</p>) : (<p><i>{`${title}`}</i></p>)}
+        description={!isPending ? (<p>{`${subtitle}`}</p>) : (<p><i>{`${subtitle}`}</i></p>)}
+      />
     )
+    if (this.props.isMobile()) {
+      return (
+        <List.Item key={item.hash}>
+          <Row>{itemMeta}</Row>
+          <Row>{label}</Row>
+        </List.Item>
+      )    
+    } else {
+      return(
+        <List.Item key={item.hash}>
+          {itemMeta}
+          {label}
+        </List.Item>
+      )
+    }
   }
 
   renderLastUpdatedTag() {
@@ -186,16 +195,16 @@ class Wallet extends React.Component {
   }
 
   renderHeader() {
-    if (this.state.windowWidth > 500) {
+    if (this.props.isMobile()) {
       return (
-        <Row style={{margin: "20px 0 0 0"}}>
-          <Col span={12}>
-            <Statistic title="Balance" value={`${this.state.balance} ${this.props.currency}`} />
-          </Col>
-          <Col span={12}>
+        <div>
+          <Row style={{margin: "20px 0 0 0"}}>
+              <Statistic title="Balance" value={`${this.state.balance.toFixed(10)} ${this.props.currency}`} />
+          </Row>
+          <Row>
             <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
-          </Col>
-        </Row>
+          </Row>
+        </div>
       )
     } else {
       return (
@@ -213,7 +222,7 @@ class Wallet extends React.Component {
 
   render() {
     return (
-      <div style={{width: this.state.windowWidth - 10}}>
+      <div style={{width: this.getInnerWidth() - 10}}>
         <Row gutter={16}>
           <Card title={`${this.props.currency} Wallet`} bordered={true}>
             <Row>
