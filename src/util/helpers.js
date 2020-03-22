@@ -93,7 +93,7 @@ exports.fetchStateData = function(currency, addresses, cb) {
 
     // Exit if we don't have addresses to use in the request
     if (!reqAddresses || reqAddresses.length === 0) 
-        return cb(null);
+        return cb(null, null);
 
     // Slice out the 'change' portion of the currency name for the request itself
     let searchCurrency = currency;

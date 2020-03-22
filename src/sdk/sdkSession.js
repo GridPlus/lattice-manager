@@ -237,7 +237,6 @@ class SDKSession {
     this.usdValues[currency] = balance.dollarAmount || 0;
     this.txs[currency] = transactions || [];
     this.utxos[currency] = utxos || [];
-
     // Tell the main component if we are done syncing. Note that this also captures the case
     // where we are switching to syncing change addresses/data
     const stillSyncingIndicator = stillSyncingAddresses === true || switchToChange === true;
@@ -250,7 +249,6 @@ class SDKSession {
       useChange = true;
       requestCurrency = changeCurrency;
     }
-
     // Continue syncing data and/or fetching addresses
     if (stillSyncingAddresses) {
       // If we are still syncing, get the new addresses we need
@@ -270,10 +268,12 @@ class SDKSession {
     }
   }
 
-  fetchData(currency, cb=null, switchToChange=false) {
+  fetchData(currency, cb=()=>{}, switchToChange=false) {
     fetchStateData(currency, this.addresses, (err, data) => {
-      if (err) return cb(err);
-      this.fetchDataHandler(data, switchToChange);
+      if (err) 
+        return cb(err);
+      if (data)
+        this.fetchDataHandler(data, switchToChange);
       if (cb) return cb(null);
     })
   }
@@ -345,9 +345,12 @@ class SDKSession {
       ETH: this.addresses.ETH || [],
     };
     const hasBTCAddrs = this.addresses.BTC && this.addresses.BTC.length > 0;
+    const hasBTCChangeAddrs = this.addresses.BTC_CHANGE && this.addresses.BTC_CHANGE.length > 0;
     if (this.btcAddrType !== null && hasBTCAddrs) {
       driedAddrs.BTC = {};
       driedAddrs.BTC[this.btcAddrType] = this.addresses.BTC || [];
+    }
+    if (this.btcAddrType !== null && hasBTCChangeAddrs) {
       driedAddrs.BTC_CHANGE = {};
       driedAddrs.BTC_CHANGE[this.btcAddrType] = this.addresses.BTC_CHANGE || [];
     }
@@ -355,13 +358,15 @@ class SDKSession {
   }
 
   // Pull addresses out of cached localStorage data
-  rehydrateAddresses(allAddrs) {
+  rehydrateAddresses(allAddrs={}) {
     const rehydratedAddrs = {
       ETH: allAddrs.ETH || [],
     };
-    if (this.btcAddrType !== null) {
-      rehydratedAddrs.BTC = allAddrs.BTC[this.btcAddrType] || [];
-      rehydratedAddrs.BTC_CHANGE = allAddrs.BTC_CHANGE[this.btcAddrType] || [];
+    if (this.btcAddrType !== null && allAddrs.BTC) {
+      rehydratedAddrs.BTC = allAddrs.BTC[this.btcAddrType];
+    }
+    if (this.btcAddrType !== null && allAddrs.BTC_CHANGE) {
+      rehydratedAddrs.BTC_CHANGE = allAddrs.BTC_CHANGE[this.btcAddrType];
     }
     this.addresses = rehydratedAddrs;
   }
@@ -458,13 +463,16 @@ class SDKSession {
   }
 
   refreshWallets(cb) {
-    if (this.client)
-      this.client.refreshWallets((err) => {
+    if (this.client) {
+      this.client.connect(this.deviceID, (err) => {
         // Update storage. This will remap to a new localStorage key if the wallet UID
         // changed. If we didn't get an active wallet, it will just clear out the addresses
         this.getStorage();
         cb(err);
       })
+    } else {
+      return cb('Lost connection to Lattice. Please refresh.');
+    }
   }
 
   pair(secret, cb) {
@@ -513,8 +521,6 @@ class SDKSession {
     // setTimeout(() => { // TESTING ONLY
     //   return cb(null, "5ac9027e255c42c6dd9c013b2aef9ee3c2d68161c92bef705e9a59063cbff090")
     // }, 1000);
-
-
     })
   }
 

@@ -195,11 +195,9 @@ class Main extends React.Component {
       return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
     }
     this.connect(deviceID, password, () => {
-      console.log('connecting')
       // Create a new session with the deviceID and password provided.
       this.wait("Trying to contact your Lattice");
       this.state.session.connect(deviceID, password, (err, isPaired) => {
-        console.log('connected?', err)
         this.unwait();
         if (err) {
           // If we failed to connect, clear out the SDK session. This component will
@@ -488,7 +486,8 @@ class Main extends React.Component {
       // Connect to the Lattice via the SDK
       return (
         <Connect  submitCb={this.connectSession} 
-                  isMobile={() => this.isMobile()}/>
+                  isMobile={() => this.isMobile()}
+                  errMsg={this.state.error.msg}/>
       );
     } else if (hasError) {
       return (
