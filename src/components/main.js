@@ -491,7 +491,8 @@ class Main extends React.Component {
     } else if (!this.state.session.isPaired()) {
       // Automatically try to pair if we have a session but no pairing  
       return (
-        <Pair submit={this.handlePair}/>
+        <Pair submit={this.handlePair}
+              isMobile={() => this.isMobile()}/>
       );
     } else if (!hasActiveWallet) {
       const retry = this.state.session ? this.refreshWallets : null;
