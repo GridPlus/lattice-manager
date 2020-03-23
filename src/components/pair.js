@@ -4,14 +4,6 @@ import 'antd/dist/antd.css'
 const { Search } = Input;
 
 class Pair extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.timeout = setTimeout(() => {
-      return this.props.submit(null, true);
-    }, 60000)
-  }
-
   render() {
     return (
      <Row>
