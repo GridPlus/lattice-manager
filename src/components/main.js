@@ -295,23 +295,15 @@ class Main extends React.Component {
   // 1. Wrong secret: draw a new screen (try again) automatically
   // 2. Timed out: display error screen and wait for user to try again
   // 3. Success: load addresses
-  handlePair(data, timedOut=false) {
-    this.setState({ pairingTimedOut: timedOut });
-    if (timedOut) {
-      // There is a timer in the Pair component that will throw
-      // a timeout after 60 seconds. This will move the user
-      // to the <Error> screen
-      // Tick just in case
-      this.setError({ msg: 'Pairing timed out. Please try again.', cb: this.connectSession });
-      return;
-    }
+  handlePair(data) {
     // If we didn't timeout, submit the secret and hope for success!
     this.wait("Establishing connection with your Lattice");
     this.state.session.pair(data, (err) => {
       this.unwait();
       if (err) {
         // If there was an error here, the user probably entered the wrong secret
-        this.setError({ msg: 'Secret was incorrect. Please try again.', cb: this.connectSession });
+        // this.setError({ msg: 'Secret was incorrect. Please try again.', cb: this.connectSession });
+        this.setError({ msg: err, cb: this.connectSession });
       } else {
         // Success! Load our addresses from this wallet.
         this.fetchAddresses(this.fetchData);
@@ -499,7 +491,8 @@ class Main extends React.Component {
     } else if (!this.state.session.isPaired()) {
       // Automatically try to pair if we have a session but no pairing  
       return (
-        <Pair submit={this.handlePair}/>
+        <Pair submit={this.handlePair}
+              isMobile={() => this.isMobile()}/>
       );
     } else if (!hasActiveWallet) {
       const retry = this.state.session ? this.refreshWallets : null;

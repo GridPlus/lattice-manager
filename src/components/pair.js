@@ -4,18 +4,13 @@ import 'antd/dist/antd.css'
 const { Search } = Input;
 
 class Pair extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.timeout = setTimeout(() => {
-      return this.props.submit(null, true);
-    }, 60000)
-  }
-
   render() {
+    const spanWidth = this.props.isMobile() ? 24 : 10;
+    const spanOffset = this.props.isMobile() ? 0 : 7;
+    const searchWidth = this.props.isMobile() ? "100%" : "80%";
     return (
      <Row>
-        <Col span={10} offset={7}>
+        <Col span={spanWidth} offset={spanOffset}>
           <center>
             <Card title="Enter Secret" bordered={true}>
               <p></p>
@@ -25,7 +20,7 @@ class Pair extends React.Component {
                 size="large" 
                 id="secret" 
                 onSearch={value => this.props.submit(value)}
-                style={{width: "50%", margin: '20px 0 0 0'}}
+                style={{width: searchWidth, margin: '20px 0 0 0'}}
               />
             </Card>
           </center>
