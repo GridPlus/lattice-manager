@@ -132,6 +132,7 @@ class Main extends React.Component {
     } else {
       this.setState({ error: { msg: null, cb: null }});
     }
+    this.unwait();
   }
 
   //------------------------------------------
@@ -378,7 +379,7 @@ class Main extends React.Component {
         walletTag = (
           <Button type="primary" ghost onClick={this.refreshWallets} size={size}>Using SafeCard</Button>
         )
-      } else if (activeWallet.internal === true) {
+      } else {
         walletTag = (
           <Button type="primary" ghost onClick={this.refreshWallets} size={size}>Using Lattice1</Button>
         )

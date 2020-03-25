@@ -359,9 +359,9 @@ class SDKSession {
 
   // Pull addresses out of cached localStorage data
   rehydrateAddresses(allAddrs={}) {
-    const rehydratedAddrs = {
-      ETH: allAddrs.ETH || [],
-    };
+    const rehydratedAddrs = {};
+    if (allAddrs.ETH)
+      rehydratedAddrs.ETH = allAddrs.ETH;
     if (this.btcAddrType !== null && allAddrs.BTC) {
       rehydratedAddrs.BTC = allAddrs.BTC[this.btcAddrType];
     }
