@@ -224,7 +224,7 @@ class Main extends React.Component {
             this.fetchAddresses(this.fetchData);
           }
         }
-      }, constants.SHORT_TIMEOUT); // Use the short timeout since connecting should just be an http message
+      });
     })
   }
 

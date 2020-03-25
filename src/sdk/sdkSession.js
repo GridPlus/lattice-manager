@@ -439,7 +439,7 @@ class SDKSession {
     })
   }
 
-  connect(deviceID, pw, cb, initialTimeout=constants.ASYNC_SDK_TIMEOUT) {
+  connect(deviceID, pw, cb, tmpTimeout=constants.SHORT_TIMEOUT) {
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
@@ -453,7 +453,7 @@ class SDKSession {
       crypto: this.crypto,
       privKey: key,
       baseUrl: 'https://signing.staging-gridpl.us',
-      timeout: initialTimeout, // Artificially short timeout for simply locating the Lattice
+      timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
     })
     client.connect(deviceID, (err) => {
       if (err) return cb(err);
@@ -473,9 +473,7 @@ class SDKSession {
   refreshWallets(cb) {
     if (this.client) {
       const prevWallet = JSON.stringify(this.client.getActiveWallet());
-      console.log('refreshing wallets', prevWallet)
       this.client.connect(this.deviceID, (err) => {
-        console.log('connected?', err)
         if (err)
           return cb(err);
         // If we pulled a new active wallet, reset balances + transactions
