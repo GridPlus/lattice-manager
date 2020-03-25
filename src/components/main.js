@@ -160,6 +160,7 @@ class Main extends React.Component {
   }
 
   handleLogout() {
+    this.unwait();
     this.state.session.disconnect();
     this.setState({ session: null, currency: 'ETH' });
     window.localStorage.removeItem('gridplus_web_wallet_id');
@@ -270,7 +271,6 @@ class Main extends React.Component {
           return cb(null);
         }
       });
-
     })
   }
 
@@ -278,9 +278,9 @@ class Main extends React.Component {
     this.wait("Refreshing wallets")
     this.state.session.refreshWallets((err) => {
       this.unwait();
-      if (err) {
-        this.setError({ msg: err, cb: this.refreshWallets })
-      }
+      if (err)
+        return this.setError({ msg: err, cb: this.refreshWallets })
+      this.fetchAddresses(this.fetchData);
     })
   }
 

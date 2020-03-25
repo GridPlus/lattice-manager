@@ -63,6 +63,14 @@ class SDKSession {
     return this.client.isPaired || false;
   }
 
+  resetStateData() {
+    this.balances = {};
+    this.usdValues = {};
+    this.txs = {};
+    this.utxos = {};
+    this.firstUnusedAddresses = {};
+  }
+
   getBalance(currency, erc20Token=null) {
     if (currency === 'ETH' && erc20Token !== null)
       return this.balances[erc20Token] || 0;
@@ -464,11 +472,21 @@ class SDKSession {
 
   refreshWallets(cb) {
     if (this.client) {
+      const prevWallet = JSON.stringify(this.client.getActiveWallet());
+      console.log('refreshing wallets', prevWallet)
       this.client.connect(this.deviceID, (err) => {
+        console.log('connected?', err)
+        if (err)
+          return cb(err);
+        // If we pulled a new active wallet, reset balances + transactions
+        // so we can reload a new set.
+        const newWallet = JSON.stringify(this.client.getActiveWallet());
+        if (newWallet !== prevWallet)
+          this.resetStateData();
         // Update storage. This will remap to a new localStorage key if the wallet UID
         // changed. If we didn't get an active wallet, it will just clear out the addresses
         this.getStorage();
-        cb(err);
+        return cb(null);
       })
     } else {
       return cb('Lost connection to Lattice. Please refresh.');
