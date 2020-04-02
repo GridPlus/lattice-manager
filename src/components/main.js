@@ -3,7 +3,6 @@ import 'antd/dist/antd.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
-import { constants } from '../util/helpers'
 
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -377,11 +376,11 @@ class Main extends React.Component {
         )
       } else if (activeWallet.external === true) {
         walletTag = (
-          <Button type="primary" ghost onClick={this.refreshWallets} size={size}>Using SafeCard</Button>
+          <Button type="primary" ghost onClick={this.refreshWallets} size={size}><Icon type="credit-card"/> Using SafeCard</Button>
         )
       } else {
         walletTag = (
-          <Button type="primary" ghost onClick={this.refreshWallets} size={size}>Using Lattice1</Button>
+          <Button type="default" ghost onClick={this.refreshWallets} size={size}>Lattice1 Wallet</Button>
         )
       }
       if (walletTag) extra.push((
