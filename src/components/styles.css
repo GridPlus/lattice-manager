@@ -10,5 +10,25 @@
 }
 
 .ant-page-header-heading-title {
-  color: rgba(255, 255, 255, 0.65);
+  /* color: rgba(255, 255, 255, 0.65); */
+  color: #fff;
+}
+
+.ant-page-header {
+  /* background: #001529; */
+  background: #000;
+}
+
+.ant-layout-sider {
+  /* background: #001529; */
+  background: #000;
+}
+.ant-menu-dark, .ant-menu-dark .ant-menu-sub {
+  background: #000;
+}
+.ant-menu .ant-menu-dark .ant-menu-root .ant-menu-inline {
+  background: #000;
+}
+.ant-menu-item {
+  background: #000;
 }

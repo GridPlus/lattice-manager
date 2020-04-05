@@ -195,6 +195,8 @@ class Main extends React.Component {
       // Sanity check -- this should never get hit
     if (!deviceID || !password) {
       return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
+    } else {
+      this.setError(null);
     }
     this.connect(deviceID, password, () => {
       // Create a new session with the deviceID and password provided.
@@ -365,6 +367,16 @@ class Main extends React.Component {
     }
   }
 
+  renderHeaderText() {
+    return (
+      <a href="https://gridplus.io" target={"_blank"}>
+        <img  alt="GridPlus" 
+              src={'/logo-on-black.png'}
+              style={{height: '1em'}}/> 
+      </a>
+    )
+  }
+
   renderHeader() {
     let extra = [];
     if (!this.isConnected())
@@ -403,8 +415,7 @@ class Main extends React.Component {
     );
     return (
       <PageHeader
-        title={"GridPlus Wallet"}
-        style={{background: "#001529"}}
+        title={this.renderHeaderText()}
         ghost={true}
         extra={extra}
       />
