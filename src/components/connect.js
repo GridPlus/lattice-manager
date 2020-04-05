@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Popover } from 'antd'
+import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Popover, Modal } from 'antd'
 const { Panel } = Collapse;
 
 class Connect extends React.Component {
@@ -9,6 +9,7 @@ class Connect extends React.Component {
     this.state = {
       errMsg: null,
       isLoading: false,
+      modal: false,
     }
     this.handleSubmit = this.handleSubmit.bind(this);
     this.renderMsg = this.renderMsg.bind(this);
@@ -59,16 +60,71 @@ class Connect extends React.Component {
     return (
       <div>
         <Row>
-          <Input placeholder="DeviceID" id="deviceIdInput" style={{ margin: '10px 0 0 0', width: "50%"}} />
+          <Input  placeholder="DeviceID" 
+                  id="deviceIdInput" 
+                  style={{ margin: '10px 0 0 0', width: "70%"}} />
         </Row>
         <Row>
-          <Input.Password placeholder="Password" id="passwordInput" onPressEnter={this.handleSubmit} style={{ margin: '20px 0 0 0', width: "50%"}} />
+          <Input.Password placeholder="Password" 
+                          id="passwordInput" 
+                          onPressEnter={this.handleSubmit} 
+                          style={{ margin: '20px 0 0 0', width: "70%"}} />
         </Row>
         <Row>
           {this.renderConnectButton()}
         </Row>
       </div>
     )
+  }
+
+  showModal() {
+    this.setState({ modal: true });
+  }
+
+  hideModal() {
+    this.setState({ modal: false });
+  }
+
+  renderModal() {
+     return (
+      <div>
+        <Modal
+          title="GridPlus Web Wallet"
+          visible={this.state.modal}
+          onOk={this.hideModal.bind(this)}
+          onCancel={this.hideModal.bind(this)}
+        >
+          <center>
+            <h3><b>New User Setup</b></h3>
+          </center>
+          <p>
+            With the GridPlus Web Wallet you can monitor balances and transactions for your Lattice1 device.
+          </p>
+          <h3><b>Step 1:</b></h3>
+          <p>
+            In order to connect to your device, find its <b>Device ID</b>:
+          </p>
+          <p>
+            {deviceIdContent}
+          </p>
+          <h3><b>Step 2:</b></h3>
+          <p>
+            Once you have your Device ID, specify a <b>password</b>:
+          </p>
+          <p>
+            {pwContent}
+          </p>
+          <p><i>
+            This password is not stored on any server or locally so there is no way to reset it.
+            However, if you forget your password, you can always create a new one and reconnect to your Lattice1.
+          </i></p>
+          <h3><b>Step 3:</b></h3>
+          <p>
+            <br/><br/>Please ensure your Lattice1 is <b>online</b> and click "Connect".
+          </p>
+        </Modal>
+      </div>
+    );
   }
 
   renderMsg() {
@@ -91,32 +147,18 @@ class Connect extends React.Component {
     const spanOffset = this.props.isMobile() ? 0 : 7;
     return (
       <Row>
+        {this.renderModal()}
         <Col span={spanWidth} offset={spanOffset}>
           <center>
-            <Card bordered={true} style={{"backgroundColor": "#001529"}}>
-              <h1 style={{"fontSize": "36px", "color": "#ffffff", margin:"20px 0 0 0"}}>GridPlus Web Wallet</h1>
-            </Card>
-            <Card bordered={true}>
-              <p>
-                With the GridPlus Web Wallet you can monitor balances and transactions for your Lattice1 device.
-                In order to connect to your device, find its <b>Device ID</b>&nbsp;
-                <Popover title={"Enter your DeviceID"} content={deviceIdContent}>
-                  <Icon type="question-circle" />
-                </Popover>
-                &nbsp;by navigating to the Device Info screen on your Lattice1 device.
-                Once you have the Device ID, specify a <b>password</b>&nbsp;
-                <Popover title={"Enter a Password"} content={pwContent}>
-                  <Icon type="question-circle" />
-                </Popover>.
-                This password is not stored on any server or locally so there is no way to reset it.
-                However, if you forget your password, you can always create a new one and reconnect to your Lattice1.
-                <br/><br/>Please ensure your Lattice1 is <b>online</b> before trying to connect.
-              </p>
-            </Card>
             {this.renderMsg()}
             <Card bordered={true}>
+              <img alt="GridPlus" src={'/gridplus-logo-black.png'}/>
+              <h2 style={{margin: "10px 0 0 0"}}>Wallet <Icon type="wallet"/> </h2>
               {this.renderForm()}
             </Card>
+            <Button type="link" onClick={this.showModal.bind(this)} style={{margin: "20px 0 0 0"}}>
+              New User?
+            </Button>
           </center>
         </Col>
       </Row>
@@ -135,12 +177,12 @@ const deviceIdContent = (
       <p>The DeviceID is a unique fingerprint of your Lattice1 device. It is used to find your Lattice over the internet.</p>
     </Panel>
     <Panel header="How do I find my DeviceID?" key="2">
-      <p>Go to your Lattice1 and navigate to the "Settings" screen and then to the "Device Info" screen.</p> 
+      <p>On your Lattice1's home screen, you should see an item titled "Device ID". Click this to find the ID.</p> 
       <p>The DeviceID should be made of 8 random numbers and letters.</p>
     </Panel>
     <Panel header="Why do I need to enter this?" key="3">
-      <p>This web wallet does not save any information about you or your device.<br/>
-      You will need to enter your DeviceID every time you open this wallet.</p>
+      <p>This web wallet does not save or send any information about you or your device.</p>
+      <p>After logging out, you must re-enter your device ID in order to find your device.</p>
     </Panel>
   </Collapse>
 );

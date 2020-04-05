@@ -1,5 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
+import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
@@ -194,6 +195,8 @@ class Main extends React.Component {
       // Sanity check -- this should never get hit
     if (!deviceID || !password) {
       return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
+    } else {
+      this.setError(null);
     }
     this.connect(deviceID, password, () => {
       // Create a new session with the deviceID and password provided.
@@ -364,48 +367,56 @@ class Main extends React.Component {
     }
   }
 
+  renderHeaderText() {
+    return (
+      <a href="https://gridplus.io" target={"_blank"}>
+        <img  alt="GridPlus" 
+              src={'/logo-on-black.png'}
+              style={{height: '1em'}}/> 
+      </a>
+    )
+  }
+
   renderHeader() {
     let extra = [];
-    if (this.isConnected()) {
-      // Display a tag if there is a SafeCard inserted
-      let walletTag = null;
-      const size = this.isMobile() ? 'small' : 'default';
-      const activeWallet = this.state.session.getActiveWallet()
-      if (activeWallet === null) {
-        walletTag = ( 
-          <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Active Wallet!</Button>
-        )
-      } else if (activeWallet.external === true) {
-        walletTag = (
-          <Button type="primary" ghost onClick={this.refreshWallets} size={size}><Icon type="credit-card"/> Using SafeCard</Button>
-        )
-      } else {
-        walletTag = (
-          <Button type="default" ghost onClick={this.refreshWallets} size={size}>Lattice1 Wallet</Button>
-        )
-      }
-      if (walletTag) extra.push((
-        <Tooltip title="Refresh" key="WalletTagTooltip">{walletTag}</Tooltip>));
-
-      // Add the currency switch
-      extra.push(
-        (<Select key="currency-select" defaultValue="ETH" onChange={this.handleCurrencyChange} size={size}>
-          <Option value="ETH">ETH</Option>
-          <Option value="BTC">BTC</Option>
-        </Select>)
-      );
-      extra.push(
-        ( <Button key="logout-button" type="primary" onClick={this.handleLogout} size={size}>
-          Logout
-        </Button>)
-      );
+    if (!this.isConnected())
+      return;
+    // Display a tag if there is a SafeCard inserted
+    let walletTag = null;
+    const size = this.isMobile() ? 'small' : 'default';
+    const activeWallet = this.state.session.getActiveWallet()
+    if (activeWallet === null) {
+      walletTag = ( 
+        <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Active Wallet!</Button>
+      )
+    } else if (activeWallet.external === true) {
+      walletTag = (
+        <Button type="primary" ghost onClick={this.refreshWallets} size={size}><Icon type="credit-card"/> SafeCard</Button>
+      )
+    } else {
+      walletTag = (
+        <Button type="default" ghost onClick={this.refreshWallets} size={size}><Icon type="check"/> Lattice1</Button>
+      )
     }
+    if (walletTag) extra.push((
+      <Tooltip title="Refresh" key="WalletTagTooltip">{walletTag}</Tooltip>));
+
+    // Add the currency switch
+    extra.push(
+      (<Select key="currency-select" defaultValue="ETH" onChange={this.handleCurrencyChange} size={size}>
+        <Option value="ETH">ETH</Option>
+        <Option value="BTC">BTC</Option>
+      </Select>)
+    );
+    extra.push(
+      ( <Button key="logout-button" type="primary" onClick={this.handleLogout} size={size}>
+        Logout
+      </Button>)
+    );
     return (
       <PageHeader
-        tags={<Tag>GridPlus Web Wallet</Tag>}
-        avatar={{src: "/logo_square.png"}}
-        style={{background: "#001529", "fontColor": "#fff"}}
-        ghost={false}
+        title={this.renderHeaderText()}
+        ghost={true}
         extra={extra}
       />
     )
@@ -520,7 +531,7 @@ class Main extends React.Component {
         <Layout id="main-content-outer">
           {this.renderSidebar()}
           <Layout id="main-content-inner">
-            <Content style={{ margin: '20px 0 0 0' }}>
+            <Content style={{ margin: '0 0 0 0' }}>
               {this.renderAlert()}
               <div style={{ margin: '30px 0 0 0'}}>
                 {this.renderContent()}        

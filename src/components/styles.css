@@ -4,3 +4,31 @@
   border: 0px;
   overflow: hidden;
 }
+
+.ant-menu-vertical .ant-menu-item, .ant-menu-vertical-left .ant-menu-item, .ant-menu-vertical-right .ant-menu-item, .ant-menu-inline .ant-menu-item, .ant-menu-vertical .ant-menu-submenu-title, .ant-menu-vertical-left .ant-menu-submenu-title, .ant-menu-vertical-right .ant-menu-submenu-title, .ant-menu-inline .ant-menu-submenu-title {
+  margin-top: 0px;
+}
+
+.ant-page-header-heading-title {
+  /* color: rgba(255, 255, 255, 0.65); */
+  color: #fff;
+}
+
+.ant-page-header {
+  /* background: #001529; */
+  background: #000;
+}
+
+.ant-layout-sider {
+  /* background: #001529; */
+  background: #000;
+}
+.ant-menu-dark, .ant-menu-dark .ant-menu-sub {
+  background: #000;
+}
+.ant-menu .ant-menu-dark .ant-menu-root .ant-menu-inline {
+  background: #000;
+}
+.ant-menu-item {
+  background: #000;
+}
