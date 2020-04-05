@@ -4,24 +4,54 @@ import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Popover } from 'a
 const { Panel } = Collapse;
 
 class Connect extends React.Component {
-    constructor(props) {
-      super(props)
-      this.state = {
-        errMsg: null,
-      }
-      this.handleSubmit = this.handleSubmit.bind(this);
-      this.renderMsg = this.renderMsg.bind(this);
+  constructor(props) {
+    super(props)
+    this.state = {
+      errMsg: null,
+      isLoading: false,
     }
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.renderMsg = this.renderMsg.bind(this);
+  }
 
+  componentDidMount() {
+    this.setState({ isLoading: false });
+  }
+
+  componentDidUnmount() {
+    this.setState({ isLoading: false })
+  }
 
   handleSubmit(data) {
     const deviceID = document.getElementById("deviceIdInput").value;
     const password = document.getElementById("passwordInput").value;
     if (password.length < 8) {
-      this.setState({errMsg: "Your password must be at least 8 characters."})
+      this.setState({ isLoading: true, errMsg: "Your password must be at least 8 characters."})
     } else {
-      this.setState({ errMsg: null })
-      this.props.submitCb({deviceID, password});
+      this.setState({ isLoading: true, errMsg: null })
+      // Call the connect function. Skip the loading screen so we don't
+      // leave the landing page until we connect.
+      this.props.submitCb({deviceID, password}, false);
+    }
+  }
+
+  renderConnectButton() {
+    if (this.state.isLoading && 
+        this.state.errMsg === null &&
+        this.props.errMsg === null) {
+      return (
+        <Button type="primary"
+                style={{ margin: '20px 0 0 0'}}
+                loading>
+          Connecting...
+        </Button>
+      )
+    } else {
+      return (
+        <Button type="primary" onClick={this.handleSubmit} style={{ margin: '20px 0 0 0'}}>
+          Connect
+        </Button>
+      )
     }
   }
 
@@ -35,9 +65,7 @@ class Connect extends React.Component {
           <Input.Password placeholder="Password" id="passwordInput" onPressEnter={this.handleSubmit} style={{ margin: '20px 0 0 0', width: "50%"}} />
         </Row>
         <Row>
-          <Button type="primary" onClick={this.handleSubmit} style={{ margin: '20px 0 0 0'}}>
-            Connect
-          </Button>
+          {this.renderConnectButton()}
         </Row>
       </div>
     )

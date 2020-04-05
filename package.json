@@ -19,7 +19,7 @@
     "react-scripts": "3.3.0"
   },
   "scripts": {
-    "start": "REACT_APP_ENV=prod react-scripts start",
+    "start": "react-scripts start",
     "start-dev": "REACT_APP_ENV=dev react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
