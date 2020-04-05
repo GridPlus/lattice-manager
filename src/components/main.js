@@ -189,7 +189,7 @@ class Main extends React.Component {
 
   // Call `connect` on the SDK session. If we get an error back, clear out the client,
   // as we cannot connect.
-  connectSession(data=this.state) {
+  connectSession(data=this.state, showLoading=true) {
     const { deviceID, password } = data;
       // Sanity check -- this should never get hit
     if (!deviceID || !password) {
@@ -197,7 +197,8 @@ class Main extends React.Component {
     }
     this.connect(deviceID, password, () => {
       // Create a new session with the deviceID and password provided.
-      this.wait("Trying to contact your Lattice");
+      if (showLoading === true)
+        this.wait("Looking for your Lattice");
       this.state.session.connect(deviceID, password, (err, isPaired) => {
         this.unwait();
         if (err) {
