@@ -381,10 +381,11 @@ class Main extends React.Component {
     let extra = [];
     if (!this.isConnected())
       return;
+
     // Display a tag if there is a SafeCard inserted
     let walletTag = null;
     const size = this.isMobile() ? 'small' : 'default';
-    const activeWallet = this.state.session.getActiveWallet()
+    const activeWallet = this.state.session.getActiveWallet();
     if (activeWallet === null) {
       walletTag = ( 
         <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Active Wallet!</Button>
@@ -417,7 +418,7 @@ class Main extends React.Component {
       <PageHeader
         title={this.renderHeaderText()}
         ghost={true}
-        extra={extra}
+        extra={!this.state.waiting ? extra : null}
       />
     )
   }
