@@ -4,7 +4,7 @@ import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
-
+import { constants } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
 
@@ -520,7 +520,10 @@ class Main extends React.Component {
 
   renderFooter() {
     return (
-      <Footer style={{ textAlign: 'center' }}>©2020 GridPlus Inc</Footer>
+      <Footer style={{ textAlign: 'center' }}>
+        ©2020 GridPlus Inc
+        {constants.ENV === 'dev' ? <Tag color="blue" style={{margin: "0 0 0 10px"}}>DEV</Tag> : null}
+      </Footer>
     )
   }
 
