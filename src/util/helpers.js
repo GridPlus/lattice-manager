@@ -12,7 +12,8 @@ const constants = {
     BTC_CHANGE_ADDR_BLOCK_LEN: 1,
     BTC_DEFAULT_FEE_RATE: 5, // 5 sat/byte
     ETH_TX_BASE_URL: 'https://etherscan.io/tx',
-    BTC_TX_BASE_URL: 'https://www.blockchain.com/btc/tx'
+    BTC_TX_BASE_URL: 'https://www.blockchain.com/btc/tx',
+    PAGE_SIZE: 20, // 20 transactions per requested page, per `gridplus-cloud-services`
 }
 if (process.env.REACT_APP_ENV === 'dev') {
     constants.ENV = 'dev';
@@ -35,14 +36,14 @@ const headers = {
     'Content-Type': 'application/json',
 };
 
-function fetchERC20Data(currency, addresses) {
+function fetchERC20Data(currency, addresses, page) {
     return new Promise((resolve, reject) => {
         if (currency !== 'ETH')
             return resolve(null);
         const url = `${BASE_URL}/v2/accounts/get-erc20-transactions`
         const data = {
             method: 'POST',
-            body: JSON.stringify([{ currency, addresses }]),
+            body: JSON.stringify([{ currency, addresses, page }]),
             headers,
         }
         fetch(url, data)
@@ -58,13 +59,13 @@ function fetchERC20Data(currency, addresses) {
     })
 }
 
-function fetchCurrencyData(currency, addresses) {
+function fetchCurrencyData(currency, addresses, page) {
     return new Promise((resolve, reject) => {
         // Account for change addresses
         const url = `${BASE_URL}/v2/accounts/get-data`
         const data = {
             method: 'POST',
-            body: JSON.stringify([{ currency, addresses }]),
+            body: JSON.stringify([{ currency, addresses, page }]),
             headers,
         }
         // Fetch currency balance and transaction history
@@ -88,7 +89,7 @@ function fetchCurrencyData(currency, addresses) {
 // @param currency  {string}   -- abbreviation of the currency (e.g. ETH, BTC)
 // @param addresses {object}   -- objecty containing arrays of addresses, indexed by currency
 // @param cb        {function} -- callback function of form cb(err, data)
-exports.fetchStateData = function(currency, addresses, cb) {
+exports.fetchStateData = function(currency, addresses, page, cb) {
     const reqAddresses = addresses[currency];
 
     // Exit if we don't have addresses to use in the request
@@ -108,7 +109,7 @@ exports.fetchStateData = function(currency, addresses, cb) {
     // Get ERC20 data if applicable
     // We fetch this first because ERC20 transactions will appear as duplicates
     // and we need to filter out the ETH-based dups
-    fetchERC20Data(searchCurrency, reqAddresses)
+    fetchERC20Data(searchCurrency, reqAddresses, page)
     .then((erc20Data) => {
         if (erc20Data !== null && erc20Data !== undefined) {
             // Add ERC20 balances
@@ -116,7 +117,7 @@ exports.fetchStateData = function(currency, addresses, cb) {
             // Add the transactions
             secondaryData.transactions = secondaryData.transactions.concat(erc20Data.transactions);
         }
-        return fetchCurrencyData(searchCurrency, reqAddresses)
+        return fetchCurrencyData(searchCurrency, reqAddresses, page)
     })
     .then((mainData) => {
         // Include the CHANGE portion of the currency label if applicable

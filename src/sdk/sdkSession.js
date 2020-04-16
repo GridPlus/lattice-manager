@@ -41,6 +41,9 @@ class SDKSession {
 
     // The type of Bitcoin addresses the lattice is currently providing us
     this.btcAddrType = null;
+
+    // Current page of results (transactions) for the wallet
+    this.page = 1; // (1-indexed)
   
     // Go time
     this.getStorage();
@@ -277,7 +280,7 @@ class SDKSession {
   }
 
   fetchData(currency, cb=()=>{}, switchToChange=false) {
-    fetchStateData(currency, this.addresses, (err, data) => {
+    fetchStateData(currency, this.addresses, this.page, (err, data) => {
       if (err) 
         return cb(err);
       if (data)
@@ -286,6 +289,14 @@ class SDKSession {
     })
   }
 
+  setPage(newPage=1) {
+    this.page = newPage;
+    this.worker.postMessage({ type: 'setPage', data: this.page });
+  }
+
+  getPage() {
+    return this.page;
+  }
 
   // Load a set of addresses based on the currency and also based on the current
   // list of addresses we hold. Note that we are operating under a specific walletUID.
