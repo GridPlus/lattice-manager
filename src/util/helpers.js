@@ -36,6 +36,28 @@ const headers = {
     'Content-Type': 'application/json',
 };
 
+function fetchETHNonce(currency, addresses) {
+    return new Promise((resolve, reject) => {
+        if (currency !== 'ETH' || addresses.length < 1)
+            return resolve(null);
+        const url = `${BASE_URL}/v2/accounts/get-transaction-count`
+        const data = {
+            method: 'POST',
+            body: JSON.stringify({ address: addresses[0] }),
+            headers,
+        }
+        fetch(url, data)
+        .then((response) => response.json())
+        .then((resp) => {
+            if (resp.error) return reject(resp.error);
+            return resolve(resp.data);
+        })
+        .catch((err) => {
+            return reject(err);
+        });
+    })
+}
+
 function fetchERC20Data(currency, addresses, page) {
     return new Promise((resolve, reject) => {
         if (currency !== 'ETH')
@@ -88,59 +110,63 @@ function fetchCurrencyData(currency, addresses, page) {
 // Fetch state data for a set of addresses
 // @param currency  {string}   -- abbreviation of the currency (e.g. ETH, BTC)
 // @param addresses {object}   -- objecty containing arrays of addresses, indexed by currency
+// @param page      {number}   -- page of transactions to request (ignored if currency!=ETH)
 // @param cb        {function} -- callback function of form cb(err, data)
 exports.fetchStateData = function(currency, addresses, page, cb) {
     const reqAddresses = addresses[currency];
 
     // Exit if we don't have addresses to use in the request
     if (!reqAddresses || reqAddresses.length === 0) 
-        return cb(null, null);
+        return cb(null);
 
     // Slice out the 'change' portion of the currency name for the request itself
-    let searchCurrency = currency;
     if (currency.indexOf('_CHANGE') > -1)
-        searchCurrency = currency.slice(0, currency.indexOf('_CHANGE'));
+        currency = currency.slice(0, currency.indexOf('_CHANGE'));
 
-    const secondaryData = {
-        erc20Balances: [],
-        transactions: [],
-    }
+    let stateData = {
+        currency,
+        transactions: [], // ETH + ERC20 transactions
+        balance: {}, // ETH balance
+        erc20Balances: [], // ERC20 balances
+        ethNonce: null,
+    };
 
     // Get ERC20 data if applicable
     // We fetch this first because ERC20 transactions will appear as duplicates
     // and we need to filter out the ETH-based dups
-    fetchERC20Data(searchCurrency, reqAddresses, page)
+    fetchETHNonce(currency, reqAddresses)
+    .then((nonce) => {
+        if (nonce !== null)
+            stateData.ethNonce = nonce;
+        return fetchERC20Data(currency, reqAddresses, page)
+    })        
     .then((erc20Data) => {
         if (erc20Data !== null && erc20Data !== undefined) {
             // Add ERC20 balances
-            secondaryData.erc20Balances = erc20Data.balanceData;
+            stateData.erc20Balances = erc20Data.balanceData;
             // Add the transactions
-            secondaryData.transactions = secondaryData.transactions.concat(erc20Data.transactions);
+            stateData.transactions = stateData.transactions.concat(erc20Data.transactions);
         }
-        return fetchCurrencyData(searchCurrency, reqAddresses, page)
+        return fetchCurrencyData(currency, reqAddresses, page)
     })
     .then((mainData) => {
-        // Include the CHANGE portion of the currency label if applicable
-        mainData.currency = currency;
-        // Account for secondary data if applicable
-        const allTransactions = secondaryData.transactions.concat(mainData.transactions);
-        mainData.erc20Balances = secondaryData.erc20Balances;
+        stateData.currency = mainData.currency;
+        stateData.balance = mainData.balance;
+        stateData.transactions = stateData.transactions.concat(mainData.transactions);
         // Remove duplicates. Since the ERC20 transactions came first, they
         // take precedence
         let hashes = [];
-        allTransactions.forEach((t, i) => {
+        stateData.transactions.forEach((t, i) => {
             if (hashes.indexOf(t.hash.toLowerCase()) > -1)
-                allTransactions.splice(i, 1);
+                stateData.transactions.splice(i, 1);
             else
                 hashes.push(t.hash.toLowerCase())
         })
         // Now sort the transactions by block height
-        allTransactions.transactions = allTransactions.sort((a, b) => {
+        stateData.transactions = stateData.transactions.sort((a, b) => {
             return a.height < b.height ? 1 : -1; 
         })
-        // Copy the transactions to the full data object
-        mainData.transactions = allTransactions.transactions;
-        return cb(null, mainData);
+        return cb(null, stateData);
     })
     .catch((err) => {
         return cb(err);

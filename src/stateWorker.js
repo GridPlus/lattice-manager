@@ -90,6 +90,28 @@ export default () => {
         'Content-Type': 'application/json',
     };
 
+    function fetchETHNonce(currency, addresses) {
+        return new Promise((resolve, reject) => {
+            if (currency !== 'ETH' || addresses.length < 1)
+                return resolve(null);
+            const url = `${BASE_URL}/v2/accounts/get-transaction-count`
+            const data = {
+                method: 'POST',
+                body: JSON.stringify({ address: addresses[0] }),
+                headers,
+            }
+            fetch(url, data)
+            .then((response) => response.json())
+            .then((resp) => {
+                if (resp.error) return reject(resp.error);
+                return resolve(resp.data);
+            })
+            .catch((err) => {
+                return reject(err);
+            });
+        })
+    }
+
     function fetchERC20Data(currency, addresses, page) {
         return new Promise((resolve, reject) => {
             if (currency !== 'ETH')
@@ -141,6 +163,7 @@ export default () => {
     // Fetch state data for a set of addresses
     // @param currency  {string}   -- abbreviation of the currency (e.g. ETH, BTC)
     // @param addresses {object}   -- objecty containing arrays of addresses, indexed by currency
+    // @param page      {number}   -- page of transactions to request (ignored if currency!=ETH)
     // @param cb        {function} -- callback function of form cb(err, data)
     function fetchStateData(currency, addresses, page, cb) {
         const reqAddresses = addresses[currency];
@@ -158,12 +181,18 @@ export default () => {
             transactions: [], // ETH + ERC20 transactions
             balance: {}, // ETH balance
             erc20Balances: [], // ERC20 balances
+            ethNonce: null,
         };
 
         // Get ERC20 data if applicable
         // We fetch this first because ERC20 transactions will appear as duplicates
         // and we need to filter out the ETH-based dups
-        fetchERC20Data(currency, reqAddresses, page)
+        fetchETHNonce(currency, reqAddresses)
+        .then((nonce) => {
+            if (nonce !== null)
+                stateData.ethNonce = nonce;
+            return fetchERC20Data(currency, reqAddresses, page)
+        })        
         .then((erc20Data) => {
             if (erc20Data !== null && erc20Data !== undefined) {
                 // Add ERC20 balances

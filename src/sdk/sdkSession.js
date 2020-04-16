@@ -183,7 +183,7 @@ class SDKSession {
 
   fetchDataHandler(data, usingChange=false) {
     let { currency } = data; // Will be adjusted if this is a change addresses request
-    const { balance, transactions, firstUnused, lastUnused, utxos, erc20Balances } = data;
+    const { balance, transactions, firstUnused, lastUnused, utxos, erc20Balances, ethNonce } = data;
     let switchToChange = false;
     const changeCurrency = `${currency}_CHANGE`;
    
@@ -229,13 +229,9 @@ class SDKSession {
         switchToChange = false;
       }
     } else if (currency === 'ETH') {
-      // Count the number of transactions
-      let count = 0;
-      transactions.forEach((t) => {
-        if (t.incoming === false)
-          count += 1;
-      })
-      this.ethNonce = count;
+      // Record nonce
+      if (ethNonce !== null)
+        this.ethNonce = ethNonce;
       // Record the ERC20 balances
       erc20Balances.forEach((e) => {
         this.balances[e.contractAddress] = e.balance;

@@ -19,7 +19,7 @@ class Connect extends React.Component {
     this.setState({ isLoading: false });
   }
 
-  componentDidUnmount() {
+  componentWillUnmount() {
     this.setState({ isLoading: false })
   }
 
