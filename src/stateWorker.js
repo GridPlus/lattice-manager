@@ -4,11 +4,15 @@ export default () => {
     let interval = null;
     let BASE_URL = 'localhost:3000'; // Should never use the default
     const LOOKUP_DELAY = 120000; // Lookup every 2 minutes
+    let currentPage = 1; // Page of transactions to look for. Only applicable for ETH
     self.addEventListener('message', e => { // eslint-disable-line no-restricted-globals
         if (!e) return;
         switch (e.data.type) {
             case 'setup':
                 BASE_URL = e.data.data;
+                break;
+            case 'setPage':
+                currentPage = e.data.data;
                 break;
             case 'setAddresses':
                 // This will get called either when the wallet boots up or when we get
@@ -54,7 +58,7 @@ export default () => {
                         baseCurrency = currency.slice(0, currency.indexOf('_CHANGE'));
                     }
                     // Fetch the state data with our set of addresses for this currency
-                    fetchStateData(baseCurrency, addresses, (err, data) => {
+                    fetchStateData(baseCurrency, addresses, currentPage, (err, data) => {
                         if (err) {
                             // Log the error if it arises
                             postMessage({ type: "error", currency, data: err });
@@ -86,14 +90,14 @@ export default () => {
         'Content-Type': 'application/json',
     };
 
-    function fetchERC20Data(currency, addresses) {
+    function fetchERC20Data(currency, addresses, page) {
         return new Promise((resolve, reject) => {
             if (currency !== 'ETH')
                 return resolve(null);
             const url = `${BASE_URL}/v2/accounts/get-erc20-transactions`
             const data = {
                 method: 'POST',
-                body: JSON.stringify([{ currency, addresses }]),
+                body: JSON.stringify([{ currency, addresses, page }]),
                 headers,
             }
             fetch(url, data)
@@ -109,12 +113,12 @@ export default () => {
         })
     }
 
-    function fetchCurrencyData(currency, addresses) {
+    function fetchCurrencyData(currency, addresses, page) {
         return new Promise((resolve, reject) => {
             const url = `${BASE_URL}/v2/accounts/get-data`
             const data = {
                 method: 'POST',
-                body: JSON.stringify([{ currency, addresses }]),
+                body: JSON.stringify([{ currency, addresses, page }]),
                 headers,
             }
             // Fetch currency balance and transaction history
@@ -138,7 +142,7 @@ export default () => {
     // @param currency  {string}   -- abbreviation of the currency (e.g. ETH, BTC)
     // @param addresses {object}   -- objecty containing arrays of addresses, indexed by currency
     // @param cb        {function} -- callback function of form cb(err, data)
-    function fetchStateData(currency, addresses, cb) {
+    function fetchStateData(currency, addresses, page, cb) {
         const reqAddresses = addresses[currency];
 
         // Exit if we don't have addresses to use in the request
@@ -159,7 +163,7 @@ export default () => {
         // Get ERC20 data if applicable
         // We fetch this first because ERC20 transactions will appear as duplicates
         // and we need to filter out the ETH-based dups
-        fetchERC20Data(currency, reqAddresses)
+        fetchERC20Data(currency, reqAddresses, page)
         .then((erc20Data) => {
             if (erc20Data !== null && erc20Data !== undefined) {
                 // Add ERC20 balances
@@ -167,7 +171,7 @@ export default () => {
                 // Add the transactions
                 stateData.transactions = stateData.transactions.concat(erc20Data.transactions);
             }
-            return fetchCurrencyData(currency, reqAddresses)
+            return fetchCurrencyData(currency, reqAddresses, page)
         })
         .then((mainData) => {
             stateData.currency = mainData.currency;

@@ -2,6 +2,7 @@
 import React from 'react';
 import 'antd/dist/antd.css'
 import { Button, Avatar, Divider, Statistic, List, Row, Card, Icon, Tag, Spin} from 'antd';
+import { constants } from '../util/helpers'
 const GREEN = "#00FF00";
 const RED = "#FF0000";
 
@@ -220,6 +221,27 @@ class Wallet extends React.Component {
     }
   }
 
+  renderPages() {
+    // We only paginate results for ETH
+    if (this.props.currency !== 'ETH')
+      return;
+    const page = this.props.session.getPage();
+    return (
+      <center style={{margin: "20px 0 0 0"}}>
+        {page > 1 ? (
+          <Button onClick={() => {this.props.pageTurnCb(page-1)}}>
+            <Icon type="caret-left"/>
+          </Button>
+        ) : null}
+        {this.state.txs.length >= constants.PAGE_SIZE ? (
+          <Button onClick={() => { this.props.pageTurnCb(page+1)}}>
+            <Icon type="caret-right"/>
+          </Button>
+        ): null}
+      </center>
+    )
+  }
+
   render() {
     return (
       <div style={{width: this.getInnerWidth() - 10}}>
@@ -244,6 +266,7 @@ class Wallet extends React.Component {
         <Divider/>
         <Row>
           {this.renderList()}
+          {this.renderPages()}
         </Row>
       </div>
     )

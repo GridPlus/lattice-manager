@@ -49,6 +49,7 @@ class Main extends React.Component {
     this.fetchData = this.fetchData.bind(this);
     this.handleStateUpdate = this.handleStateUpdate.bind(this);
     this.refreshWallets = this.refreshWallets.bind(this);
+    this.handlePageTurn = this.handlePageTurn.bind(this);
 
     // Bind wrappers
     this.retry = this.retry.bind(this);
@@ -153,6 +154,11 @@ class Main extends React.Component {
         this.fetchAddresses(this.fetchData);
       }
     })
+  }
+
+  handlePageTurn(page) {
+    this.state.session.setPage(page);
+    this.fetchData();
   }
 
   handleMenuChange({key}) {
@@ -386,6 +392,7 @@ class Main extends React.Component {
     let walletTag = null;
     const size = this.isMobile() ? 'small' : 'default';
     const activeWallet = this.state.session.getActiveWallet();
+    
     if (activeWallet === null) {
       walletTag = ( 
         <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Active Wallet!</Button>
@@ -404,7 +411,7 @@ class Main extends React.Component {
 
     // Add the currency switch
     extra.push(
-      (<Select key="currency-select" defaultValue="ETH" onChange={this.handleCurrencyChange} size={size}>
+      (<Select key="currency-select" defaultValue={this.state.currency} onChange={this.handleCurrencyChange} size={size}>
         <Option value="ETH">ETH</Option>
         <Option value="BTC">BTC</Option>
       </Select>)
@@ -456,6 +463,7 @@ class Main extends React.Component {
                   tick={this.state.tick}
                   lastUpdated={this.state.lastUpdated}
                   stillSyncingAddresses={this.state.stillSyncingAddresses}
+                  pageTurnCb={this.handlePageTurn}
           />
         );
       case 'menu-receive':
