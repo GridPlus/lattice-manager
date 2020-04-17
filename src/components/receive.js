@@ -44,21 +44,25 @@ class Receive extends React.Component {
 
   renderCard() {
     if (this.state.address) {
-      const w = 0.8 * document.getElementById("receive-card").offsetWidth;
+      const cardW = document.getElementById("receive-card").offsetWidth;
+      const w = Math.min(300, 0.8 * cardW);
       return (
         <div>
-          <p>Your {this.props.currency} receiving address:</p>
+          <Row>
           <QRCode value={this.state.address} 
                   size={w}
                   style={{margin: "30px 0 0 0"}}
           />
+          </Row>
+          <Row>
           <Search type="text" 
                   id={SEARCH_ID} 
                   value={this.state.address} 
                   enterButton={<Icon type="copy" />}
                   onSearch={this.copyAddress}
-                  style={{margin: "30px 0 0 0"}}
+                  style={{margin: "30px 0 0 0", width: `${w}px`}}
           />
+          </Row>
         </div>
       )
     } else {
@@ -71,34 +75,21 @@ class Receive extends React.Component {
     }
   }
 
-  getCardWidth() {
-    if (this.state.windowWidth > 500) {
-      return 500;
-    } else if (this.state.windowWidth > 300) {
-      return 300;
-    } else {
-      return this.state.windowWidth - 10;
-    }
-  }
-
   render() {
-    return this.props.isMobile() ? (
-      <Card title="Receive" bordered={true} id="receive-card">
-        <center>
-          {this.renderCard()}
-        </center>
-      </Card>
-    ) : (
-      <Row justify={'center'} type={'flex'}>
-        <Col>
+    const content = (
+      <center>
+        <Card title="Receive" bordered={true} id="receive-card">
           <center>
-            <Card title="Receive" 
-                  bordered={true} 
-                  id="receive-card"
-                  style={{width: this.getCardWidth()}}>
-              {this.renderCard()}
-            </Card>
+            {this.renderCard()}
           </center>
+        </Card>
+      </center>      
+    )
+
+    return this.props.isMobile() ? content : (
+      <Row justify={'center'}>
+        <Col span={12} offset={6}>
+          {content}
         </Col>
       </Row>
     )
