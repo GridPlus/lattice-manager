@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Popover, Modal } from 'antd'
+import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Modal } from 'antd'
 const { Panel } = Collapse;
 
 class Connect extends React.Component {
@@ -16,7 +16,7 @@ class Connect extends React.Component {
   }
 
   componentDidMount() {
-    this.setState({ isLoading: false });
+    this.setState({ isLoading: false });    
   }
 
   componentWillUnmount() {
@@ -164,8 +164,6 @@ class Connect extends React.Component {
       </Row>
     )
   }
-
-
 }
 
 export default Connect
