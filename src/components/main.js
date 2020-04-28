@@ -35,6 +35,9 @@ class Main extends React.Component {
       lastUpdated: new Date(),
       // Width of the current window
       windowWidth: window.innerWidth,
+      
+      // Window params
+      keyringOrigin: null,
     };
 
     // Bind local state updaters
@@ -114,7 +117,8 @@ class Main extends React.Component {
   // we need to log the opener so we can dispatch a message to
   // it when our credentials are loaded
   handleWindowLoaded() {
-    this.setState({ keyringOrigin: true });
+    if (window.opener)
+      this.setState({ keyringOrigin: true });
   }
 
   // Use window.postMessage to let the keyring requester know
@@ -233,16 +237,13 @@ class Main extends React.Component {
   // Call `connect` on the SDK session. If we get an error back, clear out the client,
   // as we cannot connect.
   connectSession(data=this.state, showLoading=true) {
-    const { deviceID, password, keyringOrigin } = data;
+    const { deviceID, password } = data;
       // Sanity check -- this should never get hit
     if (!deviceID || !password) {
       return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
     } else {
       this.setError(null);
     }
-    // Set keyring state. If this connection is part of a Metamask-based keyring
-    // connection, we do not want to show the wallet itself
-    this.setState({ keyringOrigin });
     // Connect to the device
     this.connect(deviceID, password, () => {
       // Create a new session with the deviceID and password provided.
