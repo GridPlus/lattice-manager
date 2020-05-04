@@ -11,7 +11,9 @@ class Loading extends React.Component {
         <Col span={spanLength} offset={spanOffset}>
           <center>
             <Card title="Loading" bordered={true}>
-              <Spin indicator={<Icon type="loading"/>} />
+              {this.props.spin !== false ? (
+                <Spin indicator={<Icon type="loading"/>} />
+              ) : null}
               <p>{this.props.msg ? this.props.msg : "Waiting for data from your Lattice1"}</p>
             </Card>
           </center>

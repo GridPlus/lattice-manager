@@ -35,12 +35,16 @@ class Main extends React.Component {
       lastUpdated: new Date(),
       // Width of the current window
       windowWidth: window.innerWidth,
+      
+      // Window params
+      keyringOrigin: null,
     };
 
     // Bind local state updaters
     this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
     this.handleMenuChange = this.handleMenuChange.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
+    this.handleWindowLoaded = this.handleWindowLoaded.bind(this);
 
     // Bind callbacks whose calls may originate elsewhere
     this.connectSession = this.connectSession.bind(this);
@@ -59,6 +63,14 @@ class Main extends React.Component {
   }
 
   componentDidMount() {
+    // Metamask connects through a keyring and in these cases we need
+    // to utilize window.postMessage once we connect
+    const params = new URLSearchParams(window.location.search);
+    const keyring = params.get('keyring')
+    if (keyring) {
+      window.onload = this.handleWindowLoaded();
+    }
+
     // Listen for window resize
     window.addEventListener('resize', this.updateWidth);
     // Lookup deviceID and pw from storage
@@ -96,6 +108,34 @@ class Main extends React.Component {
     if (!this.state.session) return false;
     return this.state.session.isConnected();
   }
+
+  //------------------------------------------
+  // KEYRING HANDLERS
+  //------------------------------------------
+
+  // If this window was loaded by a window opener (Metamask)
+  // we need to log the opener so we can dispatch a message to
+  // it when our credentials are loaded
+  handleWindowLoaded() {
+    if (window.opener)
+      this.setState({ keyringOrigin: true });
+  }
+
+  // Use window.postMessage to let the keyring requester know
+  // we have connected.
+  returnKeyringData() {
+    if (!this.state.keyringOrigin)
+      return;
+    const data = {
+      deviceID: this.state.deviceID,
+      password: this.state.password,
+    };
+    window.opener.postMessage(JSON.stringify(data), "*");
+    window.close();
+  }
+  //------------------------------------------
+  // END KEYRING HANDLERS
+  //------------------------------------------
 
   //------------------------------------------
   // LOCAL STATE UPDATES
@@ -204,6 +244,7 @@ class Main extends React.Component {
     } else {
       this.setError(null);
     }
+    // Connect to the device
     this.connect(deviceID, password, () => {
       // Create a new session with the deviceID and password provided.
       if (showLoading === true)
@@ -229,9 +270,12 @@ class Main extends React.Component {
           // 3. Are we already paired?
           // If so, load addresses. If that completes successfully, also fetch updated
           // blockchain state data.
-          if (isPaired) {
+          // Bypass if this request is part of a keyring connection. Metamask
+          // will ask for addresses itself.
+          if (isPaired && this.state.keyringOrigin === null)
             this.fetchAddresses(this.fetchData);
-          }
+          else if (isPaired && this.state.keyringOrigin)
+            this.returnKeyringData();
         }
       });
     })
@@ -314,9 +358,11 @@ class Main extends React.Component {
         // If there was an error here, the user probably entered the wrong secret
         // this.setError({ msg: 'Secret was incorrect. Please try again.', cb: this.connectSession });
         this.setError({ msg: err, cb: this.connectSession });
-      } else {
+      } else if (this.state.keyringOrigin === null) {
         // Success! Load our addresses from this wallet.
         this.fetchAddresses(this.fetchData);
+      } else {
+        this.returnKeyringData();
       }
     })
   }
@@ -498,7 +544,7 @@ class Main extends React.Component {
     } else if (!this.isConnected()) {
       // Connect to the Lattice via the SDK
       return (
-        <Connect  submitCb={this.connectSession} 
+        <Connect  submitCb={this.connectSession}
                   isMobile={() => this.isMobile()}
                   errMsg={this.state.error.msg}/>
       );
@@ -515,6 +561,12 @@ class Main extends React.Component {
         <Pair submit={this.handlePair}
               isMobile={() => this.isMobile()}/>
       );
+    } else if (this.state.keyringOrigin !== null) {
+      return (
+        <Loading isMobile={() => { this.isMobile() }}
+                  msg={"Successfully connected to your Lattice1! You may close this window."}
+                  spin={false}/>
+      )
     } else if (!hasActiveWallet) {
       const retry = this.state.session ? this.refreshWallets : null;
       return (
