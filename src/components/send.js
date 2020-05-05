@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Modal, Row, Input, Icon, Empty, Collapse, notification, Select } from 'antd'
+import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Statistic, notification, Select } from 'antd'
 import { allChecks } from '../util/sendChecks';
 import { constants, buildBtcTxReq, buildERC20Data } from '../util/helpers'
 import './styles.css'
@@ -59,7 +59,7 @@ class Send extends React.Component {
     const val = evt.target.value;
     const check = allChecks[this.props.currency].recipient;
     this.setState({ 
-      recipient: val, 
+      recipient: val,
       recipientCheck: check(val), 
     });
   }
@@ -67,6 +67,8 @@ class Send extends React.Component {
   checkValue(val) {
     // Verify that it is smaller than the balance
     const balance = this.props.session.getBalance(this.props.currency, this.state.erc20Addr);
+    if (val === '' || val === null || val === undefined)
+      return null;
     return (Number(balance) >= Number(val));
   }
 
@@ -362,12 +364,7 @@ class Send extends React.Component {
   renderExtra() {
     if (this.props.currency === 'ETH') {
       return (
-        <Collapse accordion 
-                  bordered={false}  
-                  className="site-collapse-custom-collapse">
-          <Collapse.Panel header="Advanced" 
-                          key="advanceData" 
-                          className="site-collapse-custom-panel">
+        <div>
             <Row>
               <p style={{textAlign: 'left'}}><b>Gas Price (GWei)</b></p>
               <Input type="text" 
@@ -385,14 +382,13 @@ class Send extends React.Component {
             {this.state.erc20Addr === null ? (
               <Row style={{margin: "20px 0 0 0"}}>
                 <p style={{textAlign: 'left'}}><b>Data</b></p>
-                <Input.TextArea rows={4} 
+                <Input.TextArea rows={2} 
                                 id={"ethData"}
                                 value={`0x${this.state.ethExtraData.data}`}
                                 onChange={this.updateEthExtraData.bind(this)}/>
               </Row>
             ) : null}
-          </Collapse.Panel>
-        </Collapse>
+        </div>
       )
     }
   }
@@ -426,10 +422,33 @@ class Send extends React.Component {
     }
   }
 
+  renderBalance() {
+    let token = null;
+    if (this.state.erc20Addr) {
+      this.state.erc20Tokens.forEach((t) => {
+        if (t.contractAddress.toLowerCase() === this.state.erc20Addr.toLowerCase())
+          token = t;
+      })
+    }
+    const balance = this.props.session.getBalance(this.props.currency, this.state.erc20Addr);
+    const name = token === null ? this.props.currency : token.symbol;
+    return (
+      <Row style={{margin: "0 0 20px 0"}}>
+        <Statistic title="Balance" value={`${balance.toFixed(5)} ${name}`} />
+      </Row>
+    )
+
+  }
+
   renderCard() {
-    if (true) {
+    const hasAddressesSlot = this.props.session.addresses[this.props.currency];
+    const hasAddresses =  hasAddressesSlot ? 
+                          this.props.session.addresses[this.props.currency].length > 0 : 
+                          false;
+    if (hasAddresses) {
       return (
         <div>
+          {this.renderBalance()}
           <Row>
             <Col span={18} offset={2}>
               <p style={{textAlign:'left'}}><b>Recipient</b></p>
