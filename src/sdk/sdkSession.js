@@ -208,6 +208,12 @@ class SDKSession {
       // Determine if we need new addresses or if we are fully synced. This is based on the gap
       // limit (20 for regular addresses, 1 for change)
       const gapLimit = usingChange === true ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
+
+      // Sometimes if we switch wallet context, the addresses will get cleared out. Make sure they
+      // are always in array format
+      if (!this.addresses[currency])
+        this.addresses[currency] = [];
+
       const needNewBtcAddresses = lastUnused === this.addresses[currency].length - 1 &&
                                   lastUnused - firstUnused < gapLimit - 1;
       // Save this
