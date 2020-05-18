@@ -35,7 +35,8 @@ class Main extends React.Component {
       lastUpdated: new Date(),
       // Width of the current window
       windowWidth: window.innerWidth,
-      
+      // Track changes in the active wallet so we can refresh addresses when we detect one
+      walletisExternal: null,
       // Window params
       keyringOrigin: null,
     };
@@ -45,6 +46,7 @@ class Main extends React.Component {
     this.handleMenuChange = this.handleMenuChange.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
     this.handleWindowLoaded = this.handleWindowLoaded.bind(this);
+    this.syncActiveWalletState = this.syncActiveWalletState.bind(this);
 
     // Bind callbacks whose calls may originate elsewhere
     this.connectSession = this.connectSession.bind(this);
@@ -80,6 +82,14 @@ class Main extends React.Component {
       this.connect(deviceID, password, () => {
         this.connectSession();
       });
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.state.session) {
+      const activeWallet = this.state.session.getActiveWallet();
+      if (activeWallet)
+        this.syncActiveWalletState(activeWallet.external);
     }
   }
 
@@ -333,8 +343,28 @@ class Main extends React.Component {
       this.unwait();
       if (err)
         return this.setError({ msg: err, cb: this.refreshWallets })
+      // If no error was returned, clear out the error and fetch addresses.
+      // Note that if this app auto-switches wallet interface, it will not immediately
+      // switch the walletUID and will catch an error, which we need to clear out here
+      // so that the user doesn't see it once we successfully fetch addresses. 
+      this.setError();
       this.fetchAddresses(this.fetchData);
     })
+  }
+
+  // If we detect a new active wallet interface, save it and refresh wallet addresses
+  syncActiveWalletState(isExternal) {
+    if (this.state.walletIsExternal !== isExternal) {
+      // We only want to refresh if we know another interface was active before. If this
+      // is the first check, just set the flag without calling refresh (it will get called)
+      // automatically.
+      const shouldRefresh = this.state.walletIsExternal !== null;
+      // Set state regardless
+      this.setState({ walletIsExternal: isExternal })
+      // Refresh if needed
+      if (shouldRefresh === true)
+        this.refreshWallets();
+    }
   }
 
   //------------------------------------------
@@ -438,17 +468,15 @@ class Main extends React.Component {
     let walletTag = null;
     const size = this.isMobile() ? 'small' : 'default';
     const activeWallet = this.state.session.getActiveWallet();
-    
+
     if (activeWallet === null) {
       walletTag = ( 
         <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Active Wallet!</Button>
       )
-    } else if (activeWallet.external === true) {
-      walletTag = (
-        <Button type="primary" ghost onClick={this.refreshWallets} size={size}><Icon type="credit-card"/> SafeCard</Button>
-      )
     } else {
-      walletTag = (
+      walletTag = activeWallet.external === true ?  (
+        <Button type="primary" ghost onClick={this.refreshWallets} size={size}><Icon type="credit-card"/> SafeCard</Button>
+      ) : (
         <Button type="default" ghost onClick={this.refreshWallets} size={size}><Icon type="check"/> Lattice1</Button>
       )
     }
