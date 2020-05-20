@@ -214,8 +214,9 @@ class SDKSession {
       if (!this.addresses[currency])
         this.addresses[currency] = [];
 
-      const needNewBtcAddresses = lastUnused === this.addresses[currency].length - 1 &&
-                                  lastUnused - firstUnused < gapLimit - 1;
+      const needNewBtcAddresses = firstUnused < 0 || lastUnused < 0 ||
+                                  (lastUnused === this.addresses[currency].length - 1 &&
+                                  lastUnused - firstUnused < gapLimit - 1);
       // Save this
       this.firstUnusedAddresses[currency] = this.addresses[currency][firstUnused];
       if (needNewBtcAddresses === true) {

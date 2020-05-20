@@ -155,6 +155,9 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
         stateData.balance = mainData.balance;
         stateData.transactions = stateData.transactions.concat(mainData.transactions);
         stateData.utxos = mainData.utxos || [];
+        stateData.firstUnused = mainData.firstUnused;
+        stateData.lastUnused = mainData.lastUnused;
+
         // Remove duplicates. Since the ERC20 transactions came first, they
         // take precedence
         let hashes = [];
