@@ -129,6 +129,7 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
         balance: {}, // ETH balance
         erc20Balances: [], // ERC20 balances
         ethNonce: null,
+        utxos: [],
     };
 
     // Get ERC20 data if applicable
@@ -153,6 +154,7 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
         stateData.currency = mainData.currency;
         stateData.balance = mainData.balance;
         stateData.transactions = stateData.transactions.concat(mainData.transactions);
+        stateData.utxos = mainData.utxos || [];
         // Remove duplicates. Since the ERC20 transactions came first, they
         // take precedence
         let hashes = [];
@@ -174,14 +176,15 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
 }
 //-------- END GET DATA
 
-function getBtcVersion(addr) {
+function getBtcVersion(addrs) {
+    const addr = Array.isArray(addrs) ? addrs[0] : addrs;
     switch (addr.slice(0, 1)) {
         case '1':
             return 'LEGACY';
         case '3':
             return 'SEGWIT';
         case '2':
-            return 'TESTNET_SEGWIT';
+            return 'SEGWIT_TESTNET';
         case 'm':
         case 'n':
             return 'TESTNET';
@@ -217,16 +220,17 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     })
 
     // Calculate the fee
-    let fee = (numInputs+1)*180 + 2*34 + 10;
+    let bytesUsed = (numInputs+1)*180 + 2*34 + 10;
     // If the fee tips us over our total value sum, add another utxo
-    if (fee + satValue > sum) {
+    if ((bytesUsed * feeRate) + satValue > sum) {
         // There's a chance that we just eclipsed the number of inputs we could support.
         // Handle the edge case.
         if (utxos.length <= numInputs)
             return { error: 'Not enough balance to handle network fee. Please send a smaller value.'}
         numInputs += 1;
-        fee += 180;
+        bytesUsed += 180;
     }
+    const fee = Math.floor(bytesUsed * feeRate);
 
     // Build the request inputs
     const BASE_SIGNER_PATH = [constants.HARDENED_OFFSET+44, constants.BTC_COIN, constants.HARDENED_OFFSET];
@@ -259,7 +263,7 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
         recipient,
         value: satValue,
         fee,
-        isSegwit: changeVersion === 'SEGWIT',
+        isSegwit: changeVersion === 'SEGWIT' || changeVersion === 'SEGWIT_TESTNET',
         // Note we send change to the latest change address. Once this becomes used, the web worker
         // should fetch a new change address and update state
         changePath: BASE_SIGNER_PATH.concat([1, changeAddrs.length -1]),

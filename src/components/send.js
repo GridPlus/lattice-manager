@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Statistic, notification, Select } from 'antd'
+import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Statistic, notification, Select, Slider } from 'antd'
 import { allChecks } from '../util/sendChecks';
 import { constants, buildBtcTxReq, buildERC20Data } from '../util/helpers'
 import './styles.css'
@@ -27,6 +27,7 @@ class Send extends React.Component {
         gasLimit: 23000,
         data: '',
       },
+      btcFeeRate: constants.BTC_DEFAULT_FEE_RATE,
       erc20Tokens: [],
     }
 
@@ -36,6 +37,7 @@ class Send extends React.Component {
     this.submit = this.submit.bind(this);
     this.buildEthRequest = this.buildEthRequest.bind(this);
     this.buildBtcrequest = this.buildBtcRequest.bind(this);
+    this.updateBtcFeeRate = this.updateBtcFeeRate.bind(this);
   }
 
   componentDidMount() {
@@ -121,6 +123,10 @@ class Send extends React.Component {
     this.setState({ ethExtraData: extraDataCopy })
   }
 
+  updateBtcFeeRate(value) {
+    this.setState({ btcFeeRate: value })
+  }
+
   //========================================================
   // TRANSACTION-RELATED BUILDERS AND HOOKS
   //========================================================
@@ -176,10 +182,11 @@ class Send extends React.Component {
 
   buildBtcRequest() {
     const req = buildBtcTxReq(this.state.recipient, 
-                              this.state.value, 
+                              this.state.value,
                               this.props.session.getUtxos('BTC'), 
                               this.props.session.addresses['BTC'],  
-                              this.props.session.addresses['BTC_CHANGE']);
+                              this.props.session.addresses['BTC_CHANGE'],
+                              this.state.btcFeeRate);
     if (req.error) {
       this.setState({ error: req.error });
       return null;
@@ -389,6 +396,18 @@ class Send extends React.Component {
               </Row>
             ) : null}
         </div>
+      )
+    } else if (this.props.currency === 'BTC') {
+      return (
+        <Row>
+          <p style={{textAlign: 'left'}}><b>{`Fee: ${this.state.btcFeeRate} sat/byte`}</b></p>
+          <Slider
+            min={1}
+            max={150}
+            onChange={this.updateBtcFeeRate}
+            value={this.state.btcFeeRate}
+          />
+        </Row>
       )
     }
   }
