@@ -277,14 +277,10 @@ class Main extends React.Component {
           this.setError();
           this.setAlertMessage();
           this.tick();
-          // 3. Are we already paired?
-          // If so, load addresses. If that completes successfully, also fetch updated
-          // blockchain state data.
-          // Bypass if this request is part of a keyring connection. Metamask
-          // will ask for addresses itself.
-          if (isPaired && this.state.keyringOrigin === null)
-            this.fetchAddresses(this.fetchData);
-          else if (isPaired && this.state.keyringOrigin)
+
+          // If the app is paired and this connection came from a keyring origin
+          // (e.g. metamask), exit the app and return data
+          if (isPaired && this.state.keyringOrigin)
             this.returnKeyringData();
         }
       });
