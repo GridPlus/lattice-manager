@@ -195,12 +195,19 @@ class Wallet extends React.Component {
     )
   }
 
+  convertBalance() {
+    if (this.props.currency === 'BTC')
+      return this.state.balance.toFixed(8)
+    else
+      return this.state.balance.toFixed(10)
+  }
+
   renderHeader() {
     if (this.props.isMobile()) {
       return (
         <div>
           <Row style={{margin: "20px 0 0 0"}}>
-              <Statistic title="Balance" value={`${this.state.balance.toFixed(10)} ${this.props.currency}`} />
+              <Statistic title="Balance" value={`${this.convertBalance()} ${this.props.currency}`} />
           </Row>
           <Row>
             <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
@@ -211,7 +218,7 @@ class Wallet extends React.Component {
       return (
         <div>
           <Row style={{margin: "20px 0 0 0"}}>
-            <Statistic title="Balance" value={`${this.state.balance} ${this.props.currency}`} />
+            <Statistic title="Balance" value={`${this.convertBalance()} ${this.props.currency}`} />
           </Row>
           <Row style={{margin: "10px 0 0 0"}}>
             <Statistic title="USD Value" value={this.state.usdValue} precision={2} />

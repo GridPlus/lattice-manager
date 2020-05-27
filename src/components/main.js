@@ -278,10 +278,15 @@ class Main extends React.Component {
           this.setAlertMessage();
           this.tick();
 
+          // If we are paired already, set a waiting message. Addresses will
+          // be fetched via `this.refreshWallets`
+          if (isPaired && this.state.keyringOrigin === null)	
+            this.wait("Searching for Wallet")	
           // If the app is paired and this connection came from a keyring origin
           // (e.g. metamask), exit the app and return data
-          if (isPaired && this.state.keyringOrigin)
+          else if (isPaired && this.state.keyringOrigin)
             this.returnKeyringData();
+
         }
       });
     })
