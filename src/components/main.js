@@ -36,7 +36,7 @@ class Main extends React.Component {
       // Width of the current window
       windowWidth: window.innerWidth,
       // Track changes in the active wallet so we can refresh addresses when we detect one
-      walletisExternal: null,
+      walletIsExternal: null,
       // Window params
       keyringOrigin: null,
     };
@@ -281,7 +281,7 @@ class Main extends React.Component {
           // If we are paired already, set a waiting message. Addresses will
           // be fetched via `this.refreshWallets`
           if (isPaired && this.state.keyringOrigin === null)	
-            this.wait("Searching for Wallet")	
+            this.fetchAddresses(this.fetchData)
           // If the app is paired and this connection came from a keyring origin
           // (e.g. metamask), exit the app and return data
           else if (isPaired && this.state.keyringOrigin)
