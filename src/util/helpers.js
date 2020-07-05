@@ -21,7 +21,7 @@ if (process.env.REACT_APP_ENV === 'dev') {
     constants.ROOT_STORE = 'gridplus-dev';
     constants.BTC_COIN = 0x80000000 + 1; // Use testnet
     constants.ETH_TX_BASE_URL = 'https://rinkeby.etherscan.io/tx';
-    constants.BTC_TX_BASE_URL = 'https://www.blockchain.com/btctest/tx';
+    constants.BTC_TX_BASE_URL = 'https://www.blockchain.com/btc-testnet/tx';
 }
 exports.constants = constants;
 
@@ -113,15 +113,22 @@ function fetchCurrencyData(currency, addresses, page) {
 // @param page      {number}   -- page of transactions to request (ignored if currency!=ETH)
 // @param cb        {function} -- callback function of form cb(err, data)
 exports.fetchStateData = function(currency, addresses, page, cb) {
-    const reqAddresses = addresses[currency];
+    // We will combine regular and change addresses for the UTXO-based coins.
+    // This function will get called for each currency type, which means the requester
+    // will naively be asking for data on the change addresses by themselves. We should
+    // just return when that request is made.
+    if (currency.indexOf('_CHANGE') > -1)
+        return cb(null);
+    
+    // Get the initial addresses
+    let reqAddresses = addresses[currency];
+    if (addresses[`${currency}_CHANGE`] && addresses[`${currency}_CHANGE`].length > 0)
+        reqAddresses = reqAddresses.concat(addresses[`${currency}_CHANGE`])
 
     // Exit if we don't have addresses to use in the request
     if (!reqAddresses || reqAddresses.length === 0) 
         return cb(null);
 
-    // Slice out the 'change' portion of the currency name for the request itself
-    if (currency.indexOf('_CHANGE') > -1)
-        currency = currency.slice(0, currency.indexOf('_CHANGE'));
 
     let stateData = {
         currency,

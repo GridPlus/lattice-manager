@@ -288,6 +288,8 @@ class SDKSession {
         return cb(err);
       if (data)
         this.fetchDataHandler(data, switchToChange);
+      else
+        this.stateUpdateHandler({ stillSyncingAddresses: false });
       if (cb) return cb(null);
     })
   }
