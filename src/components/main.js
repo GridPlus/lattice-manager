@@ -318,6 +318,8 @@ class Main extends React.Component {
   // NOTE: If we don't need additional addresses, no request will be
   // made to the Lattice and we will proceed to fetchData immediately.
   fetchAddresses(cb=null) {
+    if (this.state.waiting === true)
+      return;
     this.wait("Syncing addresses")
     // Load the first BTC address so we can rehydrate the correct set, if applicable
     this.state.session.loadBtcAddrType((err) => {
@@ -339,6 +341,8 @@ class Main extends React.Component {
   }
 
   refreshWallets() {
+    if (this.state.waiting === true)
+      return;
     this.wait("Refreshing wallets")
     this.state.session.refreshWallets((err) => {
       this.unwait();

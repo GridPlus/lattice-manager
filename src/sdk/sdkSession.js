@@ -518,7 +518,7 @@ class SDKSession {
         console.error('Signing error:', err);
         return cb("Lattice failed to sign transaction. If you're sure it's correct, please try again.");
       }
-// /*
+
       // Broadcast
       const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/broadcast`;
       // Req should have the serialized payload WITH signature in the `tx` param
@@ -531,7 +531,7 @@ class SDKSession {
           'Content-Type': 'application/json',
         }
       }
-      console.log('broadcasting', body)
+      // console.log('broadcasting', body)
       fetch(url, data)
       .then((response) => {
         return response.json()
@@ -548,11 +548,6 @@ class SDKSession {
           console.error('Broadcast error:', err);
           return cb("Error broadcasting transaction. Please wait a bit and try again.");
       });
-// */
-
-    // setTimeout(() => { // TESTING ONLY
-    //   return cb(null, "5ac9027e255c42c6dd9c013b2aef9ee3c2d68161c92bef705e9a59063cbff090")
-    // }, 1000);
     })
   }
 
