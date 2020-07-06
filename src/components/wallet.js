@@ -153,10 +153,22 @@ class Wallet extends React.Component {
     )
   }
 
-  separatePendingTxs() {
+  deDuplicateTxs() {
+    const hashes = [];
+    const newTxs = [];
+    this.state.txs.forEach((tx) => {
+      if (hashes.indexOf(tx.hash) === -1) {
+        hashes.push(tx.hash);
+        newTxs.push(tx);
+      }
+    })
+    return newTxs;
+  }
+
+  separatePendingTxs(txs) {
     const pending = [];
     const confirmed = [];
-    this.state.txs.forEach((tx) => {
+    txs.forEach((tx) => {
       if (tx.height === -1) pending.push(tx)
       else                  confirmed.push(tx);
     });
@@ -166,7 +178,7 @@ class Wallet extends React.Component {
   }
 
   renderList() {
-    const txs = this.separatePendingTxs();
+    const txs = this.separatePendingTxs(this.deDuplicateTxs());
     return (
       <div>
         {txs.pending.length > 0 ? (
