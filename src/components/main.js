@@ -86,11 +86,8 @@ class Main extends React.Component {
   }
 
   componentDidUpdate() {
-    if (this.state.session) {
-      const activeWallet = this.state.session.getActiveWallet();
-      if (activeWallet)
-        this.syncActiveWalletState(activeWallet.external);
-    }
+    if (this.state.session)
+      this.syncActiveWalletState();
   }
 
   componentWillUnmount() {
@@ -345,6 +342,7 @@ class Main extends React.Component {
       return;
     this.wait("Refreshing wallets")
     this.state.session.refreshWallets((err) => {
+      this.syncActiveWalletState(true);
       this.unwait();
       if (err)
         return this.setError({ msg: err, cb: this.refreshWallets })
@@ -358,7 +356,11 @@ class Main extends React.Component {
   }
 
   // If we detect a new active wallet interface, save it and refresh wallet addresses
-  syncActiveWalletState(isExternal) {
+  syncActiveWalletState(bypassRefresh=false) {
+    const activeWallet = this.state.session.getActiveWallet();
+    if (!activeWallet)
+      return;
+    const isExternal = activeWallet.external;
     if (this.state.walletIsExternal !== isExternal) {
       // We only want to refresh if we know another interface was active before. If this
       // is the first check, just set the flag without calling refresh (it will get called)
@@ -367,7 +369,7 @@ class Main extends React.Component {
       // Set state regardless
       this.setState({ walletIsExternal: isExternal })
       // Refresh if needed
-      if (shouldRefresh === true)
+      if (shouldRefresh === true && bypassRefresh !== true)
         this.refreshWallets();
     }
   }
