@@ -311,35 +311,43 @@ class Send extends React.Component {
     if (this.props.currency === 'BTC') {
       // For BTC, we don't need to worry about other assets
       return (
-        <Col span={14} offset={2}>
+        <Col span={18} offset={2}>
           {this.renderValueLabelTitle()}
           {input}
         </Col>
       );
     } else if (this.props.currency === 'ETH') {
+      let maxTokenChars = 3; // Default is "ETH"
       // For ETH, account for ERC20s in the form of a dropdown
-      const tokensList = this.state.erc20Tokens.map((token) =>
-        <Select.Option value={token.contractAddress} key={`token_${token.contractAddress}`} style={{margin: "0 20px 0 0"}}>
+      const tokensList = this.state.erc20Tokens.map((token) => {
+        if (token.symbol.length > maxTokenChars)
+          maxTokenChars = token.symbol.length;
+        return (<Select.Option value={token.contractAddress} key={`token_${token.contractAddress}`} style={{margin: "0 20px 0 0"}}>
           {token.symbol}
-        </Select.Option>
+        </Select.Option>);
+      });
+
+      const optionWidth = maxTokenChars * 13; // 13px per character
+      const tokenOption = (
+        <Select defaultValue="ETH" 
+                onSelect={this.selectToken.bind(this)} 
+                style={{"text-align": "center", width: optionWidth}} 
+                className="select-after">
+          <Select.Option value={'ETH'} key={'token_ETH'}>ETH</Select.Option>
+          {tokensList}
+        </Select>
       );
       
       return (
         <div>
-          <Col span={12} offset={2}>
+          <Col span={18} offset={2}>
             {this.renderValueLabelTitle()}
             <Input type="text" 
                     id={VALUE_ID} 
                     value={this.state.value} 
                     onChange={this.updateValue.bind(this)}
+                    addonAfter={tokenOption}
             />
-          </Col>
-          <Col span={4} offset={1}>
-            <p style={{textAlign: 'center'}}><b>&nbsp;Token</b><Button type="link"> </Button></p>
-            <Select defaultValue="ETH" onSelect={this.selectToken.bind(this)} style={{align: "left"}}>
-              <Select.Option value={'ETH'} key={'token_ETH'}>ETH</Select.Option>
-              {tokensList}
-            </Select>
           </Col>
         </div>
       );
