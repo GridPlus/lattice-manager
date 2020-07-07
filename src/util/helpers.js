@@ -204,6 +204,11 @@ function getBtcVersion(addrs) {
 }
 exports.getBtcVersion = getBtcVersion;
 
+function getBtcNumTxBytes(numInputs) {
+    return (numInputs+1)*180 + 2*34 + 10;
+}
+exports.getBtcNumTxBytes = getBtcNumTxBytes;
+
 exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs, feeRate=constants.BTC_DEFAULT_FEE_RATE) {
     if (!addrs || !changeAddrs || addrs.length < 1 || changeAddrs.length < 1) {
         return { error: 'No addresses (or change addresses). Please wait to sync.' };
@@ -230,7 +235,7 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     })
 
     // Calculate the fee
-    let bytesUsed = (numInputs+1)*180 + 2*34 + 10;
+    let bytesUsed = getBtcNumTxBytes(numInputs+1);
     // If the fee tips us over our total value sum, add another utxo
     if ((bytesUsed * feeRate) + satValue > sum) {
         // There's a chance that we just eclipsed the number of inputs we could support.

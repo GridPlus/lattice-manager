@@ -2,12 +2,14 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Statistic, notification, Select, Slider } from 'antd'
 import { allChecks } from '../util/sendChecks';
-import { constants, buildBtcTxReq, buildERC20Data } from '../util/helpers'
+import { constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes } from '../util/helpers'
 import './styles.css'
 
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
 const GWEI_FACTOR = Math.pow(10, 9); // 1 GWei = 10**9 wei 
+const ETH_FACTOR = Math.pow(10, 18);
+const SAT_FACTOR = Math.pow(10, 8);
 
 class Send extends React.Component {
   constructor(props) {
@@ -279,6 +281,25 @@ class Send extends React.Component {
   // RENDERERS
   //========================================================
 
+  renderValueLabelTitle() {
+    return (
+      <p style={{textAlign: 'left'}}>
+        <b>Value</b>
+        <Button type="link"
+                onClick={() => { 
+                  this.updateValue({ 
+                    target: { 
+                      value: this.calculateMaxValue() 
+                    } 
+                  }) 
+                }}>
+          Max
+        </Button>
+        {this.renderIcon(VALUE_ID)}
+      </p>
+    )
+  }
+
   renderValueLabel() {
     const input = (
       <Input type="text"
@@ -291,14 +312,14 @@ class Send extends React.Component {
       // For BTC, we don't need to worry about other assets
       return (
         <Col span={14} offset={2}>
-          <p style={{textAlign: 'left'}}><b>Value</b></p>
+          {this.renderValueLabelTitle()}
           {input}
         </Col>
       );
     } else if (this.props.currency === 'ETH') {
       // For ETH, account for ERC20s in the form of a dropdown
       const tokensList = this.state.erc20Tokens.map((token) =>
-        <Select.Option value={token.contractAddress} key={`token_${token.contractAddress}`}>
+        <Select.Option value={token.contractAddress} key={`token_${token.contractAddress}`} style={{margin: "0 20px 0 0"}}>
           {token.symbol}
         </Select.Option>
       );
@@ -306,7 +327,7 @@ class Send extends React.Component {
       return (
         <div>
           <Col span={12} offset={2}>
-            <p style={{textAlign: 'left'}}><b>Value</b></p>
+            {this.renderValueLabelTitle()}
             <Input type="text" 
                     id={VALUE_ID} 
                     value={this.state.value} 
@@ -314,7 +335,7 @@ class Send extends React.Component {
             />
           </Col>
           <Col span={4} offset={1}>
-            <p style={{textAlign: 'left'}}><b>&nbsp;</b></p>
+            <p style={{textAlign: 'center'}}><b>&nbsp;Token</b><Button type="link"> </Button></p>
             <Select defaultValue="ETH" onSelect={this.selectToken.bind(this)} style={{align: "left"}}>
               <Select.Option value={'ETH'} key={'token_ETH'}>ETH</Select.Option>
               {tokensList}
@@ -412,6 +433,23 @@ class Send extends React.Component {
     }
   }
 
+  calculateMaxValue() {
+    const balance = this.props.session.getBalance(this.props.currency, this.state.erc20Addr);
+    switch (this.props.currency) {
+      case 'BTC':
+        // Fee will be calculated inside this function
+        const feeSat = getBtcNumTxBytes(this.props.session.getUtxos('BTC').length)
+        return Math.max(balance - (feeSat / SAT_FACTOR), 0);
+      case 'ETH':
+        if (this.state.erc20Addr !== null)
+          return balance;
+        const feeWei = Number(this.state.ethExtraData.gasPrice) * Number(this.state.ethExtraData.gasLimit);
+        return Math.max(balance - (feeWei / ETH_FACTOR), 0);
+      default:
+        return 0;
+    }
+  }
+
   renderSubmitButton() {
     // If all checks have passed, display the button
     if (this.state.isLoading) {
@@ -470,26 +508,19 @@ class Send extends React.Component {
           {this.renderBalance()}
           <Row>
             <Col span={18} offset={2}>
-              <p style={{textAlign:'left'}}><b>Recipient</b></p>
+              <p style={{textAlign:'left'}}>
+                <b>Recipient</b>
+                &nbsp;&nbsp;&nbsp;{this.renderIcon(RECIPIENT_ID)}
+              </p>
               <Input type="text" 
                       id={RECIPIENT_ID} 
                       value={this.state.recipient} 
                       onChange={this.updateRecipient.bind(this)}
               />
             </Col>
-            <Col offset={20}>
-              <div style={{margin: "30px 0 0 0", fontSize: "24px"}}>
-                {this.renderIcon(RECIPIENT_ID)}
-              </div>
-            </Col>
           </Row>
           <Row style={{margin: "20px 0 0 0"}}>
             {this.renderValueLabel()}
-            <Col offset={20}>
-              <div style={{margin: "30px 0 0 0", fontSize: "24px"}}>
-                {this.renderIcon(VALUE_ID)}
-              </div>
-            </Col>
           </Row>
           <Row style={{margin: "20px 0 0 0"}}>
             <Col span={18} offset={2}>
@@ -520,7 +551,7 @@ class Send extends React.Component {
     )
     return this.props.isMobile() ? content : (
       <Row justify={'center'}>
-        <Col span={12} offset={6}>
+        <Col span={14} offset={5}>
           {content}
         </Col>
       </Row>
