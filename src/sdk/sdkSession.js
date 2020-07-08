@@ -274,11 +274,13 @@ class SDKSession {
         // We will capture this in the callback.
         const fetchWrapper = () => {this.fetchData(requestCurrency, null, useChange)};
         this.loadAddresses(requestCurrency, fetchWrapper, true);
-      }, DEVICE_ADDR_SYNC_MS)
+      }, DEVICE_ADDR_SYNC_MS);
     } else if (switchToChange === true) {
       // If we don't necessarily need new addresses but we do need to check on
       // change addresses, call `fetchData` directly (i.e. don't call `loadAddresses`)
-      this.fetchData(requestCurrency, null, useChange);
+      setTimeout(() => {
+        this.fetchData(requestCurrency, null, useChange);
+      }, DEVICE_ADDR_SYNC_MS);
     }
   }
 
@@ -347,19 +349,26 @@ class SDKSession {
       // Catch an error, but if the device is busy it probably means it is currently
       // caching a batch of new addresses. Continue the loop through this request until
       // it hits.
-      if (err && err !== 'Device Busy') 
-        return cb(err);
-      else if (err === 'Device Busy')
+      if (err && err !== 'Device Busy') {
         setTimeout(() => {
-          return this.loadAddresses(currency, cb, force);
-        }, DEVICE_ADDR_SYNC_MS);
-
-      // Save the addresses to memory and also update them in localStorage
-      // Note that we do need to track index here
-      this.addresses[currency] = currentAddresses.concat(addresses);
-      this.saveStorage();
-      this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
-      return cb(null);
+          return cb(err);
+        }, 2000);
+      } else {
+        // To avoid concurrency problems on an initial sync, we need to wait
+        // for the device to refresh addresses before completing the callback
+        setTimeout(() => {
+          if (err === 'Device Busy') {
+            return this.loadAddresses(currency, cb, force);
+          } else {
+            // Save the addresses to memory and also update them in localStorage
+            // Note that we do need to track index here
+            this.addresses[currency] = currentAddresses.concat(addresses);
+            this.saveStorage();
+            this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
+            return cb(null);
+          }
+        }, opts.n * DEVICE_ADDR_SYNC_MS);
+      }
     })
   }
 

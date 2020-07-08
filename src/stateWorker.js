@@ -5,6 +5,7 @@ export default () => {
     let BASE_URL = 'localhost:3000'; // Should never use the default
     const LOOKUP_DELAY = 120000; // Lookup every 2 minutes
     let currentPage = 1; // Page of transactions to look for. Only applicable for ETH
+    
     self.addEventListener('message', e => { // eslint-disable-line no-restricted-globals
         if (!e) return;
         switch (e.data.type) {
