@@ -1,3 +1,5 @@
+const bs58check = require('bs58check');
+
 const constants = {
     ENV: 'prod',
     HARDENED_OFFSET: 0x80000000,
@@ -315,4 +317,14 @@ exports.getCurrencyText = function(currency) {
       }
     }
     return currency;
-  }
+}
+
+exports.validateBtcAddr = function(addr) {
+    if (addr === '') return null;
+    try {
+        bs58check.decode(addr);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}

@@ -1,7 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.css'
 import { Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
-import { getCurrencyText } from '../util/helpers'
+import { getCurrencyText, validateBtcAddr } from '../util/helpers'
 const QRCode = require('qrcode.react');
 const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
@@ -72,6 +72,9 @@ class Receive extends React.Component {
 
   renderCard() {
     if (this.state.address) {
+      // Sanity check on BTC address checksum
+      if (this.props.currency === 'BTC' && validateBtcAddr(this.state.address) === false)
+        return;
       const cardW = document.getElementById("receive-card").offsetWidth;
       const w = Math.min(300, 0.8 * cardW);
       return (

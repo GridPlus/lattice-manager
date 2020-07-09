@@ -1,5 +1,5 @@
 const Buffer = require('buffer/').Buffer
-const bs58check = require('bs58check');
+const { validateBtcAddr } = require('./helpers');
 
 exports.allChecks = {
   'ETH': {
@@ -9,7 +9,7 @@ exports.allChecks = {
   },
   'BTC': {
     full: checkBtc,
-    recipient: checkBtcRecipient,
+    recipient: validateBtcAddr,
     value: checkNumericValue,
   }
 }
@@ -21,7 +21,7 @@ function checkEth(data) {
 
 // Checks for Bitcoin transfers
 function checkBtc(data) {
-  return fullCheck(data, checkBtcRecipient);
+  return fullCheck(data, validateBtcAddr);
 }
 
 // Perform a check on the recipient and value
@@ -39,16 +39,6 @@ function checkEthRecipient(recipient) {
     // If any of the data is non-hex, the length will be shorter
     const correctLength = Buffer.from(recipient.slice(2), 'hex').length === 20;
     return isPrefixed === true && correctLength === true;
-  } catch (e) {
-    return false;
-  }
-}
-
-function checkBtcRecipient(recipient) {
-  if (recipient === '') return null;
-  try {
-    bs58check.decode(recipient);
-    return true;
   } catch (e) {
     return false;
   }
