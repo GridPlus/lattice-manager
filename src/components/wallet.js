@@ -2,7 +2,7 @@
 import React from 'react';
 import 'antd/dist/antd.css'
 import { Button, Avatar, Divider, Statistic, List, Row, Card, Icon, Tag, Spin} from 'antd';
-import { constants } from '../util/helpers'
+import { constants, getCurrencyText } from '../util/helpers'
 const GREEN = "#00FF00";
 const RED = "#FF0000";
 
@@ -265,7 +265,7 @@ class Wallet extends React.Component {
     return (
       <div style={{width: this.getInnerWidth() - 10}}>
         <Row gutter={16}>
-          <Card title={`${this.props.currency} Wallet`} bordered={true}>
+          <Card title={`${getCurrencyText(this.props.currency)} Wallet`} bordered={true}>
             <Row>
               Last Updated {this.renderLastUpdatedTag()}
               {this.props.stillSyncingAddresses === true ? (

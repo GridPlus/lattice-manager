@@ -20,6 +20,8 @@ if (process.env.REACT_APP_ENV === 'dev') {
     constants.GRIDPLUS_CLOUD_API = 'https://pay.gridplus.io:3333';
     constants.ROOT_STORE = 'gridplus-dev';
     constants.BTC_COIN = 0x80000000 + 1; // Use testnet
+    constants.ETH_TESTNET = 'Rinkeby';
+    constants.BTC_TESTNET = 'Testnet3';
     constants.ETH_TX_BASE_URL = 'https://rinkeby.etherscan.io/tx';
     constants.BTC_TX_BASE_URL = 'https://www.blockchain.com/btc-testnet/tx';
 }
@@ -300,3 +302,17 @@ exports.buildERC20Data = function(recipient, value, decimals) {
     const strippedRec = recipient.indexOf('0x') > -1 ? recipient.slice(2) : recipient;
     return `0xa9059cbb${leftPad(strippedRec, 64)}${leftPad(decValue.toString(16), 64)}`;
 }
+
+exports.getCurrencyText = function(currency) {
+    if (constants.ENV === 'dev') {
+      switch (currency) {
+        case 'ETH':
+          return `ETH (${constants.ETH_TESTNET})`;
+        case 'BTC':
+          return `BTC (${constants.BTC_TESTNET})`;
+        default:
+          return;
+      }
+    }
+    return currency;
+  }

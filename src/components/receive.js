@@ -1,6 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.css'
 import { Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
+import { getCurrencyText } from '../util/helpers'
 const QRCode = require('qrcode.react');
 const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
@@ -99,7 +100,7 @@ class Receive extends React.Component {
   render() {
     const content = (
       <center>
-        <Card title="Receive" bordered={true} id="receive-card">
+        <Card title={`Receive ${getCurrencyText(this.props.currency)}`} bordered={true} id="receive-card">
           <center>
             {this.renderCard()}
           </center>

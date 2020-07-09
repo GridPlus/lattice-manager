@@ -2,7 +2,7 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Statistic, notification, Select, Slider } from 'antd'
 import { allChecks } from '../util/sendChecks';
-import { constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes } from '../util/helpers'
+import { constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes, getCurrencyText } from '../util/helpers'
 import './styles.css'
 
 const RECIPIENT_ID = "recipient";
@@ -331,7 +331,7 @@ class Send extends React.Component {
       const tokenOption = (
         <Select defaultValue="ETH" 
                 onSelect={this.selectToken.bind(this)} 
-                style={{"text-align": "center", width: optionWidth}} 
+                style={{"textAlign": "center", width: optionWidth}} 
                 className="select-after">
           <Select.Option value={'ETH'} key={'token_ETH'}>ETH</Select.Option>
           {tokensList}
@@ -552,7 +552,7 @@ class Send extends React.Component {
     const content = (
       <center>
         {this.renderBanner()}
-        <Card title="Send" bordered={true}>
+        <Card title={`Send ${getCurrencyText(this.props.currency)}`} bordered={true}>
           {this.renderCard()}
         </Card>
       </center>      

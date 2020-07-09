@@ -4,7 +4,7 @@ import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
-import { constants } from '../util/helpers'
+import { constants, getCurrencyText } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
 
@@ -86,6 +86,7 @@ class Main extends React.Component {
         this.connectSession();
       });
     }
+
   }
 
   componentDidUpdate() {
@@ -428,7 +429,6 @@ class Main extends React.Component {
   //------------------------------------------
   // RENDERERS
   //------------------------------------------
-
   renderMenu() {
     return this.isMobile() ? (
       <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="horizontal" onSelect={this.handleMenuChange}>
@@ -478,7 +478,7 @@ class Main extends React.Component {
       <a href="https://gridplus.io" target={"_blank"}>
         <img  alt="GridPlus" 
               src={'/logo-on-black.png'}
-              style={{height: '1em'}}/> 
+              style={{height: '1em'}}/>
       </a>
     )
   }
@@ -510,8 +510,8 @@ class Main extends React.Component {
     // Add the currency switch
     extra.push(
       (<Select key="currency-select" defaultValue={this.state.currency} onChange={this.handleCurrencyChange} size={size}>
-        <Option value="ETH">ETH</Option>
-        <Option value="BTC">BTC</Option>
+        <Option value="ETH">{getCurrencyText('ETH')}</Option>
+        <Option value="BTC">{getCurrencyText('BTC')}</Option>
       </Select>)
     );
     extra.push(
