@@ -1,8 +1,8 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Card, Col, Row, Input, Icon, Empty } from 'antd'
+import { Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
 const QRCode = require('qrcode.react');
-const { Search } = Input;
+const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
 
 class Receive extends React.Component {
@@ -42,6 +42,33 @@ class Receive extends React.Component {
     document.execCommand("copy")
   }
 
+  renderAddrBox() {
+    if (this.props.isMobile()) {
+      return (
+        <div>
+          <TextArea id={SEARCH_ID}
+                    value={this.state.address}
+                    autoSize={{minRows: 1, maxRows: 3}}
+                    style={{margin: "30px 0 0 0", "textAlign": "center"}}/>
+          <Button type="primary"
+                  style={{margin: "20px 0 0 0"}}>
+            Copy <Icon type="copy"/>
+          </Button>
+        </div>
+      )
+    } else {
+      return (
+         <Search type="text" 
+                  id={SEARCH_ID} 
+                  value={this.state.address} 
+                  enterButton={<Icon type="copy" />}
+                  onSearch={this.copyAddress}
+                  style={{margin: "30px 0 0 0", "textAlign": "center"}}
+          />
+      );
+    }
+  }
+
   renderCard() {
     if (this.state.address) {
       const cardW = document.getElementById("receive-card").offsetWidth;
@@ -55,13 +82,7 @@ class Receive extends React.Component {
           />
           </Row>
           <Row>
-          <Search type="text" 
-                  id={SEARCH_ID} 
-                  value={this.state.address} 
-                  enterButton={<Icon type="copy" />}
-                  onSearch={this.copyAddress}
-                  style={{margin: "30px 0 0 0", width: `${w}px`}}
-          />
+            {this.renderAddrBox()}
           </Row>
         </div>
       )
