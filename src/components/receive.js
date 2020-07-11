@@ -43,6 +43,7 @@ class Receive extends React.Component {
     document.execCommand("copy")
   }
 
+
   renderAddrBox() {
     if (this.props.isMobile()) {
       return (
@@ -52,7 +53,8 @@ class Receive extends React.Component {
                     autoSize={{minRows: 1, maxRows: 3}}
                     style={{margin: "30px 0 0 0", "textAlign": "center"}}/>
           <Button type="primary"
-                  style={{margin: "20px 0 0 0"}}>
+                  style={{margin: "20px 0 0 0"}}
+                  onClick={this.copyAddress}>
             Copy <Icon type="copy"/>
           </Button>
         </div>
