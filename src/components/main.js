@@ -4,7 +4,7 @@ import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
-import { constants, getCurrencyText } from '../util/helpers'
+import { constants, getCurrencyText, setEthersProvider } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
 
@@ -75,6 +75,9 @@ class Main extends React.Component {
     if (keyring) {
       window.onload = this.handleWindowLoaded();
     }
+
+    // Set the ethers provider for ENS support
+    setEthersProvider();
 
     // Listen for window resize
     window.addEventListener('resize', this.updateWidth);
