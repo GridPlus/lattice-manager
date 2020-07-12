@@ -1,5 +1,5 @@
 const bs58check = require('bs58check');
-
+const { ethers } = require('ethers');
 const constants = {
     ENV: 'prod',
     HARDENED_OFFSET: 0x80000000,
@@ -29,12 +29,45 @@ if (process.env.REACT_APP_ENV === 'dev') {
 }
 exports.constants = constants;
 
-exports.harden = function(x) {
-  return x + constants.HARDENED_OFFSET;
+//--------------------------------------------
+// ETHEREUM NAME SERVICE (ENS) HELPERS
+//--------------------------------------------
+let ethersProvider;
+exports.setEthersProvider = function() {
+    try {
+        if (constants.ETH_TESTNET)
+            ethersProvider = new ethers.providers.EtherscanProvider(constants.ETH_TESTNET.toLowerCase());
+        else
+            ethersProvider = new ethers.providers.EtherscanProvider();
+        return null;
+    } catch (err) {
+        return err;
+    }
 }
 
-const BASE_URL = constants.GRIDPLUS_CLOUD_API;
-//-------- GET DATA HELPER
+function isValidENS(name) {
+    try {
+        return name.slice(-4) === '.eth';
+    } catch (err) {
+        return false;
+    }
+}
+exports.isValidENS = isValidENS;
+
+exports.resolveENS = function(name, cb) {
+    if (false === isValidENS(name))
+        return cb(null, null);
+    ethersProvider.resolveName(name)
+    .then((addr) => { return cb(null, addr); })
+    .catch((err) => { return cb(err); })
+}
+//--------------------------------------------
+// END ETHEREUM NAME SERVICE (ENS) HELPERS
+//--------------------------------------------
+
+//--------------------------------------------
+// CHAIN DATA SYNCING HELPERS
+//--------------------------------------------
 const headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -44,7 +77,7 @@ function fetchETHNonce(currency, addresses) {
     return new Promise((resolve, reject) => {
         if (currency !== 'ETH' || addresses.length < 1)
             return resolve(null);
-        const url = `${BASE_URL}/v2/accounts/get-transaction-count`
+        const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/get-transaction-count`
         const data = {
             method: 'POST',
             body: JSON.stringify({ address: addresses[0] }),
@@ -66,7 +99,7 @@ function fetchERC20Data(currency, addresses, page) {
     return new Promise((resolve, reject) => {
         if (currency !== 'ETH')
             return resolve(null);
-        const url = `${BASE_URL}/v2/accounts/get-erc20-transactions`
+        const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/get-erc20-transactions`
         const data = {
             method: 'POST',
             body: JSON.stringify([{ currency, addresses, page }]),
@@ -88,7 +121,7 @@ function fetchERC20Data(currency, addresses, page) {
 function fetchCurrencyData(currency, addresses, page) {
     return new Promise((resolve, reject) => {
         // Account for change addresses
-        const url = `${BASE_URL}/v2/accounts/get-data`
+        const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/get-data`
         const data = {
             method: 'POST',
             body: JSON.stringify([{ currency, addresses, page }]),
@@ -188,7 +221,16 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
         return cb(err);
     });
 }
-//-------- END GET DATA
+//--------------------------------------------
+// END CHAIN DATA SYNCING HELPERS
+//--------------------------------------------
+
+//--------------------------------------------
+// OTHER HELPERS
+//--------------------------------------------
+exports.harden = function(x) {
+  return x + constants.HARDENED_OFFSET;
+}
 
 function getBtcVersion(addrs) {
     const addr = Array.isArray(addrs) ? addrs[0] : addrs;
@@ -328,3 +370,6 @@ exports.validateBtcAddr = function(addr) {
         return false;
     }
 }
+//--------------------------------------------
+// END OTHER HELPERS
+//--------------------------------------------

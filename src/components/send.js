@@ -2,7 +2,7 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Statistic, notification, Select, Slider } from 'antd'
 import { allChecks } from '../util/sendChecks';
-import { constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes, getCurrencyText } from '../util/helpers'
+import { constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes, getCurrencyText, isValidENS, resolveENS } from '../util/helpers'
 import './styles.css'
 
 const RECIPIENT_ID = "recipient";
@@ -31,8 +31,10 @@ class Send extends React.Component {
       },
       btcFeeRate: constants.BTC_DEFAULT_FEE_RATE,
       erc20Tokens: [],
+      ensResolvedAddress: null,
     }
 
+    this.handleENSResolution = this.handleENSResolution.bind(this);
     this.renderBanner = this.renderBanner.bind(this);
     this.renderSubmitButton = this.renderSubmitButton.bind(this);
     this.renderValueLabel = this.renderValueLabel.bind(this);
@@ -59,13 +61,26 @@ class Send extends React.Component {
   // STATE MANAGERS
   //========================================================
 
+  handleENSResolution(err, address) {
+    if (err || address === null)
+      return this.setState({ recipientCheck: false, ensResolvedAddress: null })
+    // If we got an address, stash that under "ensResolvedAddress" so as to not
+    // overwrite the text in the display component.
+    return this.setState({ recipientCheck: true, ensResolvedAddress: address })
+  }
+
   updateRecipient(evt) {
     const val = evt.target.value;
-    const check = allChecks[this.props.currency].recipient;
+    const check = allChecks[this.props.currency].recipient(val);
     this.setState({ 
       recipient: val,
-      recipientCheck: check(val), 
+      ensResolvedAddress: null,
+      recipientCheck: check, 
     });
+    // For ETH, the user may have typed in an ENS name, which should be verified
+    // independently.
+    if (false === check && this.props.currency === 'ETH' && isValidENS(val))
+      resolveENS(val, this.handleENSResolution);
   }
 
   checkValue(val) {
@@ -144,6 +159,9 @@ class Send extends React.Component {
 
   buildEthRequest() {
     let _value, _data, _recipient;
+    const recipient = this.state.ensResolvedAddress ?
+                      this.state.ensResolvedAddress :
+                      this.state.recipient;
     if (this.state.erc20Addr !== null) {
       const decimals = this.getDecimals(this.state.erc20Addr);
       // Sanity check -- should never happen
@@ -151,10 +169,10 @@ class Send extends React.Component {
         throw new Error('Could not find token specified');
       _value = 0;
       _recipient = this.state.erc20Addr;
-      _data = buildERC20Data(this.state.recipient, this.state.value, decimals);
+      _data = buildERC20Data(recipient, this.state.value, decimals);
     } else {
       _value = this.state.value * Math.pow(10, 18);
-      _recipient = this.state.recipient;
+      _recipient = recipient;
       _data = this.state.ethExtraData.data;
     }
     const txData = {
@@ -235,7 +253,9 @@ class Send extends React.Component {
           // Start watching this new tx hash for confirmation
           this.setState({ 
             recipient: '',
+            recipientCheck: null,
             value: null,
+            valueCheck: null,
             txHash: txHash, 
             error: null, 
             isLoading: false 
@@ -468,7 +488,7 @@ class Send extends React.Component {
           Waiting...
         </Button>
       )
-    } else if (allChecks[this.props.currency].full(this.state)) {
+    } else if (allChecks[this.props.currency].full(this.state) || this.state.ensResolvedAddress !== null) {
       return (
         <Button type="primary" 
                 onClick={this.submit} 
