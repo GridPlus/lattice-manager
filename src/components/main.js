@@ -111,9 +111,9 @@ class Main extends React.Component {
 
   connect(deviceID, password, cb) {
     const updates = { deviceID, password };
-    if (!this.state.session) {
+    if (!this.state.session || true === this.state.keyringOrigin) {
       // Create a new session if we don't have one.
-      updates.session =  new SDKSession(deviceID, this.handleStateUpdate);
+      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.keyringOrigin);
     }
     this.setState(updates, cb);
   }
@@ -145,6 +145,7 @@ class Main extends React.Component {
       password: this.state.password,
     };
     window.opener.postMessage(JSON.stringify(data), "*");
+    this.handleLogout();
     window.close();
   }
   //------------------------------------------

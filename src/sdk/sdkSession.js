@@ -8,9 +8,10 @@ const ReactCrypto = require('gridplus-react-crypto').default;
 const DEVICE_ADDR_SYNC_MS = 2000; // It takes roughly 2000 to sync a new address
 
 class SDKSession {
-  constructor(deviceID, stateUpdateHandler) {
+  constructor(deviceID, stateUpdateHandler, isKeyringOrigin=false) {
     this.client = null;
     this.crypto = null;
+    this.isKeyringOrigin = isKeyringOrigin;
     // Cached list of addresses, indexed by currency
     this.addresses = {};
     // Cached balances (in currency units), indexed by currency
@@ -465,6 +466,12 @@ class SDKSession {
   }
 
   connect(deviceID, pw, cb, tmpTimeout=constants.SHORT_TIMEOUT) {
+    // If this request originated from a keyring, we assume it was Metamask
+    let name = 'GridPlus Web Wallet';
+    if (true === this.isKeyringOrigin) {
+      name = 'MetaMask';
+      pw += name;
+    }
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
@@ -474,13 +481,14 @@ class SDKSession {
     // If no client exists in this session, create a new one and
     // attach it.
     const client = new Client({ 
-      name: 'GridPlus Web Wallet',
+      name,
       crypto: this.crypto,
       privKey: key,
-      baseUrl: 'https://signing.staging-gridpl.us',
+      baseUrl: constants.BASE_SIGNING_URL,
       timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
     })
     client.connect(deviceID, (err) => {
+
       if (err) return cb(err);
       // Update the timeout to a longer one for future async requests
       client.timeout = constants.ASYNC_SDK_TIMEOUT;
