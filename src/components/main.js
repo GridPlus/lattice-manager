@@ -415,8 +415,8 @@ class Main extends React.Component {
       this.unwait();
       if (err) {
         // If there was an error here, the user probably entered the wrong secret
-        // this.setError({ msg: 'Secret was incorrect. Please try again.', cb: this.connectSession });
-        this.setError({ msg: err, cb: this.connectSession });
+        const pairErr = 'Failed to pair. You either entered the wrong code or already have a connected GridPlus Web Wallet.'
+        this.setError({ msg: pairErr, cb: this.connectSession });
       } else if (this.state.keyringOrigin === null) {
         // Success! Load our addresses from this wallet.
         this.fetchAddresses(this.fetchData);
@@ -499,7 +499,7 @@ class Main extends React.Component {
 
     if (activeWallet === null) {
       walletTag = ( 
-        <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Active Wallet!</Button>
+        <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet</Button>
       )
     } else {
       walletTag = activeWallet.external === true ?  (
@@ -607,6 +607,7 @@ class Main extends React.Component {
     } else if (hasError) {
       return (
         <Error  cb={this.state.error.cb}
+                isMobile={() => this.isMobile()}
                 msg={this.state.error.msg}
                 retryCb={this.retry}
         />
