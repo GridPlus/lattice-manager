@@ -170,8 +170,8 @@ class SDKSession {
         case 'iterationDone':
           // Done looping through our set of currencies for the given iteration
           // Refresh wallets to make sure we are synced
-          this.refreshWallets(() => {
-            this.stateUpdateHandler();
+          this.refreshWallets((err) => {
+            this.stateUpdateHandler({err});
           })
           break;
         default:
@@ -487,7 +487,6 @@ class SDKSession {
       timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
     })
     client.connect(deviceID, (err) => {
-
       if (err) return cb(err);
       // Update the timeout to a longer one for future async requests
       client.timeout = constants.ASYNC_SDK_TIMEOUT;
@@ -506,6 +505,9 @@ class SDKSession {
     if (this.client) {
       const prevWallet = JSON.stringify(this.client.getActiveWallet());
       this.client.connect(this.deviceID, (err) => {
+        // If we lost connection, the user most likely removed the pairing and will need to repair
+        if (false === this.client.isPaired)
+          return cb(constants.LOST_PAIRING_ERR);
         if (err)
           return cb(err);
         // If we pulled a new active wallet, reset balances + transactions

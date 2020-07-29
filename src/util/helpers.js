@@ -17,6 +17,8 @@ const constants = {
     ETH_TX_BASE_URL: 'https://etherscan.io/tx',
     BTC_TX_BASE_URL: 'https://www.blockchain.com/btc/tx',
     PAGE_SIZE: 20, // 20 transactions per requested page, per `gridplus-cloud-services`
+    LOST_PAIRING_ERR: "NOT_PAIRED",
+    LOST_PAIRING_MSG: "Cannot find Lattice connection. Please re-connect.",
 }
 if (process.env.REACT_APP_ENV === 'dev') {
     constants.ENV = 'dev';

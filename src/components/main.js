@@ -229,15 +229,21 @@ class Main extends React.Component {
     this.setState({ menuItem: key })
   }
 
-  handleLogout() {
+  handleLogout(err=null) {
     this.unwait();
     this.state.session.disconnect();
     this.setState({ session: null, currency: 'ETH' });
     window.localStorage.removeItem('gridplus_web_wallet_id');
     window.localStorage.removeItem('gridplus_web_wallet_password');
+    if (err && err === constants.LOST_PAIRING_MSG)
+      this.setError({msg: err})
   }
 
   handleStateUpdate(data={err:null, currency:null, cb:null}) {
+    // Handle case where user deletes pairing on the Lattice
+    if (data.err === constants.LOST_PAIRING_ERR)
+      return this.handleLostPairing();
+
     if (data.err && data.currency === this.state.currency) {
       // We shouldn't assume we have updated state if we got an error message.
       // Most likely, the request failed.
@@ -359,11 +365,26 @@ class Main extends React.Component {
     })
   }
 
+  handleLostPairing() {
+    // If we lost our pairing, we will have discovered that after trying to `connect`.
+    // The Lattice will draw a pairing screen, so to tear it down we need to send an
+    // invalid pairing code.
+    // TODO: This will still draw a pairing failure screen on the Lattice. There is
+    //       currently no way around this, but it is something we should address
+    //       in the future.
+    this.state.session.pair('x', () => {
+      this.handleLogout(constants.LOST_PAIRING_MSG);
+    });
+  }
+
   refreshWallets() {
     if (this.state.waiting === true)
       return;
     this.wait("Refreshing wallets")
     this.state.session.refreshWallets((err) => {
+      if (err === constants.LOST_PAIRING_ERR)
+        return this.handleLostPairing();
+      
       this.syncActiveWalletState(true);
       this.unwait();
       if (err)
