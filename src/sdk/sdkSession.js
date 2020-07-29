@@ -468,10 +468,9 @@ class SDKSession {
   connect(deviceID, pw, cb, tmpTimeout=constants.SHORT_TIMEOUT) {
     // If this request originated from a keyring, we assume it was Metamask
     let name = 'GridPlus Web Wallet';
-    if (true === this.isKeyringOrigin) {
+    if (true === this.isKeyringOrigin)
       name = 'MetaMask';
-      pw += name;
-    }
+
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
