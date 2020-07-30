@@ -12,6 +12,7 @@ class Main extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
+      name: 'GridPlus Web Wallet',
       currency: 'ETH',
       menuItem: 'menu-wallet',
       // GridPlusSDK session object
@@ -71,8 +72,8 @@ class Main extends React.Component {
     // Metamask connects through a keyring and in these cases we need
     // to utilize window.postMessage once we connect
     const params = new URLSearchParams(window.location.search);
-    const keyring = params.get('keyring')
-    if (keyring) {
+    const keyringName = params.get('keyring')
+    if (keyringName) {
       window.onload = this.handleWindowLoaded();
     }
 
@@ -85,7 +86,7 @@ class Main extends React.Component {
     const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
     const password = window.localStorage.getItem('gridplus_web_wallet_password');
     if (deviceID && password) {
-      this.connect(deviceID, password, () => {
+      this.connect(deviceID, password, keyringName, () => {
         this.connectSession();
       });
     }
@@ -109,11 +110,11 @@ class Main extends React.Component {
     return this.state.windowWidth < 500;
   }
 
-  connect(deviceID, password, cb) {
-    const updates = { deviceID, password };
-    if (!this.state.session || true === this.state.keyringOrigin) {
+  connect(deviceID, password, name, cb) {
+    const updates = { deviceID, password, name };
+    if (!this.state.session) {
       // Create a new session if we don't have one.
-      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.keyringOrigin);
+      updates.session = new SDKSession(deviceID, this.handleStateUpdate, name);
     }
     this.setState(updates, cb);
   }
@@ -267,7 +268,7 @@ class Main extends React.Component {
   // Call `connect` on the SDK session. If we get an error back, clear out the client,
   // as we cannot connect.
   connectSession(data=this.state, showLoading=true) {
-    const { deviceID, password } = data;
+    const { deviceID, password, name } = data;
       // Sanity check -- this should never get hit
     if (!deviceID || !password) {
       return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
@@ -275,7 +276,7 @@ class Main extends React.Component {
       this.setError(null);
     }
     // Connect to the device
-    this.connect(deviceID, password, () => {
+    this.connect(deviceID, password, name, () => {
       // Create a new session with the deviceID and password provided.
       if (showLoading === true)
         this.wait("Looking for your Lattice");

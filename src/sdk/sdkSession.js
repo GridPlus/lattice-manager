@@ -8,10 +8,10 @@ const ReactCrypto = require('gridplus-react-crypto').default;
 const DEVICE_ADDR_SYNC_MS = 2000; // It takes roughly 2000 to sync a new address
 
 class SDKSession {
-  constructor(deviceID, stateUpdateHandler, isKeyringOrigin=false) {
+  constructor(deviceID, stateUpdateHandler, name=null) {
     this.client = null;
     this.crypto = null;
-    this.isKeyringOrigin = isKeyringOrigin;
+    this.name = name || 'GridPlus Web Wallet'; // app name
     // Cached list of addresses, indexed by currency
     this.addresses = {};
     // Cached balances (in currency units), indexed by currency
@@ -466,21 +466,16 @@ class SDKSession {
   }
 
   connect(deviceID, pw, cb, tmpTimeout=constants.SHORT_TIMEOUT) {
-    // If this request originated from a keyring, we assume it was Metamask
-    let name = 'GridPlus Web Wallet';
-    if (true === this.isKeyringOrigin)
-      name = 'MetaMask';
-
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
     // enter a reasonably strong password to prevent unwanted requests
     // from nefarious actors.
-    const key = this._genPrivKey(deviceID, pw);
+    const key = this._genPrivKey(deviceID, pw, this.name);
     // If no client exists in this session, create a new one and
     // attach it.
     const client = new Client({ 
-      name,
+      name: this.name,
       crypto: this.crypto,
       privKey: key,
       baseUrl: constants.BASE_SIGNING_URL,
@@ -569,8 +564,12 @@ class SDKSession {
     })
   }
 
-  _genPrivKey(deviceID, pw) {
-    const key = Buffer.concat([Buffer.from(pw), Buffer.from(deviceID)])
+  _genPrivKey(deviceID, pw, name) {
+    const key = Buffer.concat([
+      Buffer.from(pw), 
+      Buffer.from(deviceID),
+      Buffer.from(name),
+    ])
     // Create a new instance of ReactCrypto using the key as entropy
     this.crypto = new ReactCrypto(key);
     return this.crypto.createHash('sha256').update(key).digest();
