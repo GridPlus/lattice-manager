@@ -40,6 +40,7 @@ class Main extends React.Component {
       walletIsExternal: null,
       // Window params
       keyringOrigin: null,
+      keyringName: null,
       // If testnet is disabled on BTC, we will not be able to fetch addresses
       // if we are in dev config
       btcDisabled: false,
@@ -69,24 +70,29 @@ class Main extends React.Component {
   }
 
   componentDidMount() {
-    // Metamask connects through a keyring and in these cases we need
-    // to utilize window.postMessage once we connect
-    const params = new URLSearchParams(window.location.search);
-    const keyringName = params.get('keyring')
-    if (keyringName) {
-      window.onload = this.handleWindowLoaded();
-    }
-
     // Set the ethers provider for ENS support
     setEthersProvider();
 
     // Listen for window resize
     window.addEventListener('resize', this.updateWidth);
+
+    // Metamask connects through a keyring and in these cases we need
+    // to utilize window.postMessage once we connect.
+    // We can extend this pattern to other apps in the future.
+    const params = new URLSearchParams(window.location.search);
+    const keyringName = params.get('keyring')
+    if (keyringName) {
+      this.setState({ name: keyringName })
+      window.onload = this.handleWindowLoaded();
+      // Avoid using params in localStorage if this is a keyring request
+      return;
+    }
+
     // Lookup deviceID and pw from storage
     const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
     const password = window.localStorage.getItem('gridplus_web_wallet_password');
     if (deviceID && password) {
-      this.connect(deviceID, password, keyringName, () => {
+      this.connect(deviceID, password, () => {
         this.connectSession();
       });
     }
@@ -110,11 +116,11 @@ class Main extends React.Component {
     return this.state.windowWidth < 500;
   }
 
-  connect(deviceID, password, name, cb) {
-    const updates = { deviceID, password, name };
+  connect(deviceID, password, cb) {
+    const updates = { deviceID, password };
     if (!this.state.session) {
       // Create a new session if we don't have one.
-      updates.session = new SDKSession(deviceID, this.handleStateUpdate, name);
+      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name);
     }
     this.setState(updates, cb);
   }
@@ -268,7 +274,7 @@ class Main extends React.Component {
   // Call `connect` on the SDK session. If we get an error back, clear out the client,
   // as we cannot connect.
   connectSession(data=this.state, showLoading=true) {
-    const { deviceID, password, name } = data;
+    const { deviceID, password } = data;
       // Sanity check -- this should never get hit
     if (!deviceID || !password) {
       return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
@@ -276,7 +282,7 @@ class Main extends React.Component {
       this.setError(null);
     }
     // Connect to the device
-    this.connect(deviceID, password, name, () => {
+    this.connect(deviceID, password, () => {
       // Create a new session with the deviceID and password provided.
       if (showLoading === true)
         this.wait("Looking for your Lattice");
