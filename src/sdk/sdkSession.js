@@ -326,13 +326,13 @@ class SDKSession {
         // already synced and this function will get called if we discover <20 unused addresses
         // (via `fetchDataHandler`)
         if (force !== true && nextIdx >= constants.BTC_MAIN_GAP_LIMIT) return cb(null);
-        opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 0, nextIdx ];
+        opts.startPath = [ constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, harden(0), 0, nextIdx ];
         opts.n = nextIdx >= constants.BTC_MAIN_GAP_LIMIT ? 1 : constants.BTC_ADDR_BLOCK_LEN;
         break;
       case 'BTC_CHANGE':
         // Skip the initial sync if we have at least one change address (GAP_LIMIT=1)
         if (force !== true && nextIdx >= constants.BTC_CHANGE_GAP_LIMIT) return cb(null);
-        opts.startPath = [ harden(44), constants.BTC_COIN, harden(0), 1, nextIdx ];
+        opts.startPath = [ constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, harden(0), 1, nextIdx ];
         opts.n = nextIdx >= constants.BTC_CHANGE_GAP_LIMIT ? 1 : constants.BTC_CHANGE_GAP_LIMIT;
         break;
       case 'ETH':
@@ -340,7 +340,7 @@ class SDKSession {
         // We will only ever use one ETH address, so callback success here.
         if (nextIdx > 0) return cb(null);
         // If we don't have any addresses here, let's get the first one
-        opts.startPath = [ harden(44), harden(60), harden(0), 0, nextIdx ];
+        opts.startPath = [ constants.BIP44_PURPOSE, harden(60), harden(0), 0, nextIdx ];
         opts.n = 1;
         break;
       default:
@@ -452,7 +452,7 @@ class SDKSession {
   // Request the first BTC address so we can know what data to rehydrate
   loadBtcAddrType(cb) {
     const opts = {
-      startPath: [ harden(44), constants.BTC_COIN, harden(0), 0, 0 ],
+      startPath: [ constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, harden(0), 0, 0 ],
       n: 1
     };
     this.client.getAddresses(opts, (err, addresses) => {
