@@ -187,7 +187,7 @@ class Send extends React.Component {
       currency: 'ETH',
       data: {
         signerPath: [
-          constants.HARDENED_OFFSET+44, 
+          constants.BIP44_PURPOSE, 
           constants.HARDENED_OFFSET+60, 
           constants.HARDENED_OFFSET, 
           0, 
