@@ -20,6 +20,11 @@ const constants = {
     LOST_PAIRING_ERR: "NOT_PAIRED",
     LOST_PAIRING_MSG: "Cannot find Lattice connection. Please re-connect.",
 }
+constants.BIP44_PURPOSE = constants.HARDENED_OFFSET + 44;
+// NOTE: For v1, the Lattice only supports p2sh-p2wpkh addresses, which
+//       use the BIP49 purpose (49') in their derivation paths.
+constants.BIP_PURPOSE_P2SH_P2WPKH = constants.HARDENED_OFFSET + 49;
+
 if (process.env.REACT_APP_ENV === 'dev') {
     constants.ENV = 'dev';
     constants.BASE_SIGNING_URL = 'https://signing.staging-gridpl.us';
@@ -298,7 +303,7 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     const fee = Math.floor(bytesUsed * feeRate);
 
     // Build the request inputs
-    const BASE_SIGNER_PATH = [constants.HARDENED_OFFSET+44, constants.BTC_COIN, constants.HARDENED_OFFSET];
+    const BASE_SIGNER_PATH = [constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, constants.HARDENED_OFFSET];
     const prevOuts = [];
     for (let i = 0; i < numInputs; i++) {
         const utxo = sortedUtxos[i];
