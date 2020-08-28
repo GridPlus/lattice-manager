@@ -527,13 +527,13 @@ class Main extends React.Component {
 
     if (activeWallet === null) {
       walletTag = ( 
-        <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet</Button>
+        <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet <Icon type="reload"/></Button>
       )
     } else {
       walletTag = activeWallet.external === true ?  (
-        <Button type="primary" ghost onClick={this.refreshWallets} size={size}><Icon type="credit-card"/> SafeCard</Button>
+        <Button type="primary" ghost onClick={this.refreshWallets} size={size}><Icon type="credit-card"/> SafeCard <Icon type="reload"/></Button>
       ) : (
-        <Button type="default" ghost onClick={this.refreshWallets} size={size}><Icon type="check"/> Lattice1</Button>
+        <Button type="default" ghost onClick={this.refreshWallets} size={size}><Icon type="check"/> Lattice1 <Icon type="reload"/></Button>
       )
     }
     if (walletTag) extra.push((
