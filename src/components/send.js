@@ -471,8 +471,8 @@ class Send extends React.Component {
       case 'ETH':
         if (this.state.erc20Addr !== null)
           return balance;
-        const feeWei = Number(this.state.ethExtraData.gasPrice) * Number(this.state.ethExtraData.gasLimit);
-        return Math.max(balance - (feeWei / ETH_FACTOR), 0);
+        const feeGWei = Number(this.state.ethExtraData.gasPrice) * Number(this.state.ethExtraData.gasLimit);
+        return Math.max(balance - (feeGWei / GWEI_FACTOR), 0);
       default:
         return 0;
     }
