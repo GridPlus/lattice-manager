@@ -23,7 +23,7 @@ class Connect extends React.Component {
     this.setState({ isLoading: false })
   }
 
-  handleSubmit(data) {
+  handleSubmit() {
     const deviceID = document.getElementById("deviceIdInput").value;
     const password = document.getElementById("passwordInput").value;
     if (password.length < 8) {
@@ -134,11 +134,19 @@ class Connect extends React.Component {
     else if (this.props.errMsg)
       err = this.props.errMsg;
 
+      const desc = (
+            <Button onClick={this.handleSubmit} type="primary">
+              Retry
+            </Button>
+      )
     if (err)
-      return (<Alert  message={<p><b>Error:</b><br/>{err}</p>} 
-                      type={"error"} 
-                      style={{margin: "20px 0 0 0"}}
-                      closable />);
+      return (
+        <Alert  message={<p><b>Error:</b><br/>{err}</p>} 
+                type={"error"} 
+                style={{margin: "20px 0 0 0"}}
+                description={desc}
+                closable/>
+      );
     return;
   }
 
