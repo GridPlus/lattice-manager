@@ -1,0 +1,42 @@
+[
+  {
+    "contractAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "symbol": "USDC",
+    "decimals": 6
+  },
+  {
+    "contractAddress": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "symbol": "USDT",
+    "decimals": 6
+  }, 
+  {
+    "contractAddress": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "symbol": "DAI",
+    "decimals": 18
+  },
+  {
+    "contractAddress": "0x8E870D67F660D95d5be530380D0eC0bd388289E1",
+    "symbol": "PAX",
+    "decimals": 18
+  },
+  {
+    "contractAddress": "0x0000000000085d4780B73119b644AE5ecd22b376",
+    "symbol": "TUSD",
+    "decimals": 18
+  },
+  {
+    "contractAddress": "0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D",
+    "symbol": "renBTC",
+    "decimals": 8
+  },
+  {
+    "contractAddress": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "symbol": "wBTC",
+    "decimals": 8
+  },
+  {
+    "contractAddress": "0x12B19D3e2ccc14Da04FAe33e63652ce469b3F2FD",
+    "symbol": "GRID",
+    "decimals": 12
+  }
+]

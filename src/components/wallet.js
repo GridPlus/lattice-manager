@@ -82,8 +82,42 @@ class Wallet extends React.Component {
     link: "https://rinkeby.etherscan.io/tx/0xf1bfe45aaf8dc8ca379aa6661bf3af9f2d71f27d90a64d618e7ba1cfdba66ca5"
     lastUpdated: 1578858115022
     */
+
+    function getTokenName(item) {
+      if (item.currency === 'ETH' && item.asset !== 'ETH' && item.contractAddress != null)
+        return item.asset;
+      return null;
+    }
+
+    function getTokenImageURI(item) {
+      if (item.asset === 'BTC') {
+        return `/BTC.png`;
+      } else if (item.asset === 'ETH') {
+          return `/ETH.png`
+      } else if (getTokenName(item) !== null) {
+          return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${item.contractAddress}/logo.png`
+      } else {
+        return `/token.png`;
+      }
+    }
+
+    function getValue(item) {
+      if (getTokenName(item) === null)
+        return item.value.toFixed(8);
+      return (item.value / 10 ** (Number(item.tokenDecimals) || 0))
+    }
+
+    function getTitle(i) {
+      const tokenName = getTokenName(i);
+      if (tokenName !== null)
+        return `${getValue(i)} ${tokenName}`
+      else if (i.value === 0 && i.asset === 'ETH' && !i.incoming)
+        return 'Contract Interaction'
+      else
+        return `${getValue(i)} ${item.asset}`
+    }
     const isPending = item.height === -1;
-    const title = `${item.value.toFixed(8)} ${item.asset}`;
+    const title = getTitle(item);
     const subtitle = item.incoming ? `From: ${this.ensureTrimmedText(item.from)}` : `To: ${this.ensureTrimmedText(item.to)}`;
     const label = (
       <div align={this.props.isMobile() ? "left" : "right"}>
@@ -105,7 +139,7 @@ class Wallet extends React.Component {
     const itemMeta = (
       <List.Item.Meta
         avatar={
-          <Avatar src={`/${item.asset}.png`} />
+          <Avatar src={getTokenImageURI(item)} />
         }
         title={!isPending ? (<p>{`${title}`}</p>) : (<p><i>{`${title}`}</i></p>)}
         description={!isPending ? (<p>{`${subtitle}`}</p>) : (<p><i>{`${subtitle}`}</i></p>)}

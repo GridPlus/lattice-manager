@@ -8,7 +8,6 @@ import './styles.css'
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
 const GWEI_FACTOR = Math.pow(10, 9); // 1 GWei = 10**9 wei 
-const ETH_FACTOR = Math.pow(10, 18);
 const SAT_FACTOR = Math.pow(10, 8);
 
 class Send extends React.Component {
@@ -25,12 +24,11 @@ class Send extends React.Component {
       txHash: null,
       erc20Addr: null, // null = use ETH
       ethExtraData: {
-        gasPrice: 5,
+        gasPrice: constants.ETH_DEFAULT_FEE_RATE,
         gasLimit: 23000,
         data: '',
       },
       btcFeeRate: constants.BTC_DEFAULT_FEE_RATE,
-      erc20Tokens: [],
       ensResolvedAddress: null,
     }
 
@@ -42,19 +40,6 @@ class Send extends React.Component {
     this.buildEthRequest = this.buildEthRequest.bind(this);
     this.buildBtcrequest = this.buildBtcRequest.bind(this);
     this.updateBtcFeeRate = this.updateBtcFeeRate.bind(this);
-  }
-
-  componentDidMount() {
-    // TODO: Fetch list of supported tokens from the cloud-api
-    // this.setState({ erc20Tokens });
-    fetch(`${constants.GRIDPLUS_CLOUD_API}/supported-erc20-tokens`)
-    .then((response) => response.json())
-    .then((resp) => {
-      this.setState({ erc20Tokens: resp.tokenList || [] })
-    })
-    .catch((err) => {
-      console.error('Failed to load ERC20 tokens', err);
-    })
   }
 
   //========================================================
@@ -150,7 +135,7 @@ class Send extends React.Component {
 
   getDecimals(addr) {
     let decimals = null;
-    this.state.erc20Tokens.forEach((token) => {
+    constants.ERC20_TOKENS.forEach((token) => {
       if (token.contractAddress.toLowerCase() === addr.toLowerCase())
         decimals = token.decimals;
     })
@@ -339,7 +324,7 @@ class Send extends React.Component {
     } else if (this.props.currency === 'ETH') {
       let maxTokenChars = 3; // Default is "ETH"
       // For ETH, account for ERC20s in the form of a dropdown
-      const tokensList = this.state.erc20Tokens.map((token) => {
+      const tokensList = constants.ERC20_TOKENS.map((token) => {
         if (token.symbol.length > maxTokenChars)
           maxTokenChars = token.symbol.length;
         return (<Select.Option value={token.contractAddress} key={`token_${token.contractAddress}`} style={{margin: "0 20px 0 0"}}>
@@ -510,7 +495,7 @@ class Send extends React.Component {
   renderBalance() {
     let token = null;
     if (this.state.erc20Addr) {
-      this.state.erc20Tokens.forEach((t) => {
+      constants.ERC20_TOKENS.forEach((t) => {
         if (t.contractAddress.toLowerCase() === this.state.erc20Addr.toLowerCase())
           token = t;
       })
