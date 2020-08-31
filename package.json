@@ -21,7 +21,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "start-dev": "PORT=5000 REACT_APP_ENV=dev react-scripts start",
+    "start-dev": "REACT_APP_ENV=dev REACT_APP_BASE_SIGNING_URL=https://signing.staging-gridpl.us REACT_APP_GRIDPLUS_CLOUD_API=https://pay.gridplus.io:3333 REACT_APP_ROOT_STORE=gridplus-dev REACT_APP_BTC_COIN=2147483649 REACT_APP_BTC_DEFAULT_FEE_RATE=10 REACT_APP_ETH_DEFAULT_FEE_RATE=5 REACT_APP_ETH_TX_BASE_URL=https://rinkeby.etherscan.io/tx REACT_APP_BTC_TX_BASE_URL=https://www.blockchain.com/btc-testnet/tx REACT_APP_ERC20_TOKENS_LIST_PATH=./devTokens.json REACT_APP_ETH_TESTNET=Rinkeby REACT_APP_BTC_TESTNET=Testnet3 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
