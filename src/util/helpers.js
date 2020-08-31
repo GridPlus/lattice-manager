@@ -1,41 +1,36 @@
 const bs58check = require('bs58check');
 const { ethers } = require('ethers');
 const constants = {
-    ENV: 'prod',
-    BASE_SIGNING_URL: 'https://signing.gridpl.us',
+    ENV: process.env.ENV || 'prod',
+    BASE_SIGNING_URL: process.env.BASE_SIGNING_URL || 'https://signing.gridpl.us',
+    GRIDPLUS_CLOUD_API: process.env.GRIDPLUS_CLOUD_API || 'https://pay.gridplus.io:3000',
+    ROOT_STORE: process.env.ROOT_STORE || 'gridplus',
     HARDENED_OFFSET: 0x80000000,
     ASYNC_SDK_TIMEOUT: 60000,
     SHORT_TIMEOUT: 30000,
-    GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3000',
-    ROOT_STORE: 'gridplus',
-    BTC_COIN: 0x80000000,
+    BTC_COIN: process.env.BTC_COIN || 0x80000000,
     BTC_MAIN_GAP_LIMIT: 20,
     BTC_ADDR_BLOCK_LEN: 10,
     BTC_CHANGE_GAP_LIMIT: 1,
     BTC_CHANGE_ADDR_BLOCK_LEN: 1,
-    BTC_DEFAULT_FEE_RATE: 5, // 5 sat/byte
-    ETH_TX_BASE_URL: 'https://etherscan.io/tx',
-    BTC_TX_BASE_URL: 'https://www.blockchain.com/btc/tx',
+    BTC_DEFAULT_FEE_RATE: process.env.BTC_DEFAULT_FEE_RATE || 5, // 5 sat/byte
+    ETH_DEFAULT_FEE_RATE: process.env.ETH_DEFAULT_FEE_RATE || 20, //  20 GWei
+    ETH_TX_BASE_URL: process.env.ETH_TX_BASE_URL || 'https://etherscan.io/tx',
+    BTC_TX_BASE_URL: process.env.BTC_TX_BASE_URL || 'https://www.blockchain.com/btc/tx',
     PAGE_SIZE: 20, // 20 transactions per requested page, per `gridplus-cloud-services`
     LOST_PAIRING_ERR: "NOT_PAIRED",
     LOST_PAIRING_MSG: "Cannot find Lattice connection. Please re-connect.",
+    ERC20_TOKENS_LIST_PATH: process.env.ERC20_TOKENS_LIST_PATH || './prodTokens.json',
+    ETH_TESTNET: process.env.ETH_TESTNET || null,
+    BTC_TESTNET: process.env.BTC_TESTNET || null,
 }
+
+constants.ERC20_TOKENS = constants.ENV === 'dev' ? require('./devTokens.json') : require('./prodTokens.json');
 constants.BIP44_PURPOSE = constants.HARDENED_OFFSET + 44;
 // NOTE: For v1, the Lattice only supports p2sh-p2wpkh addresses, which
 //       use the BIP49 purpose (49') in their derivation paths.
 constants.BIP_PURPOSE_P2SH_P2WPKH = constants.HARDENED_OFFSET + 49;
 
-if (process.env.REACT_APP_ENV === 'dev') {
-    constants.ENV = 'dev';
-    constants.BASE_SIGNING_URL = 'https://signing.staging-gridpl.us';
-    constants.GRIDPLUS_CLOUD_API = 'https://pay.gridplus.io:3333';
-    constants.ROOT_STORE = 'gridplus-dev';
-    constants.BTC_COIN = 0x80000000 + 1; // Use testnet
-    constants.ETH_TESTNET = 'Rinkeby';
-    constants.BTC_TESTNET = 'Testnet3';
-    constants.ETH_TX_BASE_URL = 'https://rinkeby.etherscan.io/tx';
-    constants.BTC_TX_BASE_URL = 'https://www.blockchain.com/btc-testnet/tx';
-}
 exports.constants = constants;
 
 //--------------------------------------------
