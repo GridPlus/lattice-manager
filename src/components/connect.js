@@ -160,13 +160,18 @@ class Connect extends React.Component {
           <center>
             {this.renderMsg()}
             <Card bordered={true}>
-              <img alt="GridPlus" src={'/gridplus-logo-black.png'}/>
-              <h2 style={{margin: "10px 0 0 0"}}>Wallet <Icon type="wallet"/> </h2>
+              <a href="https://gridplus.io/lattice" target={"_blank"}>
+                <img alt="GridPlus" src={'/gridplus-logo-black.png'}/>
+                <h2 style={{margin: "10px 0 0 0"}}>Wallet <Icon type="wallet"/> </h2>
+              </a>
               {this.renderForm()}
             </Card>
             <Button type="link" onClick={this.showModal.bind(this)} style={{margin: "20px 0 0 0"}}>
               New User?
             </Button>
+            <a href="https://gridplus.io/lattice" target={"_blank"}>
+              <p>Buy a Lattice1</p>
+            </a>
           </center>
         </Col>
       </Row>
