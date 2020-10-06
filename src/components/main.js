@@ -439,6 +439,10 @@ class Main extends React.Component {
   // 2. Timed out: display error screen and wait for user to try again
   // 3. Success: load addresses
   handlePair(data) {
+    // Hack to circumvent a weird screen artifact we are seeing in firmware
+    // NOTHING TO SEE HERE
+    if (data[0] === '_') data = data.slice(1)
+
     // If we didn't timeout, submit the secret and hope for success!
     this.wait("Establishing connection with your Lattice");
     this.state.session.pair(data, (err) => {
