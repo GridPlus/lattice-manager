@@ -88,7 +88,7 @@ class Main extends React.Component {
         const prevKeyringLogin = this.getPrevKeyringLogin();
         const keyringTimeoutBoundary = new Date().getTime() - constants.KEYRING_LOGOUT_MS;
         if (prevKeyringLogin && prevKeyringLogin.lastLogin > keyringTimeoutBoundary) {
-          this.connect(prevKeyringLogin.deviceID, prevKeyringLogin.password, () => this.connectSession())
+          this.connect(prevKeyringLogin.deviceID, prevKeyringLogin.password, () => this.connectSession(prevKeyringLogin))
         } else {
           // If the login has expired, clear it now.
           this.clearPrevKeyringLogin();
@@ -199,10 +199,8 @@ class Main extends React.Component {
       deviceID: this.state.deviceID,
       password: this.state.password,
     };
+    this.handleLogout();
     window.opener.postMessage(JSON.stringify(data), "*");
-    // Technically we should log people out when using the keyring but it's terrible UX
-    // so I'm disabling it for now
-    // this.handleLogout(); 
     window.close();
   }
   //------------------------------------------
@@ -347,9 +345,11 @@ class Main extends React.Component {
           });
         } else {
           // We connected!
-          // 1. Save these credentials to localStorage
-          window.localStorage.setItem('gridplus_web_wallet_id', deviceID);
-          window.localStorage.setItem('gridplus_web_wallet_password', password);
+          // 1. Save these credentials to localStorage if this is NOT a keyring
+          if (!this.state.keyringOrigin) {
+            window.localStorage.setItem('gridplus_web_wallet_id', deviceID);
+            window.localStorage.setItem('gridplus_web_wallet_password', password);
+          }
           // 2. Clear errors, alerts, and tick
           this.setError();
           this.setAlertMessage();
@@ -553,13 +553,8 @@ class Main extends React.Component {
   renderSidebar() {
     if (this.state.name !== constants.DEFAULT_APP_NAME)
       return
-    if (this.state.name !== '')
-      return
-    if (this.isConnected()) {
+    if (this.isConnected())
       return this.renderMenu();
-    } else {
-      return;
-    }
   }
 
   renderHeaderText() {
