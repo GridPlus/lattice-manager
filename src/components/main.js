@@ -82,21 +82,25 @@ class Main extends React.Component {
     const params = new URLSearchParams(window.location.search);
     const keyringName = params.get('keyring')
     if (keyringName) {
-      this.setState({ name: keyringName })
       window.onload = this.handleWindowLoaded();
-      // Avoid using params in localStorage if this is a keyring request
-      return;
+      this.setState({ name: keyringName }, () => {
+        // Check if this keyring has already logged in. This login should expire after a period of time.
+        const prevKeyringLogin = this.getPrevKeyringLogin();
+        const keyringTimeoutBoundary = new Date().getTime() - constants.KEYRING_LOGOUT_MS;
+        if (prevKeyringLogin && prevKeyringLogin.lastLogin > keyringTimeoutBoundary) {
+          this.connect(prevKeyringLogin.deviceID, prevKeyringLogin.password, () => this.connectSession())
+        } else {
+          // If the login has expired, clear it now.
+          this.clearPrevKeyringLogin();
+        }
+      })
+    } else {
+      // Lookup deviceID and pw from storage
+      const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
+      const password = window.localStorage.getItem('gridplus_web_wallet_password');
+      if (deviceID && password)
+        this.connect(deviceID, password, () => this.connectSession())
     }
-
-    // Lookup deviceID and pw from storage
-    const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
-    const password = window.localStorage.getItem('gridplus_web_wallet_password');
-    if (deviceID && password) {
-      this.connect(deviceID, password, () => {
-        this.connectSession();
-      });
-    }
-
   }
 
   componentDidUpdate() {
@@ -134,6 +138,47 @@ class Main extends React.Component {
   // KEYRING HANDLERS
   //------------------------------------------
 
+  saveKeyringLogin() {
+    if (this.state.name) {
+      const _keyringState = window.localStorage.getItem('gridplus_web_wallet_keyring_logins') || JSON.stringify({});
+      try {
+        const keyringState = JSON.parse(_keyringState);
+        keyringState[this.state.name] = {
+          deviceID: this.state.deviceID,
+          password: this.state.password,
+          lastLogin: new Date().getTime()
+        }
+        window.localStorage.setItem('gridplus_web_wallet_keyring_logins', JSON.stringify(keyringState));
+      } catch (err) {
+        console.error(`Error saving keyring login: ${err.toString()}`)
+      }
+    }
+  }
+
+  getPrevKeyringLogin() {
+    if (this.state.name) {
+      const _keyringState = window.localStorage.getItem('gridplus_web_wallet_keyring_logins');
+      try {
+        const keyringState = JSON.parse(_keyringState);
+        return keyringState[this.state.name];
+      } catch (e) {
+        return {};
+      }
+    }
+  }
+
+  clearPrevKeyringLogin() {
+    if (this.state.name) {
+      const _keyringState = window.localStorage.getItem('gridplus_web_wallet_keyring_logins');
+      try {
+        const keyringState = JSON.parse(_keyringState);
+        delete keyringState[this.state.name];
+      } catch (err) {
+        console.error(`Error clearing keyring login: ${err.toString()}`)
+      }
+    }
+  }
+
   // If this window was loaded by a window opener (Metamask)
   // we need to log the opener so we can dispatch a message to
   // it when our credentials are loaded
@@ -147,6 +192,9 @@ class Main extends React.Component {
   returnKeyringData() {
     if (!this.state.keyringOrigin)
       return;
+    // Save the login for later
+    this.saveKeyringLogin();
+    // Send the data back to the opener
     const data = {
       deviceID: this.state.deviceID,
       password: this.state.password,
@@ -315,7 +363,6 @@ class Main extends React.Component {
           // (e.g. metamask), exit the app and return data
           else if (isPaired && this.state.keyringOrigin)
             this.returnKeyringData();
-
         }
       });
     })

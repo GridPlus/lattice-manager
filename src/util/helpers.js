@@ -24,6 +24,7 @@ const constants = {
     ERC20_TOKENS_LIST_PATH: process.env.REACT_APP_ERC20_TOKENS_LIST_PATH || './prodTokens.json',
     ETH_TESTNET: process.env.REACT_APP_ETH_TESTNET || null,
     BTC_TESTNET: process.env.REACT_APP_BTC_TESTNET || null,
+    KEYRING_LOGOUT_MS: process.env.KEYRING_LOGOUT_MS || 2592000000, // default 30 days
 }
 
 constants.ERC20_TOKENS = constants.ENV === 'dev' ? require('./devTokens.json') : require('./prodTokens.json');
