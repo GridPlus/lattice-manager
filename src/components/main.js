@@ -12,7 +12,7 @@ class Main extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      name: 'GridPlus Web Wallet',
+      name: constants.DEFAULT_APP_NAME,
       currency: 'ETH',
       menuItem: 'menu-wallet',
       // GridPlusSDK session object
@@ -504,6 +504,10 @@ class Main extends React.Component {
   }
 
   renderSidebar() {
+    if (this.state.name !== constants.DEFAULT_APP_NAME)
+      return
+    if (this.state.name !== '')
+      return
     if (this.isConnected()) {
       return this.renderMenu();
     } else {
@@ -522,6 +526,8 @@ class Main extends React.Component {
   }
 
   renderHeader() {
+    if (this.state.name !== constants.DEFAULT_APP_NAME)
+      return
     let extra = [];
     if (!this.isConnected())
       return;
@@ -635,6 +641,7 @@ class Main extends React.Component {
       // Connect to the Lattice via the SDK
       return (
         <Connect  submitCb={this.connectSession}
+                  name={this.state.name}
                   isMobile={() => this.isMobile()}
                   errMsg={this.state.error.msg}/>
       );

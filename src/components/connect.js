@@ -65,7 +65,7 @@ class Connect extends React.Component {
                   style={{ margin: '10px 0 0 0', width: "70%"}} />
         </Row>
         <Row>
-          <Input.Password placeholder="Password" 
+          <Input.Password placeholder="Password (create for new logins)" 
                           id="passwordInput" 
                           onPressEnter={this.handleSubmit} 
                           style={{ margin: '20px 0 0 0', width: "70%"}} />
@@ -153,6 +153,7 @@ class Connect extends React.Component {
   render() {
     const spanWidth = this.props.isMobile() ? 24 : 10;
     const spanOffset = this.props.isMobile() ? 0 : 7;
+    const keyringName = this.props.name === 'GridPlus Web Wallet' ? null : this.props.name
     return (
       <Row>
         {this.renderModal()}
@@ -162,8 +163,13 @@ class Connect extends React.Component {
             <Card bordered={true}>
               <a href="https://gridplus.io/lattice" target={"_blank"}>
                 <img alt="GridPlus" src={'/gridplus-logo-black.png'}/>
-                <h2 style={{margin: "10px 0 0 0"}}>Wallet <Icon type="wallet"/> </h2>
+                {keyringName ? (
+                  <h2 style={{margin: "10px 0 0 0"}}>Lattice1 Connector <Icon type="link"/></h2>
+                ) : (
+                  <h2 style={{margin: "10px 0 0 0"}}>Web Wallet <Icon type="wallet"/></h2>
+                )}
               </a>
+              {keyringName ? (<div><br/><i><p>Login for <b>{keyringName}</b></p></i></div>) : null}
               {this.renderForm()}
             </Card>
             <Button type="link" onClick={this.showModal.bind(this)} style={{margin: "20px 0 0 0"}}>

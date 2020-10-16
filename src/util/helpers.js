@@ -1,6 +1,7 @@
 const bs58check = require('bs58check');
 const { ethers } = require('ethers');
 const constants = {
+    DEFAULT_APP_NAME: 'GridPlus Web Wallet',
     ENV: process.env.REACT_APP_ENV || 'prod',
     BASE_SIGNING_URL: process.env.REACT_APP_BASE_SIGNING_URL || 'https://signing.gridpl.us',
     GRIDPLUS_CLOUD_API: process.env.REACT_APP_GRIDPLUS_CLOUD_API || 'https://pay.gridplus.io:3000',
