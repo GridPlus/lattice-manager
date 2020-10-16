@@ -200,9 +200,7 @@ class Main extends React.Component {
       password: this.state.password,
     };
     window.opener.postMessage(JSON.stringify(data), "*");
-    // Technically we should log people out when using the keyring but it's terrible UX
-    // so I'm disabling it for now
-    // this.handleLogout(); 
+    this.handleLogout(); 
     window.close();
   }
   //------------------------------------------
