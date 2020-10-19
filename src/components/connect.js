@@ -98,7 +98,12 @@ class Connect extends React.Component {
             <h3><b>New User Setup</b></h3>
           </center>
           <p>
-            With the GridPlus Web Wallet you can monitor balances and transactions for your Lattice1 device.
+            With the GridPlus Web Wallet you can monitor balances and transactions for your Lattice1 device. The following
+            guide is meant to explain this login process.
+            <br/><br/>
+            <i>For more general setup information, please see the <a href="https://gridplus.io/setup" target={"_blank"}>
+              Lattice1 setup page
+            </a>.</i>
           </p>
           <h3><b>Step 1:</b></h3>
           <p>
