@@ -8,7 +8,8 @@ import './styles.css'
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
 const GWEI_FACTOR = Math.pow(10, 9); // 1 GWei = 10**9 wei 
-const SAT_FACTOR = Math.pow(10, 8);
+const ETH_FACTOR = Math.pow(10, 18);
+const BTC_FACTOR = Math.pow(10, 8);
 
 class Send extends React.Component {
   constructor(props) {
@@ -450,14 +451,18 @@ class Send extends React.Component {
     const balance = this.props.session.getBalance(this.props.currency, this.state.erc20Addr);
     switch (this.props.currency) {
       case 'BTC':
-        // Fee will be calculated inside this function
-        const feeSat = getBtcNumTxBytes(this.props.session.getUtxos('BTC').length)
-        return Math.max(balance - (feeSat / SAT_FACTOR), 0);
+        // To spend all BTC, get the size of all UTXOs and calculate the fee required
+        // to spend them all
+        const txBytes = getBtcNumTxBytes(this.props.session.getUtxos('BTC').length);
+        const feeSat = this.state.btcFeeRate * txBytes;
+        return Math.max(balance - (feeSat / BTC_FACTOR), 0);
       case 'ETH':
         if (this.state.erc20Addr !== null)
           return balance;
-        const feeGWei = Number(this.state.ethExtraData.gasPrice) * Number(this.state.ethExtraData.gasLimit);
-        return Math.max(balance - (feeGWei / GWEI_FACTOR), 0);
+        const feeWei = Math.floor(GWEI_FACTOR * Number(this.state.ethExtraData.gasPrice) * Number(this.state.ethExtraData.gasLimit));
+        const balanceWei = Math.floor(balance * ETH_FACTOR)
+        const maxEth = (balanceWei - feeWei) / ETH_FACTOR;
+        return Math.max(maxEth, 0);
       default:
         return 0;
     }

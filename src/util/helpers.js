@@ -286,7 +286,7 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     })
 
     // Calculate the fee
-    let bytesUsed = getBtcNumTxBytes(numInputs+1);
+    let bytesUsed = getBtcNumTxBytes(numInputs);
     // If the fee tips us over our total value sum, add another utxo
     if ((bytesUsed * feeRate) + satValue > sum) {
         // There's a chance that we just eclipsed the number of inputs we could support.
