@@ -333,7 +333,7 @@ class Send extends React.Component {
         </Select.Option>);
       });
 
-      const optionWidth = maxTokenChars * 13; // 13px per character
+      const optionWidth = maxTokenChars * 20; // 20px per character
       const tokenOption = (
         <Select defaultValue="ETH" 
                 onSelect={this.selectToken.bind(this)} 
