@@ -520,6 +520,10 @@ class SDKSession {
     }
   }
 
+  addAbiDefs(defs, cb) {
+    this.client.addAbiDefs(defs, cb);
+  }
+
   pair(secret, cb) {
     this.client.pair(secret, cb);
   }

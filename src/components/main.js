@@ -3,7 +3,7 @@ import 'antd/dist/antd.css'
 import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Send, Receive, Wallet } from './index'
+import { Connect, Error, Loading, Pair, Send, Receive, Wallet, EthContracts } from './index'
 import { constants, getCurrencyText, setEthersProvider } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -47,6 +47,7 @@ class Main extends React.Component {
     };
 
     // Bind local state updaters
+    this.setAlertMessage = this.setAlertMessage.bind(this);
     this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
     this.handleMenuChange = this.handleMenuChange.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
@@ -532,6 +533,10 @@ class Main extends React.Component {
           <Icon type="arrow-down" />
           <span>Receive</span>
         </Menu.Item>
+        <Menu.Item key="menu-eth-contracts">
+          <Icon type="audit" />
+          <span>Contracts</span>
+        </Menu.Item>
       </Menu>
     ) : (
       <Sider collapsed={this.isMobile()}>
@@ -547,6 +552,10 @@ class Main extends React.Component {
           <Menu.Item key="menu-receive">
             <Icon type="arrow-down" />
             <span>Receive</span>
+          </Menu.Item>
+          <Menu.Item key="menu-eth-contracts">
+            <Icon type="audit" />
+            <span>Smart Contracts</span>
           </Menu.Item>
         </Menu>
       </Sider>
@@ -667,6 +676,13 @@ class Main extends React.Component {
                 session={this.state.session}
                 tick={this.state.tick}
                 isMobile={() => this.isMobile()}
+          />
+        )
+      case 'menu-eth-contracts':
+        return (
+          <EthContracts
+            session={this.state.session}
+            isMobile={() => this.isMobile()}
           />
         )
       default:
