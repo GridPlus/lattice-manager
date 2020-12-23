@@ -148,11 +148,15 @@ export default () => {
             fetch(url, data)
             .then((response) => response.json())
             .then((resp) => {
-                const mainData = resp.data[0];
-                if (mainData.error) {
-                    return reject(mainData.error);
-                } else {
-                    return resolve(mainData);
+                try {
+                    const mainData = resp.data[0];
+                    if (mainData.error) {
+                        return reject(mainData.error);
+                    } else {
+                        return resolve(mainData);
+                    }
+                } catch (err) {
+                    return reject('Failed to load account data.')
                 }
             })
             .catch((err) => {
