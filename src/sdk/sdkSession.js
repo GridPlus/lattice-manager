@@ -520,6 +520,10 @@ class SDKSession {
     }
   }
 
+  addPermissionV0(req, cb) {
+    this.client.addPermissionV0(req, cb);
+  }
+
   pair(secret, cb) {
     this.client.pair(secret, cb);
   }
