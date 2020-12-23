@@ -47,6 +47,7 @@ class Main extends React.Component {
     };
 
     // Bind local state updaters
+    this.setAlertMessage = this.setAlertMessage.bind(this);
     this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
     this.handleMenuChange = this.handleMenuChange.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
@@ -221,10 +222,13 @@ class Main extends React.Component {
   // Update alert message. If no args are provided, this will clear
   // all alert messages
   setAlertMessage(msg={}) {
-    this.setState({
-      errMsg: msg.errMsg || null,
-      pendingMsg: msg.pendingMsg || null,
-    })
+    if (msg) {
+      const { errMsg, pendingMsg } = msg;
+      this.setState({
+        errMsg: errMsg ? String(errMsg) : null,
+        pendingMsg: pendingMsg ? String(pendingMsg) : null,
+      })
+    }
   }
 
   wait(msg=null) {
