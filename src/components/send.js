@@ -2,14 +2,17 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Statistic, notification, Select, Slider } from 'antd'
 import { allChecks } from '../util/sendChecks';
-import { constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes, getCurrencyText, isValidENS, resolveENS } from '../util/helpers'
+import { constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes, getCurrencyText, isValidENS, resolveENS, toHexStr } from '../util/helpers'
 import './styles.css'
-
+const BN = require('bignumber.js');
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
-const GWEI_FACTOR = Math.pow(10, 9); // 1 GWei = 10**9 wei 
-const ETH_FACTOR = Math.pow(10, 18);
+// Conversion from sats to BTC
+const GWEI_FACTOR = Math.pow(10, 9);
 const BTC_FACTOR = Math.pow(10, 8);
+// ETH uses bignums so we cannot safely do native JS math and must use BigInt types
+const ETH_POWER = new BN('10').pow(18);
+const GWEI_POWER = new BN('10').pow(9);
 
 class Send extends React.Component {
   constructor(props) {
@@ -157,7 +160,8 @@ class Send extends React.Component {
       _recipient = this.state.erc20Addr;
       _data = buildERC20Data(recipient, this.state.value, decimals);
     } else {
-      _value = this.state.value * Math.pow(10, 18);
+      const valueBn = new BN(this.state.value);
+      _value = toHexStr(valueBn.multipliedBy(ETH_POWER));
       _recipient = recipient;
       _data = this.state.ethExtraData.data;
     }
@@ -231,7 +235,7 @@ class Send extends React.Component {
         if (err) {
           // Display an error banner
           this.setState({ 
-            error: 'Failed to submit transaction. Please try again.', 
+            error: err, 
             isLoading: false, 
             txHash: null 
           })
@@ -456,10 +460,13 @@ class Send extends React.Component {
       case 'ETH':
         if (this.state.erc20Addr !== null)
           return balance;
-        const feeWei = Math.floor(GWEI_FACTOR * Number(this.state.ethExtraData.gasPrice) * Number(this.state.ethExtraData.gasLimit));
-        const balanceWei = Math.floor(balance * ETH_FACTOR)
-        const maxEth = (balanceWei - feeWei) / ETH_FACTOR;
-        return Math.max(maxEth, 0);
+        const gasPriceBn = new BN(this.state.ethExtraData.gasPrice);
+        const gasLimitBn = new BN(this.state.ethExtraData.gasLimit);
+        const feeWei = gasPriceBn.multipliedBy(gasLimitBn).multipliedBy(GWEI_POWER);
+        const balanceBn = new BN(balance);
+        const balanceWei = balanceBn.multipliedBy(ETH_POWER);
+        const maxEth = balanceWei.minus(feeWei).div(ETH_POWER);
+        return Math.max(Number(maxEth.toString(10)), 0);
       default:
         return 0;
     }
