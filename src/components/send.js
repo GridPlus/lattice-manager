@@ -323,21 +323,18 @@ class Send extends React.Component {
         </Col>
       );
     } else if (this.props.currency === 'ETH') {
-      let maxTokenChars = 3; // Default is "ETH"
       // For ETH, account for ERC20s in the form of a dropdown
       const tokensList = constants.ERC20_TOKENS.map((token) => {
-        if (token.symbol.length > maxTokenChars)
-          maxTokenChars = token.symbol.length;
         return (<Select.Option value={token.contractAddress} key={`token_${token.contractAddress}`} style={{margin: "0 20px 0 0"}}>
           {token.symbol}
         </Select.Option>);
       });
-
-      const optionWidth = maxTokenChars * 20; // 20px per character
+      // Buffer the ETH string
       const tokenOption = (
-        <Select defaultValue="ETH" 
+        <Select defaultValue={'ETH'} 
+                dropdownMatchSelectWidth={false}
                 onSelect={this.selectToken.bind(this)} 
-                style={{"textAlign": "center", width: optionWidth}} 
+                style={{"textAlign": "center"}} 
                 className="select-after">
           <Select.Option value={'ETH'} key={'token_ETH'}>ETH</Select.Option>
           {tokensList}
@@ -470,6 +467,11 @@ class Send extends React.Component {
 
   renderSubmitButton() {
     // If all checks have passed, display the button
+    const isValidReq = (
+      (true == this.state.valueCheck) &&
+      (allChecks[this.props.currency].full(this.state) || this.state.ensResolvedAddress !== null)
+    );
+
     if (this.state.isLoading) {
       return (
         <Button type="primary"
@@ -478,7 +480,7 @@ class Send extends React.Component {
           Waiting...
         </Button>
       )
-    } else if (allChecks[this.props.currency].full(this.state) || this.state.ensResolvedAddress !== null) {
+    } else if (isValidReq) {
       return (
         <Button type="primary" 
                 onClick={this.submit} 
