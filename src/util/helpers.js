@@ -95,7 +95,7 @@ function fetchETHNonce(currency, addresses) {
             return resolve(resp.data);
         })
         .catch((err) => {
-            return reject(err);
+            return reject('Failed to fetch data. Please refresh to try again.');
         });
     })
 }
@@ -118,7 +118,7 @@ function fetchERC20Data(currency, addresses, page) {
             return resolve(data);
         })
         .catch((err) => {
-            return reject(err);
+            return reject('Failed to fetch data. Please refresh to try again.');
         });
     })
 }
@@ -144,7 +144,7 @@ function fetchCurrencyData(currency, addresses, page) {
             }
         })
         .catch((err) => {
-            return reject(err);
+            return reject('Failed to fetch data. Please refresh to try again.');
         });
     })
 }
@@ -374,6 +374,12 @@ exports.validateBtcAddr = function(addr) {
     } catch (e) {
         return false;
     }
+}
+
+exports.toHexStr = function(bn) {
+    const s = bn.toString(16);
+    const base = s.length % 2 === 0 ? s : `0${s}`;
+    return `0x${base}`; 
 }
 //--------------------------------------------
 // END OTHER HELPERS
