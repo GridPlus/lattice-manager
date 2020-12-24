@@ -167,12 +167,13 @@ class Send extends React.Component {
     }
     const txData = {
       nonce: this.props.session.ethNonce,
-      gasPrice: Number(this.state.ethExtraData.gasPrice) * GWEI_FACTOR,
-      gasLimit: Number(this.state.ethExtraData.gasLimit),
+      gasPrice: (parseFloat(this.state.ethExtraData.gasPrice).toFixed(1) * GWEI_FACTOR),
+      gasLimit: Math.ceil(Number(this.state.ethExtraData.gasLimit)),
       to: _recipient,
       value: _value,
       data: _data,
     };
+
     const req = {
       currency: 'ETH',
       data: {
