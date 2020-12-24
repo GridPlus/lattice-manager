@@ -4,8 +4,8 @@ import { Card, Col, Row, Button } from 'antd'
 
 class Error extends React.Component {
   render() {
-    const spanVal = this.props.isMobile() === true ? 22 : 10;
-    const offsetVal = this.props.isMobile() === true ? 1 : 7;
+    const spanVal = this.props.isMobile === true ? 22 : 10;
+    const offsetVal = this.props.isMobile === true ? 1 : 7;
     return (
       <Row>
         <Col span={spanVal} offset={offsetVal}>
