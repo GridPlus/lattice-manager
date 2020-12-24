@@ -492,7 +492,7 @@ class Main extends React.Component {
   handlePair(data) {
     // Hack to circumvent a weird screen artifact we are seeing in firmware
     // NOTHING TO SEE HERE
-    if (data[0] === '_') data = data.slice(1)
+    if (data[0] === '_' || data[0] === '[') data = data.slice(1)
 
     // If we didn't timeout, submit the secret and hope for success!
     this.wait("Establishing connection with your Lattice");
