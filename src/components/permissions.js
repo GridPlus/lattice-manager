@@ -3,6 +3,7 @@ import 'antd/dist/antd.css'
 import { Alert, Button, Card, Col, Icon, Input, Row, Select, Spin } from 'antd'
 import './styles.css'
 import { constants, } from '../util/helpers';
+const BN = require('bignumber.js');
 const HOURS = 3600;
 const DAYS = 86400;
 const assets = {
@@ -58,12 +59,11 @@ class Permissions extends React.Component {
   }
 
   updateValue(evt) {
-    const x = evt.target.value
+    let x = evt.target.value
     if (!isNaN(parseFloat(x))) {
-      let s = parseFloat(x);
-      if (x[x.length-1] === '.')
-        s += '.';
-      this.setState({ value: s })
+      if (x.length > 1 && x[0] === '0' && x[1] !== '.')
+        x = x.slice(1);
+      this.setState({ value: x })
     }
     else if (x === '')
       this.setState({ value: '0' })
@@ -74,18 +74,17 @@ class Permissions extends React.Component {
     const req = {
       currency: this.state.asset.name,
       decimals: this.state.asset.decimals,
-      timeWindow: parseInt(this.state.window) * this.state.timeMultiplier,
+      timeWindow: Math.floor(parseFloat(this.state.window) * this.state.timeMultiplier),
       limit: 0,
       asset: null,
     };
-    const value = window.BigInt(parseInt(this.state.value));
-    const decimals = window.BigInt(this.state.asset.decimals);
-    console.log('value', value, 'decimals', decimals, 'state', this.state)
-    let limitStr = (value * (window.BigInt(10) ** decimals)).toString(16)
+    const value = new BN(this.state.value);
+    const decimals = new BN(this.state.asset.decimals);
+    const power = new BN('10').pow(decimals);
+    let limitStr = value.multipliedBy(power).toString(16)
     if (limitStr.length % 2 > 0)
       limitStr = `0${limitStr}`;
     req.limit = `0x${limitStr}`;
-    console.log(req)
     this.props.session.addPermissionV0(req, (err) => {
       if (err) {
         this.setState({ error: err.toString(), success: false, loading: false })
