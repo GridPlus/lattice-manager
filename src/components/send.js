@@ -121,7 +121,13 @@ class Send extends React.Component {
           extraDataCopy.gasLimit = evt.target.value;
         break;
       case 'ethData':
-        extraDataCopy.data = evt.target.value.slice(2); // Remove the 0x-prefix
+        let data = evt.target.value;
+        while(data.indexOf('0x') > -1) {
+          const left = data.slice(0, data.indexOf('0x'));
+          const right = data.slice(data.indexOf('0x') + 2);
+          data = left + right;
+        }
+        extraDataCopy.data = data;
         break;
       default:
         break;
