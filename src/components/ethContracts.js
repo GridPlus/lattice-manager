@@ -125,14 +125,14 @@ class EthContracts extends React.Component {
     const content = (
       <center>
         {this.renderBanner()}
-        <Card title={'Ethereum Smart Contracts'} bordered={true} style={{maxWidth: '600px'}}>
+        <Card title={'Ethereum Smart Contracts'} bordered={true}>
           {this.renderCard()}
         </Card>
       </center>      
     )
     return this.props.isMobile() ? content : (
       <Row justify={'center'}>
-        <Col span={14} offset={5}>
+        <Col span={14} offset={5} style={{maxWidth: '600px'}}>
           {content}
         </Col>
       </Row>
