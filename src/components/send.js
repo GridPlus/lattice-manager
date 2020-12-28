@@ -119,8 +119,11 @@ class Send extends React.Component {
         break;
       case 'ethData':
         let data = evt.target.value;
-        while(data.slice(0, 2) === '0x')
-          data = data.slice(2);
+        while(data.indexOf('0x') > -1) {
+          const left = data.slice(0, data.indexOf('0x'));
+          const right = data.slice(data.indexOf('0x') + 2);
+          data = left + right;
+        }
         extraDataCopy.data = data;
         break;
       default:
