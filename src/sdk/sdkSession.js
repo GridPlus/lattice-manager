@@ -532,8 +532,7 @@ class SDKSession {
     // Get the tx payload to broadcast
     this.client.sign(req, (err, res) => {
       if (err) {
-        console.error('Signing error:', err);
-        return cb("Lattice failed to sign transaction. If you're sure it's correct, please try again.");
+        return cb(err);
       }
 
       // Broadcast
