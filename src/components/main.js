@@ -500,7 +500,7 @@ class Main extends React.Component {
       this.unwait();
       if (err) {
         // If there was an error here, the user probably entered the wrong secret
-        const pairErr = 'Failed to pair. You either entered the wrong code or already have a connected GridPlus Web Wallet.'
+        const pairErr = 'Failed to pair. You either entered the wrong code or have already connected to this app.'
         this.setError({ msg: pairErr, cb: this.connectSession });
       } else if (this.state.keyringOrigin === null) {
         // Success! Load our addresses from this wallet.
