@@ -474,13 +474,18 @@ class SDKSession {
     const key = this._genPrivKey(deviceID, pw, this.name);
     // If no client exists in this session, create a new one and
     // attach it.
-    const client = new Client({ 
-      name: this.name,
-      crypto: this.crypto,
-      privKey: key,
-      baseUrl: constants.BASE_SIGNING_URL,
-      timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
-    })
+    let client;
+    try {
+      client = new Client({ 
+        name: this.name,
+        crypto: this.crypto,
+        privKey: key,
+        baseUrl: constants.BASE_SIGNING_URL,
+        timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
+      })
+    } catch (err) {
+      return cb(err.toString());
+    }
     client.connect(deviceID, (err) => {
       if (err) return cb(err);
       // Update the timeout to a longer one for future async requests
