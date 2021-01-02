@@ -12,7 +12,7 @@
     "buffer": "^5.6.0",
     "ethers": "^5.0.17",
     "gridplus-react-crypto": "0.0.5",
-    "gridplus-sdk": "0.7.0",
+    "gridplus-sdk": "0.7.1",
     "gulp": "^4.0.2",
     "nanoid": "^2.1.11",
     "qrcode.react": "^1.0.0",
