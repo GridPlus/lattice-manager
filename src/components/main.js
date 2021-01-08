@@ -726,7 +726,7 @@ class Main extends React.Component {
   renderFooter() {
     return (
       <Footer style={{ textAlign: 'center' }}>
-        ©2020 GridPlus Inc
+        ©2021 GridPlus Inc
         {constants.ENV === 'dev' ? <Tag color="blue" style={{margin: "0 0 0 10px"}}>DEV</Tag> : null}
       </Footer>
     )
