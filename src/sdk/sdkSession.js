@@ -529,6 +529,10 @@ class SDKSession {
     }
   }
 
+  addAbiDefs(defs, cb) {
+    this.client.addAbiDefs(defs, cb);
+  }
+
   addPermissionV0(req, cb) {
     this.client.addPermissionV0(req, cb);
   }
