@@ -231,8 +231,7 @@ class Send extends React.Component {
       notification.open({
         message: "Waiting for signature...",
         key: 'signNotification',
-        description: `We have sent the transaction to your Lattice for signing. 
-                      You must approve the transaction on your Lattice screen. 
+        description: `We have sent the transaction to your Lattice for signing.
                       After approval, the transaction will be broadcast.`,
         duration: 0,
       });
