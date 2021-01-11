@@ -346,6 +346,9 @@ class SDKSession {
       default:
         return cb('Invalid currency to request addresses');
     }
+    // Make sure we are using the cache in this app
+    opts.skipCache = false;
+    // Get the addresses
     this.client.getAddresses(opts, (err, addresses) => {
       // Catch an error, but if the device is busy it probably means it is currently
       // caching a batch of new addresses. Continue the loop through this request until
@@ -453,7 +456,8 @@ class SDKSession {
   loadBtcAddrType(cb) {
     const opts = {
       startPath: [ constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, harden(0), 0, 0 ],
-      n: 1
+      n: 1,
+      skipCache: false,
     };
     this.client.getAddresses(opts, (err, addresses) => {
       if (err) return cb(err);
@@ -474,13 +478,18 @@ class SDKSession {
     const key = this._genPrivKey(deviceID, pw, this.name);
     // If no client exists in this session, create a new one and
     // attach it.
-    const client = new Client({ 
-      name: this.name,
-      crypto: this.crypto,
-      privKey: key,
-      baseUrl: constants.BASE_SIGNING_URL,
-      timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
-    })
+    let client;
+    try {
+      client = new Client({ 
+        name: this.name,
+        crypto: this.crypto,
+        privKey: key,
+        baseUrl: constants.BASE_SIGNING_URL,
+        timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
+      })
+    } catch (err) {
+      return cb(err.toString());
+    }
     client.connect(deviceID, (err) => {
       if (err) return cb(err);
       // Update the timeout to a longer one for future async requests
@@ -522,6 +531,10 @@ class SDKSession {
 
   addAbiDefs(defs, cb) {
     this.client.addAbiDefs(defs, cb);
+  }
+
+  addPermissionV0(req, cb) {
+    this.client.addPermissionV0(req, cb);
   }
 
   pair(secret, cb) {

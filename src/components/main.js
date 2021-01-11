@@ -3,7 +3,7 @@ import 'antd/dist/antd.css'
 import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Send, Receive, Wallet, EthContracts } from './index'
+import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts } from './index'
 import { constants, getCurrencyText, setEthersProvider } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -500,7 +500,7 @@ class Main extends React.Component {
       this.unwait();
       if (err) {
         // If there was an error here, the user probably entered the wrong secret
-        const pairErr = 'Failed to pair. You either entered the wrong code or already have a connected GridPlus Web Wallet.'
+        const pairErr = 'Failed to pair. You either entered the wrong code or have already connected to this app.'
         this.setError({ msg: pairErr, cb: this.connectSession });
       } else if (this.state.keyringOrigin === null) {
         // Success! Load our addresses from this wallet.
@@ -537,6 +537,10 @@ class Main extends React.Component {
           <Icon type="audit" />
           <span>Contracts</span>
         </Menu.Item>
+        <Menu.Item key="menu-permissions">
+          <Icon type="dollar" />
+          <span>Limits</span>
+        </Menu.Item>
       </Menu>
     ) : (
       <Sider collapsed={this.isMobile()}>
@@ -556,6 +560,10 @@ class Main extends React.Component {
           <Menu.Item key="menu-eth-contracts">
             <Icon type="audit" />
             <span>Smart Contracts</span>
+          </Menu.Item>
+          <Menu.Item key="menu-permissions">
+            <Icon type="dollar" />
+            <span>Limits</span>
           </Menu.Item>
         </Menu>
       </Sider>
@@ -685,6 +693,13 @@ class Main extends React.Component {
             isMobile={() => this.isMobile()}
           />
         )
+      case 'menu-permissions':
+        return (
+          <Permissions
+            session={this.state.session}
+            isMobile={() => this.isMobile()}
+          />
+        )
       default:
         return;
     }
@@ -741,7 +756,7 @@ class Main extends React.Component {
   renderFooter() {
     return (
       <Footer style={{ textAlign: 'center' }}>
-        ©2020 GridPlus Inc
+        ©2021 GridPlus Inc
         {constants.ENV === 'dev' ? <Tag color="blue" style={{margin: "0 0 0 10px"}}>DEV</Tag> : null}
       </Footer>
     )

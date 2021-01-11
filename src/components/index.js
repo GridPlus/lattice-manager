@@ -9,6 +9,7 @@ export { default as Wallet } from './wallet'
 export { default as Receive } from './receive'
 export { default as Send } from './send'
 export { default as EthContracts} from './ethContracts'
+export { default as Permissions } from './permissions'
 
 // Stateless components
 export { default as Loading } from './loading'
