@@ -8,7 +8,7 @@ const ReactCrypto = require('gridplus-react-crypto').default;
 const DEVICE_ADDR_SYNC_MS = 2000; // It takes roughly 2000 to sync a new address
 
 class SDKSession {
-  constructor(deviceID, stateUpdateHandler, name=null, network=null) {
+  constructor(deviceID, stateUpdateHandler, name=null) {
     this.client = null;
     this.crypto = null;
     this.name = name || 'GridPlus Web Wallet'; // app name
@@ -24,8 +24,6 @@ class SDKSession {
     // Cached list of unused addresses. These indicate the next available
     // address for each currency. Currently only contains a Bitcoin address
     this.firstUnusedAddresses = {};
-    // Network is used to determine how to contact the Lattice, if applicable
-    this.network = network;
 
     // Make use of localstorage to persist wallet data
     this.storageSession = null;
@@ -478,20 +476,6 @@ class SDKSession {
     // enter a reasonably strong password to prevent unwanted requests
     // from nefarious actors.
     const key = this._genPrivKey(deviceID, pw, this.name);
-    // Determine if we need to contact production Lattices
-    let baseUrl = constants.BASE_SIGNING_URL;
-    switch (this.network) {
-      case 'rpc':
-      case 'mainnet':
-        baseUrl = constants.BASE_MAINNET_SIGNING_URL;
-        break;
-      case 'rinkeby':
-        baseUrl = constants.BASE_RINKEBY_SIGNING_URL;
-        break;
-      default:
-        break; 
-    }
-    
     // If no client exists in this session, create a new one and
     // attach it.
     let client;
@@ -500,7 +484,7 @@ class SDKSession {
         name: this.name,
         crypto: this.crypto,
         privKey: key,
-        baseUrl,
+        baseUrl: constants.BASE_SIGNING_URL,
         timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
       })
     } catch (err) {
