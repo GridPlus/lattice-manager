@@ -4,6 +4,8 @@ const constants = {
     DEFAULT_APP_NAME: 'GridPlus Web Wallet',
     ENV: process.env.REACT_APP_ENV || 'prod',
     BASE_SIGNING_URL: process.env.REACT_APP_BASE_SIGNING_URL || 'https://signing.gridpl.us',
+    BASE_MAINNET_SIGNING_URL: process.env.REACT_APP_BASE_MAINNET_SIGNING_URL || 'https://signing.gridpl.us',
+    BASE_RINKEBY_SIGNING_URL: process.env.REACT_APP_BASE_RINKEBY_SIGNING_URL || 'https://signing.staging-gridpl.us',
     GRIDPLUS_CLOUD_API: process.env.REACT_APP_GRIDPLUS_CLOUD_API || 'https://pay.gridplus.io:3000',
     ROOT_STORE: process.env.REACT_APP_ROOT_STORE || 'gridplus',
     HARDENED_OFFSET: 0x80000000,
