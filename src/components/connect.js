@@ -32,7 +32,7 @@ class Connect extends React.Component {
       this.setState({ isLoading: true, errMsg: null })
       // Call the connect function. Skip the loading screen so we don't
       // leave the landing page until we connect.
-      this.props.submitCb({deviceID, password}, false);
+      this.props.submitCb({deviceID, password, network: this.props.network}, false);
     }
   }
 

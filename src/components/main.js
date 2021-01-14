@@ -13,6 +13,7 @@ class Main extends React.Component {
     super(props)
     this.state = {
       name: constants.DEFAULT_APP_NAME,
+      network: null,
       currency: 'ETH',
       menuItem: 'menu-wallet',
       // GridPlusSDK session object
@@ -82,14 +83,19 @@ class Main extends React.Component {
     // We can extend this pattern to other apps in the future.
     const params = new URLSearchParams(window.location.search);
     const keyringName = params.get('keyring')
+    const network = params.get('network');
     if (keyringName) {
       window.onload = this.handleWindowLoaded();
-      this.setState({ name: keyringName }, () => {
+      this.setState({ name: keyringName, network }, () => {
         // Check if this keyring has already logged in. This login should expire after a period of time.
         const prevKeyringLogin = this.getPrevKeyringLogin();
         const keyringTimeoutBoundary = new Date().getTime() - constants.KEYRING_LOGOUT_MS;
         if (prevKeyringLogin && prevKeyringLogin.lastLogin > keyringTimeoutBoundary) {
-          this.connect(prevKeyringLogin.deviceID, prevKeyringLogin.password, () => this.connectSession(prevKeyringLogin))
+          const opts = this.state;
+          opts.deviceID = prevKeyringLogin.deviceID;
+          opts.password = prevKeyringLogin.password;
+          opts.network = network;
+          this.startSDKSession(opts, () => this.connectSession(opts))
         } else {
           // If the login has expired, clear it now.
           this.clearPrevKeyringLogin();
@@ -99,8 +105,12 @@ class Main extends React.Component {
       // Lookup deviceID and pw from storage
       const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
       const password = window.localStorage.getItem('gridplus_web_wallet_password');
+      const opts = this.state;
+      opts.deviceID = deviceID;
+      opts.password = password;
+      opts.network = network;
       if (deviceID && password)
-        this.connect(deviceID, password, () => this.connectSession())
+        this.startSDKSession(opts, () => this.connectSession(opts))
     }
   }
 
@@ -121,11 +131,12 @@ class Main extends React.Component {
     return this.state.windowWidth < 500;
   }
 
-  connect(deviceID, password, cb) {
+  startSDKSession(opts, cb) {
+    const { deviceID, password, network } = opts;
     const updates = { deviceID, password };
     if (!this.state.session) {
       // Create a new session if we don't have one.
-      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name);
+      updates.session = new SDKSession(opts, this.handleStateUpdate, this.state.name);
     }
     this.setState(updates, cb);
   }
@@ -173,7 +184,8 @@ class Main extends React.Component {
       const _keyringState = window.localStorage.getItem('gridplus_web_wallet_keyring_logins');
       try {
         const keyringState = JSON.parse(_keyringState);
-        delete keyringState[this.state.name];
+        if (keyringState)
+          delete keyringState[this.state.name];
       } catch (err) {
         console.error(`Error clearing keyring login: ${err.toString()}`)
       }
@@ -334,7 +346,7 @@ class Main extends React.Component {
       this.setError(null);
     }
     // Connect to the device
-    this.connect(deviceID, password, () => {
+    this.startSDKSession(data, () => {
       // Create a new session with the deviceID and password provided.
       if (showLoading === true)
         this.wait("Looking for your Lattice");
@@ -718,6 +730,7 @@ class Main extends React.Component {
       return (
         <Connect  submitCb={this.connectSession}
                   name={this.state.name}
+                  network={this.state.network}
                   isMobile={() => this.isMobile()}
                   errMsg={this.state.error.msg}/>
       );

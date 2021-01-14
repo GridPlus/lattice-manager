@@ -8,7 +8,7 @@ const ReactCrypto = require('gridplus-react-crypto').default;
 const DEVICE_ADDR_SYNC_MS = 2000; // It takes roughly 2000 to sync a new address
 
 class SDKSession {
-  constructor(deviceID, stateUpdateHandler, name=null) {
+  constructor(opts, stateUpdateHandler, name=null) {
     this.client = null;
     this.crypto = null;
     this.name = name || 'GridPlus Web Wallet'; // app name
@@ -24,11 +24,15 @@ class SDKSession {
     // Cached list of unused addresses. These indicate the next available
     // address for each currency. Currently only contains a Bitcoin address
     this.firstUnusedAddresses = {};
+    // Certain `network` values (passed in as url params) indicate we 
+    // are only starting this connection to pass back to the app that spawned
+    // this window/session.
+    this.forceMainnetUrl = (opts.network === 'mainnet' || opts.network === 'rpc') ;
 
     // Make use of localstorage to persist wallet data
     this.storageSession = null;
     // Save the device ID for the session
-    this.deviceID = deviceID;
+    this.deviceID = opts.deviceID;
     // Handler to call when we get state updates
     this.stateUpdateHandler = stateUpdateHandler;
     // Web worker to sync blockchain data in the background
@@ -479,12 +483,14 @@ class SDKSession {
     // If no client exists in this session, create a new one and
     // attach it.
     let client;
+    const baseUrl = this.forceMainnetUrl ?  constants.BASE_MAINNET_SIGNING_URL : 
+                                            constants.BASE_SIGNING_URL;
     try {
       client = new Client({ 
         name: this.name,
         crypto: this.crypto,
         privKey: key,
-        baseUrl: constants.BASE_SIGNING_URL,
+        baseUrl,
         timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
       })
     } catch (err) {
