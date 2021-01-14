@@ -89,7 +89,7 @@ class Main extends React.Component {
         const prevKeyringLogin = this.getPrevKeyringLogin();
         const keyringTimeoutBoundary = new Date().getTime() - constants.KEYRING_LOGOUT_MS;
         if (prevKeyringLogin && prevKeyringLogin.lastLogin > keyringTimeoutBoundary) {
-          this.connect(prevKeyringLogin.deviceID, prevKeyringLogin.password, () => this.connectSession(prevKeyringLogin))
+          this.startSDKSession(prevKeyringLogin.deviceID, prevKeyringLogin.password, () => this.connectSession(prevKeyringLogin))
         } else {
           // If the login has expired, clear it now.
           this.clearPrevKeyringLogin();
@@ -100,7 +100,7 @@ class Main extends React.Component {
       const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
       const password = window.localStorage.getItem('gridplus_web_wallet_password');
       if (deviceID && password)
-        this.connect(deviceID, password, () => this.connectSession())
+        this.startSDKSession(deviceID, password, () => this.connectSession())
     }
   }
 
@@ -121,11 +121,15 @@ class Main extends React.Component {
     return this.state.windowWidth < 500;
   }
 
-  connect(deviceID, password, cb) {
+  startSDKSession(deviceID, password, cb) {
+    // We want to pay attention to the URL network parameter, as it ultimately determines
+    // how we try to contact the Lattice.
+    const params = new URLSearchParams(window.location.search);
+    const network = params.get('network');
     const updates = { deviceID, password };
     if (!this.state.session) {
       // Create a new session if we don't have one.
-      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name);
+      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name, network);
     }
     this.setState(updates, cb);
   }
@@ -334,7 +338,7 @@ class Main extends React.Component {
       this.setError(null);
     }
     // Connect to the device
-    this.connect(deviceID, password, () => {
+    this.startSDKSession(deviceID, password, () => {
       // Create a new session with the deviceID and password provided.
       if (showLoading === true)
         this.wait("Looking for your Lattice");
