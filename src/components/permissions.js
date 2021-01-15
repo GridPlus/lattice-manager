@@ -181,7 +181,7 @@ class Permissions extends React.Component {
     const content = (
       <center>
         {this.renderBanner()}
-        <Card title={'Ethereum Smart Contracts'} bordered={true}>
+        <Card title={'Auto-sign Spending Limits'} bordered={true}>
           {this.renderCard()}
         </Card>
       </center>      
