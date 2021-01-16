@@ -200,7 +200,7 @@ const deviceIdContent = (
     </Panel>
     <Panel header="How do I find my DeviceID?" key="2">
       <p>On your Lattice1's home screen, you should see an item titled "Device ID". Click this to find the ID.</p> 
-      <p>The DeviceID should be made of 8 random numbers and letters.</p>
+      <p>The DeviceID contains 6 to 8 random numbers and letters.</p>
     </Panel>
     <Panel header="Why do I need to enter this?" key="3">
       <p>This web wallet does not save or send any information about you or your device.</p>
