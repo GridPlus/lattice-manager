@@ -1,6 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Modal } from 'antd'
+import { Settings } from './index'
 const { Panel } = Collapse;
 
 class Connect extends React.Component {
@@ -10,9 +11,11 @@ class Connect extends React.Component {
       errMsg: null,
       isLoading: false,
       modal: false,
+      showSettings: false,
     }
     this.handleSubmit = this.handleSubmit.bind(this);
     this.renderMsg = this.renderMsg.bind(this);
+    this.showModal = this.showModal.bind(this);
   }
 
   componentDidMount() {
@@ -82,10 +85,26 @@ class Connect extends React.Component {
   }
 
   hideModal() {
-    this.setState({ modal: false });
+    this.setState({ modal: false, showSettings: false });
+  }
+
+  _isMobile() {
+    return this.state.windowWidth < 500;
   }
 
   renderModal() {
+    if (this.state.showSettings) {
+      return (
+        <Modal
+          title="Settings"
+          visible={this.state.modal}
+          onOk={this.hideModal.bind(this)}
+          onCancel={this.hideModal.bind(this)}
+        >
+          <Settings isMobile={() => this._isMobile()} inModal={true} />
+        </Modal>
+      )
+    }
      return (
       <div>
         <Modal
@@ -179,6 +198,12 @@ class Connect extends React.Component {
             </Card>
             <Button type="link" onClick={this.showModal.bind(this)} style={{margin: "20px 0 0 0"}}>
               New User?
+            </Button>
+            <br/>
+            <Button type="link" onClick={() => {
+              this.setState({ showSettings: true }, this.showModal)
+            }}>
+              Settings
             </Button>
             <a href="https://gridplus.io/lattice" target={"_blank"}>
               <p>Buy a Lattice1</p>

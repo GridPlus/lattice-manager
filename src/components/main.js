@@ -3,7 +3,7 @@ import 'antd/dist/antd.css'
 import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts } from './index'
+import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings } from './index'
 import { constants, getCurrencyText, setEthersProvider } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -125,7 +125,8 @@ class Main extends React.Component {
     const updates = { deviceID, password };
     if (!this.state.session) {
       // Create a new session if we don't have one.
-      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name);
+      const settings = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}').settings || {};
+      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name, settings);
     }
     this.setState(updates, cb);
   }
@@ -541,6 +542,10 @@ class Main extends React.Component {
           <Icon type="dollar" />
           <span>Limits</span>
         </Menu.Item>
+        <Menu.Item key="menu-settings">
+          <Icon type="setting" />
+          <span>Settings</span>
+        </Menu.Item>
       </Menu>
     ) : (
       <Sider collapsed={this.isMobile()}>
@@ -564,6 +569,10 @@ class Main extends React.Component {
           <Menu.Item key="menu-permissions">
             <Icon type="dollar" />
             <span>Limits</span>
+          </Menu.Item>
+          <Menu.Item key="menu-settings">
+            <Icon type="setting" />
+            <span>Settings</span>
           </Menu.Item>
         </Menu>
       </Sider>
@@ -697,6 +706,12 @@ class Main extends React.Component {
         return (
           <Permissions
             session={this.state.session}
+            isMobile={() => this.isMobile()}
+          />
+        )   
+      case 'menu-settings':
+        return (
+          <Settings
             isMobile={() => this.isMobile()}
           />
         )
