@@ -125,7 +125,8 @@ class Main extends React.Component {
     const updates = { deviceID, password };
     if (!this.state.session) {
       // Create a new session if we don't have one.
-      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name);
+      const settings = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}').settings || {};
+      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name, settings);
     }
     this.setState(updates, cb);
   }

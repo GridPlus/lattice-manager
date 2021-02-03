@@ -8,7 +8,7 @@ const ReactCrypto = require('gridplus-react-crypto').default;
 const DEVICE_ADDR_SYNC_MS = 2000; // It takes roughly 2000 to sync a new address
 
 class SDKSession {
-  constructor(deviceID, stateUpdateHandler, name=null) {
+  constructor(deviceID, stateUpdateHandler, name=null, opts={}) {
     this.client = null;
     this.crypto = null;
     this.name = name || 'GridPlus Web Wallet'; // app name
@@ -45,6 +45,9 @@ class SDKSession {
 
     // Current page of results (transactions) for the wallet
     this.page = 1; // (1-indexed)
+
+    // Configurable settings
+    this.baseUrl = opts.customEndpoint ? opts.customEndpoint : constants.BASE_SIGNING_URL;
   
     // Go time
     this.getStorage();
@@ -484,7 +487,7 @@ class SDKSession {
         name: this.name,
         crypto: this.crypto,
         privKey: key,
-        baseUrl: constants.BASE_SIGNING_URL,
+        baseUrl: this.baseUrl,
         timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
       })
     } catch (err) {
