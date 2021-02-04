@@ -178,6 +178,7 @@ class Connect extends React.Component {
     const spanWidth = this.props.isMobile() ? 24 : 10;
     const spanOffset = this.props.isMobile() ? 0 : 7;
     const keyringName = this.props.name === 'GridPlus Web Wallet' ? null : this.props.name
+    const tooLong = keyringName !== null && keyringName.length < 5;
     return (
       <Row>
         {this.renderModal()}
@@ -194,7 +195,7 @@ class Connect extends React.Component {
                 )}
               </a>
               {keyringName ? (<div><br/><i><p>Login for <b>{keyringName}</b></p></i></div>) : null}
-              {this.renderForm()}
+              {tooLong ? (<p><b>Error: App name must be more than 4 characters.</b></p>) : this.renderForm()}
             </Card>
             <Button type="link" onClick={this.showModal.bind(this)} style={{margin: "20px 0 0 0"}}>
               New User?
