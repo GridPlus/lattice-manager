@@ -142,15 +142,19 @@ class Main extends React.Component {
 
   saveKeyringLogin() {
     if (this.state.name) {
-      const _keyringState = window.localStorage.getItem('gridplus_web_wallet_keyring_logins') || JSON.stringify({});
+      const _storage = window.localStorage.getItem(constants.ROOT_STORE) || JSON.stringify({});
       try {
-        const keyringState = JSON.parse(_keyringState);
-        keyringState[this.state.name] = {
+        const storage = JSON.parse(_storage);
+        if (!storage.settings)
+          storage.settings = {};
+        if (!storage.settings.keyringLogins)
+          storage.settings.keyringLogins = {};
+        storage.settings.keyringLogins[this.state.name] = {
           deviceID: this.state.deviceID,
           password: this.state.password,
           lastLogin: new Date().getTime()
         }
-        window.localStorage.setItem('gridplus_web_wallet_keyring_logins', JSON.stringify(keyringState));
+        window.localStorage.setItem(constants.ROOT_STORE, JSON.stringify(storage));
       } catch (err) {
         console.error(`Error saving keyring login: ${err.toString()}`)
       }
@@ -159,10 +163,10 @@ class Main extends React.Component {
 
   getPrevKeyringLogin() {
     if (this.state.name) {
-      const _keyringState = window.localStorage.getItem('gridplus_web_wallet_keyring_logins');
+      const _storage = window.localStorage.getItem(constants.ROOT_STORE);
       try {
-        const keyringState = JSON.parse(_keyringState);
-        return keyringState[this.state.name];
+        const storage = JSON.parse(_storage);
+        return storage.settings.keyringLogins[this.state.name];
       } catch (e) {
         return {};
       }
@@ -171,10 +175,10 @@ class Main extends React.Component {
 
   clearPrevKeyringLogin() {
     if (this.state.name) {
-      const _keyringState = window.localStorage.getItem('gridplus_web_wallet_keyring_logins');
+      const _storage = window.localStorage.getItem(constants.ROOT_STORE);
       try {
-        const keyringState = JSON.parse(_keyringState);
-        delete keyringState[this.state.name];
+        const storage = JSON.parse(_storage);
+        delete storage.settings.keyringLogins[this.state.name];
       } catch (err) {
         console.error(`Error clearing keyring login: ${err.toString()}`)
       }
