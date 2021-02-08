@@ -142,6 +142,7 @@ class Main extends React.Component {
     }
     // Reset all SDK-related state variables so the user can re-connect to something else.
     this.setState({ deviceID: null, password: null, session: null })
+    this.unwait()
   }
 
   isConnected() {
@@ -249,12 +250,12 @@ class Main extends React.Component {
     }
   }
 
-  wait(msg=null) {
-    this.setState({ pendingMsg: msg, waiting: true });
+  wait(msg=null, onCancel=null) {
+    this.setState({ pendingMsg: msg, waiting: true, onCancel });
   }
 
   unwait() {
-    this.setState({ pendingMsg: null, waiting: false });
+    this.setState({ pendingMsg: null, waiting: false, onCancel: null });
   }
 
   setError(data) {
@@ -354,12 +355,13 @@ class Main extends React.Component {
     // Connect to the device
     this.connect(deviceID, password, () => {
       // Create a new session with the deviceID and password provided.
-      if (showLoading === true)
-        this.wait("Looking for your Lattice");
+      if (showLoading === true) {
+        this.wait("Looking for your Lattice", this.cancelConnect);
+      }
       this.state.session.connect(deviceID, password, (err, isPaired) => {
         this.unwait();
         // If the request was before we got our callback, exit here
-        if (!this.state.session)
+        if (!this.state.session || this.state.deviceID !== deviceID)
           return;
         if (err) {
           // If we failed to connect, clear out the SDK session. This component will
@@ -746,7 +748,8 @@ class Main extends React.Component {
     if (this.state.waiting) {
       return (
         <Loading  isMobile={() => this.isMobile()} 
-                  msg={this.state.pendingMsg} /> 
+                  msg={this.state.pendingMsg}
+                  onCancel={this.state.onCancel}/> 
       );
     } else if (!this.isConnected()) {
       // Connect to the Lattice via the SDK
