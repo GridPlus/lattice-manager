@@ -55,6 +55,7 @@ class Main extends React.Component {
     this.syncActiveWalletState = this.syncActiveWalletState.bind(this);
 
     // Bind callbacks whose calls may originate elsewhere
+    this.cancelConnect = this.cancelConnect.bind(this);
     this.connectSession = this.connectSession.bind(this);
     this.handlePair = this.handlePair.bind(this);
     this.fetchAddresses = this.fetchAddresses.bind(this);
@@ -129,6 +130,18 @@ class Main extends React.Component {
       updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name, settings);
     }
     this.setState(updates, cb);
+  }
+
+  cancelConnect() {
+    // Cancel the pairing process if it was started (i.e. if the connection was started with
+    // a device that could be discovered). Most of the time this will not be possible because
+    // the cancel button that triggers this function will not be displayed once the device
+    // responds back that it is ready to pair.
+    if (this.state.session && this.state.session.client) {
+      this.state.session.pair('', () => {});
+    }
+    // Reset all SDK-related state variables so the user can re-connect to something else.
+    this.setState({ deviceID: null, password: null, session: null })
   }
 
   isConnected() {
@@ -345,6 +358,9 @@ class Main extends React.Component {
         this.wait("Looking for your Lattice");
       this.state.session.connect(deviceID, password, (err, isPaired) => {
         this.unwait();
+        // If the request was before we got our callback, exit here
+        if (!this.state.session)
+          return;
         if (err) {
           // If we failed to connect, clear out the SDK session. This component will
           // prompt the user for new login data and will try to create one.
@@ -736,6 +752,7 @@ class Main extends React.Component {
       // Connect to the Lattice via the SDK
       return (
         <Connect  submitCb={this.connectSession}
+                  cancelConnect={this.cancelConnect}
                   name={this.state.name}
                   isMobile={() => this.isMobile()}
                   errMsg={this.state.error.msg}/>
