@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Card, Col, Icon, Row, Spin } from 'antd'
+import { Button, Card, Col, Icon, Row, Spin } from 'antd'
 
 class Loading extends React.Component {
   render() {
@@ -15,6 +15,11 @@ class Loading extends React.Component {
                 <Spin indicator={<Icon type="loading"/>} />
               ) : null}
               <p>{this.props.msg ? this.props.msg : "Waiting for data from your Lattice1"}</p>
+              {this.props.onCancel ? (
+                <Button type='link' onClick={this.props.onCancel}>
+                  Cancel
+                </Button>
+              ) : null}
             </Card>
           </center>
         </Col>

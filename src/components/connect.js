@@ -13,6 +13,7 @@ class Connect extends React.Component {
       modal: false,
       showSettings: false,
     }
+    this.handleCancel = this.handleCancel.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.renderMsg = this.renderMsg.bind(this);
     this.showModal = this.showModal.bind(this);
@@ -39,16 +40,27 @@ class Connect extends React.Component {
     }
   }
 
+  handleCancel() {
+    this.props.cancelConnect();
+    this.setState({ isLoading: false, errMsg: null });
+  }
+
   renderConnectButton() {
     if (this.state.isLoading && 
         this.state.errMsg === null &&
         this.props.errMsg === null) {
       return (
-        <Button type="primary"
-                style={{ margin: '20px 0 0 0'}}
-                loading>
-          Connecting...
-        </Button>
+        <div>
+          <Button type="primary"
+                  style={{ margin: '20px 0 0 0' }}
+                  loading>
+            Connecting...
+          </Button>
+          <br/>
+          <Button type="link" onClick={this.handleCancel}>
+            Cancel
+          </Button>
+        </div>
       )
     } else {
       return (
