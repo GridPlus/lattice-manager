@@ -26,6 +26,7 @@ const constants = {
     BTC_TESTNET: process.env.REACT_APP_BTC_TESTNET || null,
     KEYRING_LOGOUT_MS: process.env.KEYRING_LOGOUT_MS || 2592000000, // default 30 days
     KEYRING_DATA_PATH: 'gridplus_web_wallet_keyring_logins', // item in localStorage
+    AWS_BUCKET_URL: 'https://gridplus-public.s3.amazonaws.com',
 }
 
 constants.ERC20_TOKENS = constants.ENV === 'dev' ? require('./devTokens.json') : require('./prodTokens.json');

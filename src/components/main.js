@@ -586,7 +586,7 @@ class Main extends React.Component {
           </Menu.Item>
           <Menu.Item key="menu-eth-contracts">
             <Icon type="audit" />
-            <span>Smart Contracts</span>
+            <span>Contract Data</span>
           </Menu.Item>
           <Menu.Item key="menu-permissions">
             <Icon type="dollar" />
