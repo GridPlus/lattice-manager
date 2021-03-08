@@ -40,11 +40,7 @@ class EthContracts extends React.Component {
             const defs = this.props.session.client.parseAbi('etherscan', resp.result);
             this.setState({ defs, contract: input, error: null, success: false, loading: false })
           } catch (err) {
-            let errStr = err.toString()
-            // The most common error will be from our lack of tuple support so let's use a custom string
-            if (errStr === 'Error: Unsupported type: tuple[]')
-              errStr = 'This contract contains "tuple" types, which are not yet supported. We are working on support for the next version!'
-            this.setState({ error: errStr, ...defaultState })
+            this.setState({ error: err.toString(), ...defaultState })
           }
         }
       })
