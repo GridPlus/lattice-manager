@@ -13,10 +13,20 @@ const TAB_KEYS = {
   SINGLE_ADDR: '2',
 }
 const PACKS = {
-  DEFI: {
-    name: 'Defi Pack',
-    desc: 'This contract pack contains a number of functions from contracts deployed and used by popular DeFi apps.',
-    url: 'defi-pack'
+  DEFI_1: {
+    name: 'Defi Pack 1',
+    desc: 'Contract data from AAVE, Compound, Opyn, and Uniswap',
+    url: 'defi_pack_1'
+  },
+  DEFI_2: {
+    name: 'Defi Pack 2',
+    desc: 'Contract data from Yearn',
+    url: 'defi_pack_2'
+  },
+  DEFI_3: {
+    name: 'Defi Pack 3',
+    desc: 'Contract data from Curve',
+    url: 'defi_pack_3'
   },
 }
 
@@ -32,7 +42,7 @@ class EthContracts extends React.Component {
       loading: false,
       tab: TAB_KEYS.PATH,
       packData: {},
-      selectedPackKey: 'DEFI',
+      selectedPackKey: 'DEFI_1',
       modal: false
     }
 
@@ -264,7 +274,9 @@ class EthContracts extends React.Component {
   renderPackCard() {
     return (
       <div>
-        {this.renderPack('DEFI')}
+        {this.renderPack('DEFI_1')}
+        {this.renderPack('DEFI_2')}
+        {this.renderPack('DEFI_3')}
       </div>
     )
   }
