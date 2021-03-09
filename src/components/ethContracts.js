@@ -4,10 +4,13 @@ import { Alert, Button, Card, Col, Icon, Input, Modal, Row, Select, Spin, Table,
 import './styles.css'
 import { constants, } from '../util/helpers';
 
+// Approximate of seconds each def takes to load. 2 defs load per request
+// This is just a guesstimate for display purposes
+const SEC_PER_DEF = 1.3; 
+
 const defaultState = {
   contract: null, defs: [], success: false, loading: false,
 }
-
 const TAB_KEYS = {
   PACK: '1',
   SINGLE_ADDR: '2',
@@ -15,20 +18,16 @@ const TAB_KEYS = {
 const PACKS = {
   DEFI_1: {
     name: 'Defi Pack 1',
-    desc: 'Contract data from AAVE, Compound, Opyn, and Uniswap',
+    desc: 'Contract data from AAVE, Compound, Opyn, Uniswap, and Yearn',
     url: 'defi_pack_1'
   },
   DEFI_2: {
     name: 'Defi Pack 2',
-    desc: 'Contract data from Yearn',
+    desc: 'Contract data from Curve',
     url: 'defi_pack_2'
   },
-  DEFI_3: {
-    name: 'Defi Pack 3',
-    desc: 'Contract data from Curve',
-    url: 'defi_pack_3'
-  },
 }
+
 
 class EthContracts extends React.Component {
   constructor(props) {
@@ -109,7 +108,11 @@ class EthContracts extends React.Component {
 
   addContract() {
     this.setState({ loading: true })
+    // Stop the web worker so it doesn't interfere with this request
+    this.props.session.stopWorker();
     this.props.session.addAbiDefs(this.state.defs, (err) => {
+      // Restart the web worker
+      this.props.session.restartWorker();
       if (err) {
         this.setState({ error: err.toString(), loading: false, success: false })
       } else {
@@ -189,13 +192,6 @@ class EthContracts extends React.Component {
           onClose={() => { this.setState({ error: null, ...defaultState })}}
         />
       )
-    } else if (this.state.loading) {
-      return (
-        <div>
-          <Spin indicator={(<Icon type="loading"/>)}/>
-          <br/>
-        </div>
-      )
     }
   }
 
@@ -215,17 +211,23 @@ class EthContracts extends React.Component {
       <Card>
         <br/>
         <h3>{PACKS[key].name}</h3>
-        <p>{PACKS[key].desc}</p>
         {this.state.packData[key] ? (
-          <div>
-            <Button type="link" onClick={() => { this.setState({ selectedPackKey: key }, this.showModal.bind(this)) }}>
-              View Contents
-            </Button>
-            <br/><br/>
-            <Button size="large" type="primary" onClick={() => {this.setState({ defs: this.state.packData[key].defs }, this.addContract)}}>
-              Install (~{Math.ceil((this.state.packData[key].defs.length * 5) / 60) } min)
-            </Button>
-          </div>
+          <p>
+            {PACKS[key].desc}
+            &nbsp;(
+              <a onClick={() => { this.setState({ selectedPackKey: key }, this.showModal.bind(this)) }}>View Contents</a>
+            )
+          </p>
+        ) : <p>{PACKS[key].desc}</p>}
+        <br/>
+        {this.state.packData[key] ? (
+          <Button size="large" type="primary" loading={this.state.loading}
+                  onClick={() => {this.setState({ defs: this.state.packData[key].defs }, this.addContract)}}>
+            {this.state.loading ? 
+              "Installing..." :
+              `Install (~${Math.ceil((this.state.packData[key].defs.length * SEC_PER_DEF) / 60) } min)`
+            }
+          </Button>
         ) : (
           <Button size="large" onClick={() => { this.loadPackData(key) }}>
             Check Latest
@@ -275,8 +277,7 @@ class EthContracts extends React.Component {
     return (
       <div>
         {this.renderPack('DEFI_1')}
-        {this.renderPack('DEFI_2')}
-        {this.renderPack('DEFI_3')}
+        {/* {this.renderPack('DEFI_2')} */}
       </div>
     )
   }
@@ -293,12 +294,12 @@ class EthContracts extends React.Component {
 
   render() {
     const content = (
-      <center>
+      <div>
         {this.renderBanner()}
         <Card title={'Contract Data'} bordered={true}>
           {this.renderCard()}
         </Card>
-      </center>      
+      </div>      
     )
     return this.props.isMobile() ? content : (
       <Row justify={'center'}>
