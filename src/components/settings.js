@@ -2,7 +2,7 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Button, Card, Col, Collapse, Icon, Input, Row, Switch, Table } from 'antd'
 import './styles.css'
-import { constants, } from '../util/helpers';
+import { constants, getLocalStorageSettings } from '../util/helpers';
 const settingsPath = `${constants.ROOT_STORE}/settings`
 
 class Settings extends React.Component {
@@ -25,8 +25,7 @@ class Settings extends React.Component {
   }
 
   getSettings() {
-    const storage = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}');
-    const settings = storage.settings ? storage.settings : {};
+    const settings = getLocalStorageSettings();
     this.setState({ settings })
   }
 

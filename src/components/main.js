@@ -4,7 +4,7 @@ import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings } from './index'
-import { constants, getCurrencyText, setEthersProvider } from '../util/helpers'
+import { constants, getCurrencyText, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
 
@@ -218,7 +218,13 @@ class Main extends React.Component {
     const data = {
       deviceID: this.state.deviceID,
       password: this.state.password,
+      endpoint: constants.BASE_SIGNING_URL,
     };
+    // Check if there is a custom endpoint configured
+    const settings = getLocalStorageSettings();
+    if (settings.customEndpoint && settings.customEndpoint !== '') {
+      data.endpoint = settings.customEndpoint;
+    }
     this.handleLogout();
     window.opener.postMessage(JSON.stringify(data), "*");
     window.close();
