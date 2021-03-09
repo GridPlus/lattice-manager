@@ -155,6 +155,14 @@ class SDKSession {
     return this.client.getActiveWallet();
   }
 
+  stopWorker() {
+    this.worker.postMessage({ type: 'stop' });
+  }
+
+  restartWorker() {
+    this.worker.postMessage({ type: 'restart' });
+  }
+
   // Setup a web worker to periodically lookup state data
   setupWorker() {
     this.worker = new WebWorker(worker);

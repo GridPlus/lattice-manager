@@ -37,6 +37,8 @@ export default () => {
             case 'stop':
                 clearInterval(interval);
                 break;
+            case 'restart':
+                tick();
             default:
                 break;
         }
