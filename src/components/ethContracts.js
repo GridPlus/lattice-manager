@@ -23,7 +23,7 @@ const PACKS = {
   },
   DEFI_2: {
     name: 'Defi Pack 2',
-    desc: 'Contract data from Curve',
+    desc: 'Contract data from Curve and Maker',
     url: 'defi_pack_2'
   },
 }
@@ -107,7 +107,7 @@ class EthContracts extends React.Component {
   }
 
   addContract() {
-    this.setState({ loading: true })
+    this.setState({ loading: true, error: null })
     // Stop the web worker so it doesn't interfere with this request
     this.props.session.stopWorker();
     this.props.session.addAbiDefs(this.state.defs, (err) => {
@@ -214,7 +214,8 @@ class EthContracts extends React.Component {
         {this.state.packData[key] ? (
           <p>
             {PACKS[key].desc}
-            &nbsp;(
+            <br/>
+            (
               <a onClick={() => { this.setState({ selectedPackKey: key }, this.showModal.bind(this)) }}>View Contents</a>
             )
           </p>
@@ -255,7 +256,9 @@ class EthContracts extends React.Component {
         {this.state.contract ? (
           <Card title={this.state.contract}>
             <p>Found <b>{this.state.defs.length}</b> functions to add from this contract.</p>
-            <Button type="primary" onClick={this.addContract}>Send to Lattice</Button>
+            <Button type="primary" onClick={this.addContract} loading={this.state.loading}>
+              {this.state.loading ? "Installing..." : "Install"}
+            </Button>
             {this.state.success ? (
               <div>
                 <br/>
