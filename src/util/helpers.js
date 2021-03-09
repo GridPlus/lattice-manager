@@ -232,6 +232,19 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
 //--------------------------------------------
 
 //--------------------------------------------
+// LOCAL STORAGE HELPERS
+//--------------------------------------------
+exports.getLocalStorageSettings = function() {
+    const storage = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}');
+    const settings = storage.settings ? storage.settings : {};
+    return settings;
+}
+
+//--------------------------------------------
+// END LOCAL STORAGE HELPERS
+//--------------------------------------------
+
+//--------------------------------------------
 // OTHER HELPERS
 //--------------------------------------------
 exports.harden = function(x) {
