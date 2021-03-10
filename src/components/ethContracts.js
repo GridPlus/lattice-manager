@@ -6,7 +6,7 @@ import { constants, } from '../util/helpers';
 
 // Approximate of seconds each def takes to load. 2 defs load per request
 // This is just a guesstimate for display purposes
-const SEC_PER_DEF = 1.3; 
+const SEC_PER_DEF = 1.2; 
 
 const defaultState = {
   contract: null, defs: [], success: false, loading: false,
@@ -18,7 +18,7 @@ const TAB_KEYS = {
 const PACKS = {
   DEFI_1: {
     name: 'Defi Pack 1',
-    desc: 'Contract data from AAVE, Compound, Opyn, Uniswap, and Yearn',
+    desc: 'Contract data from AAVE, Maker, Opyn, Uniswap, and Yearn',
     url: 'defi_pack_1'
   },
   DEFI_2: {
@@ -59,7 +59,7 @@ class EthContracts extends React.Component {
   }
 
   onTabChange(key) {
-    this.setState({ tab: key })
+    this.setState({ tab: key, success: false, error: null, loading: false })
   }
 
   onSmartContractAddress(input) {
@@ -195,6 +195,15 @@ class EthContracts extends React.Component {
     }
   }
 
+  renderSuccessAlert() {
+    return (<Alert 
+      type="success"
+      message="Success"
+      description="Successfully sent data to Lattice. You must 
+                  confirm all functions on your Lattice for them to be saved."
+    />)
+  }
+
   renderTabs() {
     return (
       <Tabs defaultActiveKey={TAB_KEYS.PACK} onChange={this.onTabChange.bind(this)}>
@@ -222,13 +231,21 @@ class EthContracts extends React.Component {
         ) : <p>{PACKS[key].desc}</p>}
         <br/>
         {this.state.packData[key] ? (
-          <Button size="large" type="primary" loading={this.state.loading}
-                  onClick={() => {this.setState({ defs: this.state.packData[key].defs }, this.addContract)}}>
-            {this.state.loading ? 
-              "Installing..." :
-              `Install (~${Math.ceil((this.state.packData[key].defs.length * SEC_PER_DEF) / 60) } min)`
-            }
-          </Button>
+          <div>
+            {this.state.success ? (
+              <div>
+                {this.renderSuccessAlert()}
+              </div>
+            ) : (
+              <Button size="large" type="primary" loading={this.state.loading}
+                      onClick={() => {this.setState({ defs: this.state.packData[key].defs }, this.addContract)}}>
+                {this.state.loading ? 
+                  "Installing..." :
+                  `Install (~${Math.ceil((this.state.packData[key].defs.length * SEC_PER_DEF) / 60) } min)`
+                }
+              </Button>
+            )}
+          </div>
         ) : (
           <Button size="large" onClick={() => { this.loadPackData(key) }}>
             Check Latest
@@ -249,28 +266,30 @@ class EthContracts extends React.Component {
           placeholder="Contract address"
           allowClear
           enterButton
+          loading={this.state.loading && !this.state.contract}
           onSearch={this.onSmartContractAddress}
         />
         <br/>
         <br/>
         {this.state.contract ? (
-          <Card title={this.state.contract}>
-            <p>Found <b>{this.state.defs.length}</b> functions to add from this contract.</p>
-            <Button type="primary" onClick={this.addContract} loading={this.state.loading}>
-              {this.state.loading ? "Installing..." : "Install"}
-            </Button>
+          <div>
             {this.state.success ? (
-              <div>
-                <br/>
-                <Alert 
-                  type="success"
-                  message="Success"
-                  description="Successfully sent data to Lattice. You must 
-                              confirm all functions on your Lattice for them to be saved."
-                /> 
-              </div>
-            ) : null}
-          </Card>
+              <div>{this.renderSuccessAlert()}</div>
+            ) : (
+              <Card title={this.state.contract}>
+                <p>Found <b>{this.state.defs.length}</b> functions to add from this contract.</p>
+                <Button type="primary" onClick={this.addContract} loading={this.state.loading}>
+                  {this.state.loading ? "Installing..." : "Install"}
+                </Button>
+                {this.state.success ? (
+                  <div>
+                    <br/>
+                    {this.renderSuccessAlert()}
+                  </div>
+                ) : null}
+              </Card>
+            )}
+          </div>
         ): null}
       </div>
     )
