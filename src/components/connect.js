@@ -20,6 +20,7 @@ class Connect extends React.Component {
   }
 
   componentDidMount() {
+    this.input.focus()
     this.setState({ isLoading: false });    
   }
 
@@ -77,6 +78,7 @@ class Connect extends React.Component {
         <Row>
           <Input  placeholder="DeviceID" 
                   id="deviceIdInput" 
+                  ref={i => {this.input = i}}
                   style={{ margin: '10px 0 0 0', width: "70%"}} />
         </Row>
         <Row>
