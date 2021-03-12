@@ -29,8 +29,9 @@ class Send extends React.Component {
       erc20Addr: null, // null = use ETH
       ethExtraData: {
         gasPrice: constants.ETH_DEFAULT_FEE_RATE,
-        gasLimit: 23000,
+        gasLimit: 25000,
         data: '',
+        nonce: this.props.session.ethNonce,
       },
       btcFeeRate: constants.BTC_DEFAULT_FEE_RATE,
       ensResolvedAddress: null,
@@ -44,6 +45,29 @@ class Send extends React.Component {
     this.buildEthRequest = this.buildEthRequest.bind(this);
     this.buildBtcrequest = this.buildBtcRequest.bind(this);
     this.updateBtcFeeRate = this.updateBtcFeeRate.bind(this);
+  }
+
+  componentDidMount() {
+    fetch('https://www.gasnow.org/api/v3/gas/price?utm_source=gpwebwallet')
+    .then((response) => response.json())
+    .then((resp) => {
+      if (resp.code === 200 && resp.data) {
+        if (resp.data.fast) {
+          const data = JSON.parse(JSON.stringify(this.state.ethExtraData))
+          data.gasPrice = (resp.data.fast) / GWEI_FACTOR;
+          this.setState({ ethExtraData: data })
+        }
+      }
+      return fetch('https://bitcoinfees.earn.com/api/v1/fees/recommended')
+    })
+    .then((response) => response.json())
+    .then((resp) => {
+      if (resp.hourFee)
+        this.setState({ btcFeeRate: resp.hourFee })
+    })
+    .catch((err) => {
+      console.error(`Error from fetching fee rates: ${err.toString()}`)
+    })
   }
 
   //========================================================
@@ -120,6 +144,10 @@ class Send extends React.Component {
         if (!isNaN(evt.target.value) && Number(evt.target.value) < 10000000)
           extraDataCopy.gasLimit = evt.target.value;
         break;
+      case 'ethNonce':
+        if (!isNaN(evt.target.value))
+          extraDataCopy.nonce = evt.target.value;
+        break;
       case 'ethData':
         let data = evt.target.value;
         while(data.indexOf('0x') > -1) {
@@ -172,7 +200,7 @@ class Send extends React.Component {
       _data = this.state.ethExtraData.data;
     }
     const txData = {
-      nonce: this.props.session.ethNonce,
+      nonce: Number(this.state.ethExtraData.nonce),
       gasPrice: (parseFloat(this.state.ethExtraData.gasPrice).toFixed(1) * GWEI_FACTOR),
       gasLimit: Math.ceil(Number(this.state.ethExtraData.gasLimit)),
       to: _recipient,
@@ -428,6 +456,22 @@ class Send extends React.Component {
                 value={this.state.ethExtraData.gasLimit}
                 onChange={this.updateEthExtraData.bind(this)}/>
             </Row>
+            <Row style={{margin: "20px 0 0 0"}}>
+              <p style={{textAlign: 'left'}}>
+                <b>Nonce</b>
+                <Button onClick={() => { 
+                  const ed = JSON.parse(JSON.stringify(this.state.ethExtraData)); 
+                  ed.nonce = this.props.session.ethNonce;
+                  this.setState({ ethExtraData: ed })}}
+                  type="link">
+                  Reset
+                </Button>
+              </p>
+              <Input type="text" 
+                id={"ethNonce"} 
+                value={this.state.ethExtraData.nonce}
+                onChange={this.updateEthExtraData.bind(this)}/>
+            </Row>
             {this.state.erc20Addr === null ? (
               <Row style={{margin: "20px 0 0 0"}}>
                 <p style={{textAlign: 'left'}}><b>Data</b></p>
@@ -444,8 +488,8 @@ class Send extends React.Component {
         <Row>
           <p style={{textAlign: 'left'}}><b>{`Fee: ${this.state.btcFeeRate} sat/byte`}</b></p>
           <Slider
-            min={1}
-            max={150}
+            min={10}
+            max={200}
             onChange={this.updateBtcFeeRate}
             value={this.state.btcFeeRate}
           />
