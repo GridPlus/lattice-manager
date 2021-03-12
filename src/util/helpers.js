@@ -14,8 +14,8 @@ const constants = {
     BTC_ADDR_BLOCK_LEN: 10,
     BTC_CHANGE_GAP_LIMIT: 1,
     BTC_CHANGE_ADDR_BLOCK_LEN: 1,
-    BTC_DEFAULT_FEE_RATE: process.env.REACT_APP_BTC_DEFAULT_FEE_RATE || 5, // 5 sat/byte
-    ETH_DEFAULT_FEE_RATE: process.env.REACT_APP_ETH_DEFAULT_FEE_RATE || 20, //  20 GWei
+    BTC_DEFAULT_FEE_RATE: process.env.REACT_APP_BTC_DEFAULT_FEE_RATE || 40, // 40 sat/byte
+    ETH_DEFAULT_FEE_RATE: process.env.REACT_APP_ETH_DEFAULT_FEE_RATE || 100, //  100 GWei
     ETH_TX_BASE_URL: process.env.REACT_APP_ETH_TX_BASE_URL || 'https://etherscan.io/tx',
     BTC_TX_BASE_URL: process.env.REACT_APP_BTC_TX_BASE_URL || 'https://www.blockchain.com/btc/tx',
     PAGE_SIZE: 20, // 20 transactions per requested page, per `gridplus-cloud-services`
