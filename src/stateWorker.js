@@ -173,15 +173,18 @@ export default () => {
     // @param page      {number}   -- page of transactions to request (ignored if currency!=ETH)
     // @param cb        {function} -- callback function of form cb(err, data)
     function fetchStateData(currency, addresses, page, cb) {
-        const reqAddresses = addresses[currency];
+        // The change currency types are second class citizens. Recast to the main type.
+        if (currency.indexOf('_CHANGE') > -1)
+            currency = currency.slice(0, currency.indexOf('_CHANGE'))
+        
+        // If there are change addresses, append them to the main addresses
+        let reqAddresses = addresses[currency];
+        if (addresses[`${currency}_CHANGE`] && addresses[`${currency}_CHANGE`].length > 0)
+            reqAddresses = reqAddresses.concat(addresses[`${currency}_CHANGE`])
 
         // Exit if we don't have addresses to use in the request
         if (!reqAddresses || reqAddresses.length === 0) 
             return cb(null);
-
-        // Slice out the 'change' portion of the currency name for the request itself
-        if (currency.indexOf('_CHANGE') > -1)
-            currency = currency.slice(0, currency.indexOf('_CHANGE'));
 
         let stateData = {
             currency,

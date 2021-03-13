@@ -157,14 +157,11 @@ function fetchCurrencyData(currency, addresses, page) {
 // @param page      {number}   -- page of transactions to request (ignored if currency!=ETH)
 // @param cb        {function} -- callback function of form cb(err, data)
 exports.fetchStateData = function(currency, addresses, page, cb) {
-    // We will combine regular and change addresses for the UTXO-based coins.
-    // This function will get called for each currency type, which means the requester
-    // will naively be asking for data on the change addresses by themselves. We should
-    // just return when that request is made.
+    // The change currency types are second class citizens. Recast to the main type.
     if (currency.indexOf('_CHANGE') > -1)
-        return cb(null);
+        currency = currency.slice(0, currency.indexOf('_CHANGE'))
     
-    // Get the initial addresses
+    // If there are change addresses, append them to the main addresses
     let reqAddresses = addresses[currency];
     if (addresses[`${currency}_CHANGE`] && addresses[`${currency}_CHANGE`].length > 0)
         reqAddresses = reqAddresses.concat(addresses[`${currency}_CHANGE`])
@@ -172,7 +169,6 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
     // Exit if we don't have addresses to use in the request
     if (!reqAddresses || reqAddresses.length === 0) 
         return cb(null);
-
 
     let stateData = {
         currency,
@@ -208,7 +204,6 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
         stateData.utxos = mainData.utxos || [];
         stateData.firstUnused = mainData.firstUnused;
         stateData.lastUnused = mainData.lastUnused;
-
         // Remove duplicates. Since the ERC20 transactions came first, they
         // take precedence
         let hashes = [];
@@ -290,7 +285,17 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
         return { error: 'Unrecognized change address.' };
 
     // Sort utxos by value
-    const sortedUtxos = utxos.sort((a, b) => { return a.value-b.value });
+    // First deduplicate utxos
+    const hashes = [];
+    const filteredUtxos = [];
+    utxos.forEach((utxo) => {
+      if (hashes.indexOf(utxo.txHash) === -1) {
+        hashes.push(utxo.txHash);
+        filteredUtxos.push(utxo);
+      }
+    })
+    console.log('utxos', utxos)
+    const sortedUtxos = filteredUtxos.sort((a, b) => { return a.value-b.value });
     let sum = 0;
     let numInputs = 0;
     sortedUtxos.forEach((utxo) => {

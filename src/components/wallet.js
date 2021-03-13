@@ -131,7 +131,7 @@ class Wallet extends React.Component {
               <Icon type="up-circle" style={{color: RED}}/>
             )}
           </p>) : (
-            <p><Spin indicator={(<Icon type="loading"/>)}/></p>
+            <Spin indicator={(<Icon type="loading"/>)}/>
           )}
         <Button size="small" href={item.link} target="_blank">View</Button>
       </div>

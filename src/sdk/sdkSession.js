@@ -81,14 +81,10 @@ class SDKSession {
   getBalance(currency, erc20Token=null) {
     if (currency === 'ETH' && erc20Token !== null)
       return this.balances[erc20Token] || 0;
-    if (typeof this.balances[`${currency}_CHANGE`] === 'number')
-      return this.balances[currency] + this.balances[`${currency}_CHANGE`];
     return this.balances[currency] || 0;
   }
 
   getUSDValue(currency) {
-    if (typeof this.usdValues[`${currency}_CHANGE`] === 'number')
-      return this.usdValues[currency] + this.usdValues[`${currency}_CHANGE`];
     return this.usdValues[currency] || 0;
   }
 
@@ -198,7 +194,7 @@ class SDKSession {
     const { balance, transactions, firstUnused, lastUnused, utxos, erc20Balances, ethNonce } = data;
     let switchToChange = false;
     const changeCurrency = `${currency}_CHANGE`;
-   
+
     // Handle a case where the user logged out while requesting addresses. This return
     // prevents an infinite loop of looking up state data for the same set of addresses
     if (!this.client) return;
@@ -220,22 +216,37 @@ class SDKSession {
       // Determine if we need new addresses or if we are fully synced. This is based on the gap
       // limit (20 for regular addresses, 1 for change)
       const gapLimit = usingChange === true ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
-
       // Sometimes if we switch wallet context, the addresses will get cleared out. Make sure they
       // are always in array format
       if (!this.addresses[currency])
         this.addresses[currency] = [];
 
-      const needNewBtcAddresses = firstUnused < 0 || lastUnused < 0 ||
-                                  (lastUnused === this.addresses[currency].length - 1 &&
-                                  lastUnused - firstUnused < gapLimit - 1);
+      // Determine if we need more BTC or BTC_CHANGE addresses
+      // `data `comes from the concatenation of BTC | BTC_CHANGE addresses, so if the `lastUnused` value is 
+      // in the range of the regular BTC addresses, it means our BTC_CHANGE addresses are all used.
+      const numBtcAddrs = this.addresses.BTC ? this.addresses.BTC.length : 0; // Number of BTC (NOT change) addresses
+      const numChangeAddrs = this.addresses.BTC_CHANGE ? this.addresses.BTC_CHANGE.length : 0;
+
+      const firstBtcGapUnsynced = !(numBtcAddrs >= constants.BTC_MAIN_GAP_LIMIT);
+      const firstUnusedInBtcAddrs = firstUnused > (numBtcAddrs - constants.BTC_MAIN_GAP_LIMIT);
+      const lastUnusedInBtcAddrs = ((lastUnused < numBtcAddrs - 1) && (lastUnused - firstUnused < constants.BTC_MAIN_GAP_LIMIT));
+      const needNewBtcAddresses = (firstUnused < 0) || 
+                                  (lastUnused < 0) || 
+                                  (firstBtcGapUnsynced) || 
+                                  (firstUnusedInBtcAddrs) ||
+                                  (lastUnusedInBtcAddrs);
+
+      const lastUnusedInBtcChangeAddrs = (lastUnused > numBtcAddrs - 1);
+      const needNewBtcChangeAddresses = (numChangeAddrs === 0) || 
+                                        (!lastUnusedInBtcChangeAddrs);
+
       // Save this
       this.firstUnusedAddresses[currency] = this.addresses[currency][firstUnused];
       if (needNewBtcAddresses === true) {
         // If we need more addresses of our currency (regular OR change), just continue on.
         stillSyncingAddresses = true;
         switchToChange = false;
-      } else if (!this.addresses[changeCurrency]) {
+      } else if (!this.addresses[changeCurrency] || needNewBtcChangeAddresses) {
         // If we're up to speed with the regular ones but we don't have any change addresses,
         // we need to switch to those.
         stillSyncingAddresses = true;
@@ -379,7 +390,8 @@ class SDKSession {
             // Note that we do need to track index here
             this.addresses[currency] = currentAddresses.concat(addresses);
             this.saveStorage();
-            this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
+            if (this.worker)
+              this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
             return cb(null);
           }
         }, opts.n * DEVICE_ADDR_SYNC_MS);
