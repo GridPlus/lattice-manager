@@ -16,15 +16,35 @@ const TAB_KEYS = {
   SINGLE_ADDR: '2',
 }
 const PACKS = {
-  DEFI_1: {
-    name: 'Defi Pack 1',
-    desc: 'Contract data from AAVE, Maker, Opyn, Uniswap, and Yearn',
-    url: 'defi_pack_1'
+  AAVE: {
+    name: 'AAVE Pack',
+    desc: 'Contract definitions from AAVE',
+    url: 'aave_pack'
   },
-  DEFI_2: {
-    name: 'Defi Pack 2',
-    desc: 'Contract data from Curve and Maker',
-    url: 'defi_pack_2'
+  CURVE: {
+    name: 'Curve Pack',
+    desc: 'Contract definitions from Curve Finance',
+    url: 'curve_pack'
+  },
+  MAKER: {
+    name: 'Maker Pack',
+    desc: 'Contract definitions from Maker',
+    url: 'maker_pack'
+  },
+  OPYN: {
+    name: 'Opyn Pack',
+    desc: 'Contract definitions from Opyn V3',
+    url: 'opyn_pack'
+  },
+  UNISWAP: {
+    name: 'Uniswap Pack',
+    desc: 'Contract definitions from Uniswap V2. Note that Uniswap V2 router definitions are preloaded on your Lattice.',
+    url: 'uniswap_pack'
+  },
+  YEARN: {
+    name: 'Yearn Pack',
+    desc: 'Contract definitions from Yearn Finance',
+    url: 'yearn_pack'
   },
 }
 
@@ -41,7 +61,7 @@ class EthContracts extends React.Component {
       loading: false,
       tab: TAB_KEYS.PATH,
       packData: {},
-      selectedPackKey: 'DEFI_1',
+      selectedPackKey: 'AAVE',
       modal: false
     }
 
@@ -110,8 +130,11 @@ class EthContracts extends React.Component {
     this.setState({ loading: true, error: null })
     // Stop the web worker so it doesn't interfere with this request
     this.props.session.stopWorker();
+    // Longer timeout for loading these since requests may get dropped
+    this.props.session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT; 
     this.props.session.addAbiDefs(this.state.defs, (err) => {
-      // Restart the web worker
+      // Restart the web worker and reset the timeout
+      this.props.session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
       this.props.session.restartWorker();
       if (err) {
         this.setState({ error: err.toString(), loading: false, success: false })
@@ -216,6 +239,7 @@ class EthContracts extends React.Component {
   renderPack(key) {
     if (!PACKS[key])
       return;
+    let shouldLoad = this.state.loading && this.state.selectedPackKey === key;
     return (
       <Card>
         <br/>
@@ -225,21 +249,27 @@ class EthContracts extends React.Component {
             {PACKS[key].desc}
             <br/>
             (
-              <a onClick={() => { this.setState({ selectedPackKey: key }, this.showModal.bind(this)) }}>View Contents</a>
+              <a onClick={() => { 
+                  this.setState({ selectedPackKey: key, success: false, loading: false }, 
+                  this.showModal.bind(this)) }}
+              >View Contents</a>
             )
           </p>
         ) : <p>{PACKS[key].desc}</p>}
         <br/>
         {this.state.packData[key] ? (
           <div>
-            {this.state.success ? (
+            {(this.state.success && this.state.selectedPackKey === key)? (
               <div>
                 {this.renderSuccessAlert()}
               </div>
             ) : (
-              <Button size="large" type="primary" loading={this.state.loading}
-                      onClick={() => {this.setState({ defs: this.state.packData[key].defs }, this.addContract)}}>
-                {this.state.loading ? 
+              <Button size="large" type="primary" loading={shouldLoad}
+                      onClick={() => {
+                        this.setState({ defs: this.state.packData[key].defs, selectedPackKey: key, success: false, loading: false }, 
+                        this.addContract)}}
+              >
+                {shouldLoad ? 
                   "Installing..." :
                   `Install (~${Math.ceil((this.state.packData[key].defs.length * SEC_PER_DEF) / 60) } min)`
                 }
@@ -298,8 +328,12 @@ class EthContracts extends React.Component {
   renderPackCard() {
     return (
       <div>
-        {this.renderPack('DEFI_1')}
-        {/* {this.renderPack('DEFI_2')} */}
+        {this.renderPack('AAVE')}
+        {this.renderPack('CURVE')}
+        {this.renderPack('MAKER')}
+        {this.renderPack('OPYN')}
+        {this.renderPack('UNISWAP')}
+        {this.renderPack('YEARN')}
       </div>
     )
   }
@@ -307,7 +341,8 @@ class EthContracts extends React.Component {
   renderCard() {
     return (
       <div>
-        <p><i>Add smart contract data for more readable transactions on your Lattice1!</i></p>
+        <p><i>Add smart contract data for more readable transactions on your Lattice1! Note that not all
+        functions may be added for a given app. Please View Contents to see the specific contracts being loaded.</i></p>
         {this.renderTabs()}
         {this.state.tab === TAB_KEYS.SINGLE_ADDR ? this.renderSearchCard() : this.renderPackCard()}
       </div>
