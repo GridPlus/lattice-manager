@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Icon, Input, Modal, Row, Select, Spin, Table, Tabs, Tag } from 'antd'
+import { Alert, Button, Card, Col, Icon, Input, Modal, Result, Row, Select, Spin, Table, Tabs, Tag } from 'antd'
 import './styles.css'
 import { constants, } from '../util/helpers';
 
@@ -68,6 +68,7 @@ class EthContracts extends React.Component {
     this.addContract = this.addContract.bind(this);
     this.onSmartContractAddress = this.onSmartContractAddress.bind(this);
     this.loadPackData = this.loadPackData.bind(this);
+    this.renderSuccessAlert = this.renderSuccessAlert.bind(this);
   }
 
   showModal() {
@@ -218,16 +219,29 @@ class EthContracts extends React.Component {
     }
   }
 
-  renderSuccessAlert() {
-    return (<Alert 
-      type="success"
-      message="Success"
-      description="Successfully sent data to Lattice. You must 
-                  confirm all functions on your Lattice for them to be saved."
-    />)
+  renderSuccessAlert(buttonTxt=null) {
+    return (
+      <Result
+        status="success"
+        title="Success"
+        subTitle="Successfully sent data to your Lattice. You must confirm all
+                  functions on your Lattice for them to be saved.
+                  Please confirm or reject the definitions before continuing."
+        extra={buttonTxt !== null ? [
+          <Button type="primary"
+                  key="buttonTxt" 
+                  onClick={() => { this.setState({ loading: false, success: false, })}}>
+            {buttonTxt}
+          </Button>
+        ] : null}
+      />
+    )
   }
 
   renderTabs() {
+    const isLoadingDefs = (this.state.success || this.state.loading)
+    if (isLoadingDefs)
+      return;
     return (
       <Tabs defaultActiveKey={TAB_KEYS.PACK} onChange={this.onTabChange.bind(this)}>
         <Tabs.TabPane tab="Packs" key={TAB_KEYS.PACK}/>
@@ -239,7 +253,11 @@ class EthContracts extends React.Component {
   renderPack(key) {
     if (!PACKS[key])
       return;
-    let shouldLoad = this.state.loading && this.state.selectedPackKey === key;
+    const isLoadingDefs = (this.state.success || this.state.loading)
+    const onCurrentKey = this.state.selectedPackKey === key
+    let shouldLoad = this.state.loading && onCurrentKey
+    if (isLoadingDefs && !onCurrentKey)
+      return;
     return (
       <Card>
         <br/>
@@ -259,11 +277,19 @@ class EthContracts extends React.Component {
         <br/>
         {this.state.packData[key] ? (
           <div>
-            {(this.state.success && this.state.selectedPackKey === key)? (
+            {(this.state.success && onCurrentKey) 
+            ? 
+            (
               <div>
-                {this.renderSuccessAlert()}
+                {this.renderSuccessAlert('Continue')}
               </div>
-            ) : (
+            ) 
+            : 
+            (isLoadingDefs && this.state.selectedPackKey !== key)
+            ?
+            null
+            :
+            (
               <Button size="large" type="primary" loading={shouldLoad}
                       onClick={() => {
                         this.setState({ defs: this.state.packData[key].defs, selectedPackKey: key, success: false, loading: false }, 
@@ -276,11 +302,17 @@ class EthContracts extends React.Component {
               </Button>
             )}
           </div>
-        ) : (
+        ) 
+        :
+        isLoadingDefs === false
+        ?
+        (
           <Button size="large" onClick={() => { this.loadPackData(key) }}>
             Check Latest
           </Button>
-        )}
+        )
+        :
+        null}
       </Card>
     )
   }
