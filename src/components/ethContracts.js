@@ -21,11 +21,11 @@ const PACKS = {
     desc: 'Contract definitions from AAVE',
     url: 'aave_pack'
   },
-  CURVE: {
-    name: 'Curve Pack',
-    desc: 'Contract definitions from Curve Finance',
-    url: 'curve_pack'
-  },
+  // CURVE: {
+  //   name: 'Curve Pack',
+  //   desc: 'Contract definitions from Curve Finance',
+  //   url: 'curve_pack'
+  // },
   MAKER: {
     name: 'Maker Pack',
     desc: 'Contract definitions from Maker',
@@ -329,7 +329,7 @@ class EthContracts extends React.Component {
     return (
       <div>
         {this.renderPack('AAVE')}
-        {this.renderPack('CURVE')}
+        {/* {this.renderPack('CURVE')} */}
         {this.renderPack('MAKER')}
         {this.renderPack('OPYN')}
         {this.renderPack('UNISWAP')}
