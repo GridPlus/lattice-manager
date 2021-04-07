@@ -492,7 +492,13 @@ class SDKSession {
     })
   }
 
-  connect(deviceID, pw, cb, tmpTimeout=constants.SHORT_TIMEOUT) {
+  _tryConnect(deviceID, pw, cb, _triedLocal=false) {
+    let baseUrl = this.baseUrl;
+    let tmpTimeout = constants.SHORT_TIMEOUT; // Artificially short timeout just for connecting
+    if (_triedLocal === false) {
+      baseUrl = `http://lattice-${deviceID}.local:8080`
+      tmpTimeout = 5000 // Shorten the timeout even more since we should discover quickly if device is on LAN
+    }
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
@@ -507,14 +513,24 @@ class SDKSession {
         name: this.name,
         crypto: this.crypto,
         privKey: key,
-        baseUrl: this.baseUrl,
+        baseUrl,
         timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
       })
     } catch (err) {
       return cb(err.toString());
     }
     client.connect(deviceID, (err) => {
-      if (err) return cb(err);
+      if (err) {
+        if (_triedLocal === false) {
+          console.warn('Failed to connect to Lattice over LAN. Falling back to cloud routing.')
+          return this._tryConnect(deviceID, pw, cb, true); 
+        } else {
+          console.error('Failed to connect via cloud routing.')
+          return cb(err);
+        }
+      } else if (_triedLocal === false) {
+        console.log('Successfully connected to Lattice over LAN.')
+      }
       // Update the timeout to a longer one for future async requests
       client.timeout = constants.ASYNC_SDK_TIMEOUT;
       this.client = client;
@@ -526,6 +542,10 @@ class SDKSession {
       this.getStorage();
       return cb(null, client.isPaired);
     });
+  }
+
+  connect(deviceID, pw, cb) {
+    return this._tryConnect(deviceID, pw, cb);
   }
 
   refreshWallets(cb) {
