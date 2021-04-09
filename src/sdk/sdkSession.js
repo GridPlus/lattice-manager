@@ -496,7 +496,7 @@ class SDKSession {
     let baseUrl = this.baseUrl;
     let tmpTimeout = constants.SHORT_TIMEOUT; // Artificially short timeout just for connecting
     if (_triedLocal === false) {
-      baseUrl = `http://lattice-${deviceID}.local:8080`
+      baseUrl = `https://lattice-${deviceID}.local:8080`
       tmpTimeout = 5000 // Shorten the timeout even more since we should discover quickly if device is on LAN
     }
     // Derive a keypair from the deviceID and password
