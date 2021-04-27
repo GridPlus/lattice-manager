@@ -545,7 +545,8 @@ class SDKSession {
   }
 
   connect(deviceID, pw, cb) {
-    return this._tryConnect(deviceID, pw, cb);
+    // return this._tryConnect(deviceID, pw, cb);
+    return this._tryConnect(deviceID, pw, cb, true); // temporarily disable local connect
   }
 
   refreshWallets(cb) {
