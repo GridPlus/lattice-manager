@@ -9,11 +9,12 @@ import { constants, } from '../util/helpers';
 const SEC_PER_DEF = 1.2; 
 
 const defaultState = {
-  contract: null, defs: [], success: false, loading: false,
+  contract: null, defs: [], success: false, loading: false, customDefs: [], customDefsStr: '',
 }
 const TAB_KEYS = {
   PACK: '1',
   SINGLE_ADDR: '2',
+  CUSTOM: '3',
 }
 const PACKS = {
   AAVE: {
@@ -47,6 +48,7 @@ const PACKS = {
     url: 'yearn_pack'
   },
 }
+const manualPlaceholder = '[{"inputs":[{"internalType":"address[]","name":"_components","type":"address[]"},{"internalType":"int256[]","name":"_units","type":"int256[]"},{"internalType":"address[]","name":"_modules","type":"address[]"},{"internalType":"contract IController","name":"_controller","type":"address"},{"internalType":"address","name":"_manager","type":"address"},{"internalType":"string","name":"_name","type":"string"},'
 
 
 class EthContracts extends React.Component {
@@ -65,10 +67,13 @@ class EthContracts extends React.Component {
       modal: false
     }
 
-    this.addContract = this.addContract.bind(this);
+    this.addDefs = this.addDefs.bind(this);
     this.onSmartContractAddress = this.onSmartContractAddress.bind(this);
     this.loadPackData = this.loadPackData.bind(this);
     this.renderSuccessAlert = this.renderSuccessAlert.bind(this);
+    this.renderPackCard = this.renderPackCard.bind(this);
+    this.renderCustomCard = this.renderCustomCard.bind(this);
+    this.renderSearchCard = this.renderSearchCard.bind(this);
   }
 
   showModal() {
@@ -127,13 +132,14 @@ class EthContracts extends React.Component {
     })
   }
 
-  addContract() {
+  addDefs(_defs=null, skipErrors=false) {
     this.setState({ loading: true, error: null })
     // Stop the web worker so it doesn't interfere with this request
     this.props.session.stopWorker();
     // Longer timeout for loading these since requests may get dropped
-    this.props.session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT; 
-    this.props.session.addAbiDefs(this.state.defs, (err) => {
+    this.props.session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
+    const defs = _defs === null ? this.state.defs : _defs;
+    this.props.session.addAbiDefs(defs, (err) => {
       // Restart the web worker and reset the timeout
       this.props.session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
       this.props.session.restartWorker();
@@ -243,9 +249,10 @@ class EthContracts extends React.Component {
     if (isLoadingDefs)
       return;
     return (
-      <Tabs defaultActiveKey={TAB_KEYS.PACK} onChange={this.onTabChange.bind(this)}>
+      <Tabs activeKey={this.state.tab} onChange={this.onTabChange.bind(this)}>
         <Tabs.TabPane tab="Packs" key={TAB_KEYS.PACK}/>
-        <Tabs.TabPane tab="Search" key={TAB_KEYS.SINGLE_ADDR}/>
+        <Tabs.TabPane tab="Address" key={TAB_KEYS.SINGLE_ADDR}/>
+        <Tabs.TabPane tab="Manual" key={TAB_KEYS.CUSTOM}/>
       </Tabs>
     )
   }
@@ -293,7 +300,7 @@ class EthContracts extends React.Component {
               <Button size="large" type="primary" loading={shouldLoad}
                       onClick={() => {
                         this.setState({ defs: this.state.packData[key].defs, selectedPackKey: key, success: false, loading: false }, 
-                        this.addContract)}}
+                        this.addDefs)}}
               >
                 {shouldLoad ? 
                   "Installing..." :
@@ -340,7 +347,7 @@ class EthContracts extends React.Component {
             ) : (
               <Card title={this.state.contract}>
                 <p>Found <b>{this.state.defs.length}</b> functions to add from this contract.</p>
-                <Button type="primary" onClick={this.addContract} loading={this.state.loading}>
+                <Button type="primary" onClick={this.addDefs} loading={this.state.loading}>
                   {this.state.loading ? "Installing..." : "Install"}
                 </Button>
                 {this.state.success ? (
@@ -357,9 +364,75 @@ class EthContracts extends React.Component {
     )
   }
 
+  renderCustomCard() {
+    return (
+      <div>
+        <p>
+          Here you can add ABI definitions manually. Please stick with
+          Etherscan formatting (i.e. the contents of "Contract ABI" in the Contract tab -&nbsp;
+          <a href="https://etherscan.io/address/0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b#code" target={"_blank"}>
+          example</a>
+          ).
+        </p>
+        <Input.TextArea
+          placeholder={`${manualPlaceholder}...`}
+          autoSize={{ minRows: 5, maxRows: 10 }}
+          value={this.state.customDefsStr}
+          onChange={(x) => {
+            const customDefsStr = x.target.value;
+            try {
+              const parsed = JSON.parse(customDefsStr);
+              const customDefs = this.props.session.client.parseAbi('etherscan', parsed, true);
+              if (customDefs.length > 0)
+                this.setState({ customDefs, success: false, customDefsStr })
+            } catch (err) {
+              console.warn(`Failed to scan for ABI definitions ${err.message}`)
+              this.setState({ customDefs: [], success: false, customDefsStr })
+            }
+          }}
+        />
+        <br/>
+        <br/>
+        {this.state.customDefs && this.state.customDefs.length > 0 ? (
+          <div>
+            {this.state.success ? (
+              <div>
+                <center>
+                  {this.renderSuccessAlert()}
+                  <Button type="primary" onClick={() => { 
+                    this.setState({ customDefs: [], customDefsStr: '', success: false, loading: false })
+                  }}>
+                    Add More
+                  </Button>
+                </center>
+              </div>
+
+            ) : (
+              <div>
+                <p>Found <b>{this.state.customDefs.length}</b> functions that can be added.</p>
+                <Button type="primary" onClick={() => {this.addDefs(this.state.customDefs, true)}} loading={this.state.loading}>
+                  {this.state.loading ? "Installing..." : "Install"}
+                </Button>
+                {this.state.success ? (
+                  <div>
+                    <br/>
+                    {this.renderSuccessAlert()}
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        ): null}
+      </div>
+    )
+  }
+
   renderPackCard() {
     return (
       <div>
+        <p>
+          Once loaded, please click View Contents to see the specific contracts being loaded.
+        </p>
         {this.renderPack('AAVE')}
         {/* {this.renderPack('CURVE')} */}
         {this.renderPack('MAKER')}
@@ -371,12 +444,25 @@ class EthContracts extends React.Component {
   }
 
   renderCard() {
+    let f;
+    switch (this.state.tab) {
+      case TAB_KEYS.CUSTOM:
+        f = this.renderCustomCard;
+        break;
+      case TAB_KEYS.SINGLE_ADDR:
+        f = this.renderSearchCard;
+        break;
+      case TAB_KEYS.PACK:
+      default:
+        f = this.renderPackCard;
+        break;
+    }
     return (
       <div>
         <p><i>Add smart contract data for more readable transactions on your Lattice1! Note that not all
-        functions may be added for a given app. Please View Contents to see the specific contracts being loaded.</i></p>
+        functions may be added for a given app.</i></p>
         {this.renderTabs()}
-        {this.state.tab === TAB_KEYS.SINGLE_ADDR ? this.renderSearchCard() : this.renderPackCard()}
+        {f()}
       </div>
     )
   }
