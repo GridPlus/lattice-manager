@@ -557,21 +557,35 @@ class Send extends React.Component {
   }
 
   renderBalance() {
+    let balance = new BN(this.props.session.getBalance(this.props.currency, this.state.erc20Addr));
     let token = null;
     if (this.state.erc20Addr) {
+      let decimals = 18
       constants.ERC20_TOKENS.forEach((t) => {
-        if (t.contractAddress.toLowerCase() === this.state.erc20Addr.toLowerCase())
+        if (t.contractAddress.toLowerCase() === this.state.erc20Addr.toLowerCase()) {
           token = t;
+          decimals = t.decimals
+        }
       })
+      const divisor = new BN(10).pow(decimals);
+      balance = balance.div(divisor)
     }
-    const balance = this.props.session.getBalance(this.props.currency, this.state.erc20Addr);
     const name = token === null ? this.props.currency : token.symbol;
     return (
       <Row style={{margin: "0 0 20px 0"}}>
-        <Statistic title="Balance" value={`${balance.toFixed(5)} ${name}`} />
+        {this.props.currency === 'ETH' ? (
+          <p><i>
+          Functionality is limited.<br/>
+          We recommend the&nbsp;
+          <a href="https://chrome.google.com/webstore/detail/metamask-gridplus-fork/ginmdlhabcljcbgnmladjeimmkblldle" target="_blank">
+            GridPlus MetaMask extension 
+          </a>
+          &nbsp;for a better Ethereum experience.&nbsp;
+          </i></p>
+        ) : null}
+        <Statistic title="Balance" value={`${balance} ${name}`} />
       </Row>
     )
-
   }
 
   renderCard() {
