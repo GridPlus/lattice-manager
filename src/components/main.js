@@ -3,7 +3,7 @@ import 'antd/dist/antd.css'
 import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings } from './index'
+import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig } from './index'
 import { constants, getCurrencyText, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -44,6 +44,8 @@ class Main extends React.Component {
       // If testnet is disabled on BTC, we will not be able to fetch addresses
       // if we are in dev config
       btcDisabled: false,
+      // Validation check on Lattice hardware. Should draw a separate component
+      hwCheck: null,
     };
 
     // Bind local state updaters
@@ -83,6 +85,7 @@ class Main extends React.Component {
     // We can extend this pattern to other apps in the future.
     const params = new URLSearchParams(window.location.search);
     const keyringName = params.get('keyring')
+    const hwCheck = params.get('hwCheck')
     if (keyringName) {
       window.onload = this.handleWindowLoaded();
       this.setState({ name: keyringName }, () => {
@@ -96,6 +99,9 @@ class Main extends React.Component {
           this.clearPrevKeyringLogin();
         }
       })
+    } else if (hwCheck) {
+      // Lattice validation check builds this URL and includes a signature + preimage
+      this.setState({ hwCheck })
     } else {
       // Lookup deviceID and pw from storage
       const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
@@ -807,6 +813,14 @@ class Main extends React.Component {
     )
   }
 
+  renderPage() {
+    if (this.state.hwCheck !== null) {
+      return <ValidateSig data={this.state.hwCheck} isMobile={() => this.isMobile()}/>
+    } else {
+      return this.renderContent();
+    }
+  }
+
   render() {
     return (
       <Layout style={{ minHeight: '100vh' }}>
@@ -817,7 +831,7 @@ class Main extends React.Component {
             <Content style={{ margin: '0 0 0 0' }}>
               {this.renderAlert()}
               <div style={{ margin: '30px 0 0 0'}}>
-                {this.renderContent()}        
+                {this.renderPage()}        
               </div>
             </Content>
             {this.renderFooter()}

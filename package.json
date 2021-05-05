@@ -10,6 +10,7 @@
     "bignumber.js": "^9.0.1",
     "bs58check": "^2.1.2",
     "buffer": "^5.6.0",
+    "elliptic": "^6.5.4",
     "ethers": "^5.0.17",
     "gridplus-react-crypto": "0.0.5",
     "gridplus-sdk": "0.7.12",
@@ -22,7 +23,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "start-dev": "REACT_APP_ENV=dev REACT_APP_BASE_SIGNING_URL=https://signing.staging-gridpl.us REACT_APP_GRIDPLUS_CLOUD_API=https://pay.gridplus.io:3333 REACT_APP_ROOT_STORE=gridplus-dev REACT_APP_BTC_COIN=2147483649 REACT_APP_BTC_DEFAULT_FEE_RATE=10 REACT_APP_ETH_DEFAULT_FEE_RATE=5 REACT_APP_ETH_TX_BASE_URL=https://rinkeby.etherscan.io/tx REACT_APP_BTC_TX_BASE_URL=https://www.blockchain.com/btc-testnet/tx REACT_APP_ERC20_TOKENS_LIST_PATH=./devTokens.json REACT_APP_ETH_TESTNET=Rinkeby REACT_APP_BTC_TESTNET=Testnet3 react-scripts start",
+    "start-dev": "REACT_APP_ENV=dev REACT_APP_BASE_SIGNING_URL=https://signing.staging-gridpl.us REACT_APP_GRIDPLUS_CLOUD_API=https://pay.gridplus.io:3333 REACT_APP_ROOT_STORE=gridplus-dev REACT_APP_BTC_COIN=2147483649 REACT_APP_BTC_DEFAULT_FEE_RATE=10 REACT_APP_ETH_DEFAULT_FEE_RATE=5 REACT_APP_ETH_TX_BASE_URL=https://rinkeby.etherscan.io/tx REACT_APP_BTC_TX_BASE_URL=https://www.blockchain.com/btc-testnet/tx REACT_APP_ERC20_TOKENS_LIST_PATH=./devTokens.json REACT_APP_ETH_TESTNET=Rinkeby REACT_APP_BTC_TESTNET=Testnet3 REACT_APP_LATTICE_CERT_SIGNER=045cfdf77a00b4b6b4a5b8bb26b5497dbc7a4d01cbefd7aaeaf5f6f8f8865976e7941ab0ec1651209c444009fd48d925a17de5040ba47eaf3f5b51720dd40b2f9d react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
