@@ -1,5 +1,7 @@
 const bs58check = require('bs58check');
 const { ethers } = require('ethers');
+
+console.log('got signer', process.env.REACT_APP_LATTICE_CERT_SIGNER)
 const constants = {
     DEFAULT_APP_NAME: 'GridPlus Web Wallet',
     ENV: process.env.REACT_APP_ENV || 'prod',
@@ -27,6 +29,7 @@ const constants = {
     KEYRING_LOGOUT_MS: process.env.KEYRING_LOGOUT_MS || 2592000000, // default 30 days
     KEYRING_DATA_PATH: 'gridplus_web_wallet_keyring_logins', // item in localStorage
     AWS_BUCKET_URL: 'https://gridplus-public.s3.amazonaws.com',
+    LATTICE_CERT_SIGNER: process.env.REACT_APP_LATTICE_CERT_SIGNER || '0477816e8e83bb17c4309cc2e5aa134c573a5943154940095a423149f7cc0384ad52d33f1b4cd89c967bf211c039202df3a7899cb7543de4738c96a81cfde4b117'
 }
 
 constants.ERC20_TOKENS = constants.ENV === 'dev' ? require('./devTokens.json') : require('./prodTokens.json');
