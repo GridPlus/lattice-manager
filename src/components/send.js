@@ -269,7 +269,7 @@ class Send extends React.Component {
         if (err) {
           // Display an error banner
           this.setState({ 
-            error: err, 
+            error: err.message, 
             isLoading: false, 
             txHash: null 
           })

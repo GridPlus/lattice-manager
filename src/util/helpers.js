@@ -1,4 +1,5 @@
 const bs58check = require('bs58check');
+const bech32 = require('bech32').bech32;
 const { ethers } = require('ethers');
 
 console.log('got signer', process.env.REACT_APP_LATTICE_CERT_SIGNER)
@@ -279,14 +280,12 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     }
     // Convert value to satoshis
     const satValue = Math.round(Number(btcValue) * Math.pow(10, 8));
-
     // Determine if these are testnet or mainnet addresses
     const network = addrs[0].slice(0, 1) === '1' || addrs[0].slice(0, 1) === '3' ? 'MAINNET' : 'TESTNET';
     // Determine the change version
     const changeVersion = getBtcVersion(changeAddrs);
     if (changeVersion === null)
         return { error: 'Unrecognized change address.' };
-
     // Sort utxos by value
     // First deduplicate utxos
     const hashes = [];
@@ -307,7 +306,6 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
             sum += utxo.value;
         }
     })
-
     // Calculate the fee
     let bytesUsed = getBtcNumTxBytes(numInputs);
     // If the fee tips us over our total value sum, add another utxo
@@ -320,7 +318,6 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
         bytesUsed += 180;
     }
     const fee = Math.floor(bytesUsed * feeRate);
-
     // Build the request inputs
     const BASE_SIGNER_PATH = [constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, constants.HARDENED_OFFSET];
     const prevOuts = [];
@@ -345,7 +342,6 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
             return { error: 'Failed to find holder of UTXO. Syncing issue likely.' };
         }
     }
-
     // Return the request (i.e. the whole object)
     const req = {
         prevOuts,
@@ -395,7 +391,12 @@ exports.validateBtcAddr = function(addr) {
         bs58check.decode(addr);
         return true;
     } catch (e) {
-        return false;
+        try {
+            bech32.decode(addr);
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 }
 
