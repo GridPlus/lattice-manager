@@ -2,7 +2,6 @@ const bs58check = require('bs58check');
 const bech32 = require('bech32').bech32;
 const { ethers } = require('ethers');
 
-console.log('got signer', process.env.REACT_APP_LATTICE_CERT_SIGNER)
 const constants = {
     DEFAULT_APP_NAME: 'GridPlus Web Wallet',
     ENV: process.env.REACT_APP_ENV || 'prod',

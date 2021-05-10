@@ -568,7 +568,11 @@ class Send extends React.Component {
         }
       })
       const divisor = new BN(10).pow(decimals);
-      balance = balance.div(divisor)
+      balance = balance.div(divisor);
+      if (decimals < 18)
+        balance = balance.toFixed(decimals);
+    } else if (this.props.currency === 'BTC') {
+      balance = balance.toFixed(8);
     }
     const name = token === null ? this.props.currency : token.symbol;
     return (
