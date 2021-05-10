@@ -101,7 +101,7 @@ class EthContracts extends React.Component {
           this.setState({ error: resp.err.toString(), ...defaultState })
         } else {
           try {
-            const defs = this.props.session.client.parseAbi('etherscan', resp.result);
+            const defs = this.TMP_REMOVE_ZERO_LEN_PARAMS(this.props.session.client.parseAbi('etherscan', resp.result, true));
             this.setState({ defs, contract: input, error: null, success: false, loading: false })
           } catch (err) {
             this.setState({ error: err.toString(), ...defaultState })
@@ -132,13 +132,13 @@ class EthContracts extends React.Component {
     })
   }
 
-  addDefs(_defs=null, skipErrors=false) {
+  addDefs(skipErrors=false) {
     this.setState({ loading: true, error: null })
     // Stop the web worker so it doesn't interfere with this request
     this.props.session.stopWorker();
     // Longer timeout for loading these since requests may get dropped
     this.props.session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
-    const defs = _defs === null ? this.state.defs : _defs;
+    const defs = this.state.customDefs ? this.state.customDefs : this.state.defs;
     this.props.session.addAbiDefs(defs, (err) => {
       // Restart the web worker and reset the timeout
       this.props.session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
@@ -364,6 +364,27 @@ class EthContracts extends React.Component {
     )
   }
 
+
+  // TEMPORARY FUNCTION TO REMOVE FUNCTIONS WITH ZERO LENGTH PARAM NAMES
+  // SEE: https://github.com/GridPlus/gridplus-sdk/issues/154
+  TMP_REMOVE_ZERO_LEN_PARAMS(defs) {
+    const newDefs = [];
+    defs.forEach((def) => {
+      let shouldAdd = true;
+      if (def.name.length === 0) {
+        shouldAdd = false;
+      } else {
+        def.params.forEach((param) => {
+          if (param.name.length === 0)
+            shouldAdd = false;
+        })
+      }
+      if (shouldAdd === true)
+        newDefs.push(defs);
+    })
+    return newDefs;
+  }
+
   renderCustomCard() {
     return (
       <div>
@@ -382,7 +403,7 @@ class EthContracts extends React.Component {
             const customDefsStr = x.target.value;
             try {
               const parsed = JSON.parse(customDefsStr);
-              const customDefs = this.props.session.client.parseAbi('etherscan', parsed, true);
+              const customDefs = this.TMP_REMOVE_ZERO_LEN_PARAMS(this.props.session.client.parseAbi('etherscan', parsed, true));
               if (customDefs.length > 0)
                 this.setState({ customDefs, success: false, customDefsStr })
             } catch (err) {
@@ -409,8 +430,12 @@ class EthContracts extends React.Component {
 
             ) : (
               <div>
-                <p>Found <b>{this.state.customDefs.length}</b> functions that can be added.</p>
-                <Button type="primary" onClick={() => {this.addDefs(this.state.customDefs, true)}} loading={this.state.loading}>
+                <p>
+                  Found <b>{this.state.customDefs.length}</b> functions that can be added.
+                  <br/>
+                  <i>Note: functions with unsupported types are not included.</i>
+                </p>
+                <Button type="primary" onClick={() => {this.addDefs(true)}} loading={this.state.loading}>
                   {this.state.loading ? "Installing..." : "Install"}
                 </Button>
                 {this.state.success ? (
