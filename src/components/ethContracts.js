@@ -380,7 +380,7 @@ class EthContracts extends React.Component {
         })
       }
       if (shouldAdd === true)
-        newDefs.push(defs);
+        newDefs.push(def);
     })
     return newDefs;
   }
