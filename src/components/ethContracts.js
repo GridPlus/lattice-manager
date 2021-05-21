@@ -27,6 +27,11 @@ const PACKS = {
   //   desc: 'Contract definitions from Curve Finance',
   //   url: 'curve_pack'
   // },
+  GNOSIS: {
+    name: 'Gnosis Safe Pack',
+    desc: 'Contract definitions for the Gnosis Safe application',
+    url: 'gnosis_pack'
+  },
   MAKER: {
     name: 'Maker Pack',
     desc: 'Contract definitions from Maker',
@@ -461,6 +466,7 @@ class EthContracts extends React.Component {
         {this.renderPack('AAVE')}
         {/* {this.renderPack('CURVE')} */}
         {this.renderPack('MAKER')}
+        {this.renderPack('GNOSIS')}
         {this.renderPack('OPYN')}
         {this.renderPack('UNISWAP')}
         {this.renderPack('YEARN')}
