@@ -42,9 +42,14 @@ const PACKS = {
     desc: 'Contract definitions from Opyn V3',
     url: 'v2_opyn'
   },
+  SUSHISWAP: {
+    name: 'SushiSwap Pack',
+    desc: 'Contract definitions from SushiSwap',
+    url: 'v2_uniswap'
+  },
   UNISWAP: {
-    name: 'Uniswap Pack',
-    desc: 'Contract definitions from Uniswap V2. Note that Uniswap V2 router definitions are preloaded on your Lattice.',
+    name: 'UniSwap Pack',
+    desc: 'Contract definitions from Uniswap V2 and V3.',
     url: 'v2_uniswap'
   },
   YEARN: {
@@ -309,7 +314,7 @@ class EthContracts extends React.Component {
               >
                 {shouldLoad ? 
                   "Installing..." :
-                  `Install (~${Math.ceil((this.state.packData[key].defs.length * SEC_PER_DEF) / 60) } min)`
+                  "Install"
                 }
               </Button>
             )}
@@ -468,6 +473,7 @@ class EthContracts extends React.Component {
         {this.renderPack('MAKER')}
         {this.renderPack('GNOSIS')}
         {this.renderPack('OPYN')}
+        {this.renderPack('SUSHISWAP')}
         {this.renderPack('UNISWAP')}
         {this.renderPack('YEARN')}
       </div>
