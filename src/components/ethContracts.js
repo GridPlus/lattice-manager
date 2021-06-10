@@ -20,37 +20,37 @@ const PACKS = {
   AAVE: {
     name: 'AAVE Pack',
     desc: 'Contract definitions from AAVE',
-    url: 'aave_pack'
+    url: 'v2_aave'
   },
   // CURVE: {
   //   name: 'Curve Pack',
   //   desc: 'Contract definitions from Curve Finance',
-  //   url: 'curve_pack'
+  //   url: 'v2_curve'
   // },
   GNOSIS: {
     name: 'Gnosis Safe Pack',
     desc: 'Contract definitions for the Gnosis Safe application',
-    url: 'gnosis_pack'
+    url: 'v2_gnosis'
   },
   MAKER: {
     name: 'Maker Pack',
     desc: 'Contract definitions from Maker',
-    url: 'maker_pack'
+    url: 'v2_maker'
   },
   OPYN: {
     name: 'Opyn Pack',
     desc: 'Contract definitions from Opyn V3',
-    url: 'opyn_pack'
+    url: 'v2_opyn'
   },
   UNISWAP: {
     name: 'Uniswap Pack',
     desc: 'Contract definitions from Uniswap V2. Note that Uniswap V2 router definitions are preloaded on your Lattice.',
-    url: 'uniswap_pack'
+    url: 'v2_uniswap'
   },
   YEARN: {
     name: 'Yearn Pack',
     desc: 'Contract definitions from Yearn Finance',
-    url: 'yearn_pack'
+    url: 'v2_yearn'
   },
 }
 const manualPlaceholder = '[{"inputs":[{"internalType":"address[]","name":"_components","type":"address[]"},{"internalType":"int256[]","name":"_units","type":"int256[]"},{"internalType":"address[]","name":"_modules","type":"address[]"},{"internalType":"contract IController","name":"_controller","type":"address"},{"internalType":"address","name":"_manager","type":"address"},{"internalType":"string","name":"_name","type":"string"},'
