@@ -22,6 +22,16 @@ const PACKS = {
     desc: 'Contract definitions from AAVE',
     url: 'v2_aave'
   },
+  ALCHEMIX: {
+    name: 'Alchemix Pack',
+    desc: 'Contract defintions from Alchemix',
+    url: 'v2_alchemix'
+  },
+  BALANCER: {
+    name: 'Balancer Pack',
+    desc: 'Contract definitions from Balancer V2. NOTE: Some unsupported definitions were skipped.',
+    url: 'v2_balancer'
+  },
   // CURVE: {
   //   name: 'Curve Pack',
   //   desc: 'Contract definitions from Curve Finance',
@@ -469,6 +479,8 @@ class EthContracts extends React.Component {
           Once loaded, please click View Contents to see the specific contracts being loaded.
         </p>
         {this.renderPack('AAVE')}
+        {this.renderPack('ALCHEMIX')}
+        {this.renderPack('BALANCER')}
         {/* {this.renderPack('CURVE')} */}
         {this.renderPack('MAKER')}
         {this.renderPack('GNOSIS')}
