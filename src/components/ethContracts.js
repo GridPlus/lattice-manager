@@ -31,6 +31,11 @@ const PACKS = {
     name: 'Balancer Pack',
     desc: 'Contract definitions from Balancer V2. NOTE: Some unsupported definitions were skipped.',
     url: 'v2_balancer'
+  },  
+  CRYPTEX: {
+    name: 'Cryptex Pack',
+    desc: 'Contract definitions from Cryptex',
+    url: 'v2_cryptex'
   },
   // CURVE: {
   //   name: 'Curve Pack',
@@ -481,6 +486,7 @@ class EthContracts extends React.Component {
         {this.renderPack('AAVE')}
         {this.renderPack('ALCHEMIX')}
         {this.renderPack('BALANCER')}
+        {this.renderPack('CRYPTEX')}
         {/* {this.renderPack('CURVE')} */}
         {this.renderPack('MAKER')}
         {this.renderPack('GNOSIS')}
