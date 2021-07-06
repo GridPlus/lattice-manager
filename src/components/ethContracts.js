@@ -37,11 +37,11 @@ const PACKS = {
     desc: 'Contract definitions from Cryptex',
     url: 'v2_cryptex'
   },
-  // CURVE: {
-  //   name: 'Curve Pack',
-  //   desc: 'Contract definitions from Curve Finance',
-  //   url: 'v2_curve'
-  // },
+  CURVE: {
+    name: 'Curve Pack',
+    desc: 'Contract definitions from Curve Finance',
+    url: 'v2_curve'
+  },
   GNOSIS: {
     name: 'Gnosis Safe Pack',
     desc: 'Contract definitions for the Gnosis Safe application',
@@ -487,7 +487,7 @@ class EthContracts extends React.Component {
         {this.renderPack('ALCHEMIX')}
         {this.renderPack('BALANCER')}
         {this.renderPack('CRYPTEX')}
-        {/* {this.renderPack('CURVE')} */}
+        {this.renderPack('CURVE')}
         {this.renderPack('MAKER')}
         {this.renderPack('GNOSIS')}
         {this.renderPack('OPYN')}
