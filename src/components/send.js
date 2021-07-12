@@ -219,7 +219,7 @@ class Send extends React.Component {
           0
         ],
         ...txData,
-        chainId: 'rinkeby', // Rinkeby does not use EIP155
+        chainId: constants.ENV === 'dev' ? 4 : 1, // Rinkeby does not use EIP155
       }
     };
     return req;
