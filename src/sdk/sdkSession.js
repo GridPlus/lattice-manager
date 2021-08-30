@@ -105,8 +105,9 @@ class SDKSession {
         if (
           (baseAddrs.indexOf(t.to) > -1 || changeAddrs.indexOf(t.to) > -1) &&
           (baseAddrs.indexOf(t.from) > -1 || changeAddrs.indexOf(t.from) > -1)
-        ) 
-          allTxs = allTxs.splice(i, 1);
+        ) {
+          allTxs.splice(i, 1);
+        }
       })
       return allTxs;
     } else {
