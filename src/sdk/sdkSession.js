@@ -309,13 +309,15 @@ class SDKSession {
 
   fetchData(currency, cb=()=>{}, switchToChange=false) {
     fetchStateData(currency, this.addresses, this.page, (err, data) => {
-      if (err) 
-        return cb(err);
-      if (data)
+      if (err) {
+        if (cb) return cb(err);
+      } else if (data) {
         this.fetchDataHandler(data, switchToChange);
-      else
+        if (cb) return cb(null);
+      } else {
         this.stateUpdateHandler({ stillSyncingAddresses: false });
-      if (cb) return cb(null);
+        if (cb) return cb(null);
+      }
     })
   }
 
