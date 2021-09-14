@@ -101,6 +101,9 @@ class SDKSession {
       // our addresses (regular or change)
       const baseAddrs = this.addresses[currency];
       const changeAddrs = this.addresses[`${currency}_CHANGE`];
+      console.log('txs superset', allTxs)
+      console.log('baseAddrs', baseAddrs)
+      console.log('changeAddrs', changeAddrs)
       JSON.parse(JSON.stringify(allTxs)).forEach((t, i) => {
         if (
           (baseAddrs.indexOf(t.to) > -1 || changeAddrs.indexOf(t.to) > -1) &&
@@ -109,6 +112,7 @@ class SDKSession {
           allTxs.splice(i, 1);
         }
       })
+      console.log('trimmed txs', allTxs)
       return allTxs;
     } else {
       return base;
@@ -275,6 +279,7 @@ class SDKSession {
     this.usdValues[currency] = balance.dollarAmount || 0;
     this.txs[currency] = transactions || [];
     this.utxos[currency] = utxos || [];
+    console.log('utxos for', currency, utxos)
     // Tell the main component if we are done syncing. Note that this also captures the case
     // where we are switching to syncing change addresses/data
     const stillSyncingIndicator = stillSyncingAddresses === true || switchToChange === true;
