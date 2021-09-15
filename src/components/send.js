@@ -577,16 +577,6 @@ class Send extends React.Component {
     const name = token === null ? this.props.currency : token.symbol;
     return (
       <Row style={{margin: "0 0 20px 0"}}>
-        {this.props.currency === 'ETH' ? (
-          <p><i>
-          Functionality is limited.<br/>
-          We recommend the&nbsp;
-          <a href="https://chrome.google.com/webstore/detail/metamask-gridplus-fork/ginmdlhabcljcbgnmladjeimmkblldle" target="_blank">
-            GridPlus MetaMask extension 
-          </a>
-          &nbsp;for a better Ethereum experience.&nbsp;
-          </i></p>
-        ) : null}
         <Statistic title="Balance" value={`${balance} ${name}`} />
       </Row>
     )
@@ -597,7 +587,33 @@ class Send extends React.Component {
     const hasAddresses =  hasAddressesSlot ? 
                           this.props.session.addresses[this.props.currency].length > 0 : 
                           false;
-    if (hasAddresses) {
+    if (this.props.currency === 'ETH') {
+      return (
+        <p><i>
+          Sending ETH using the web wallet has been deprecated.<br/>
+          Please use one of these fine wallets instead:<br/><br/>
+
+
+          <a href='https://chrome.google.com/webstore/detail/metamask-gridplus-fork/ginmdlhabcljcbgnmladjeimmkblldle' target='_blank' rel="noopener noreferrer">
+            <img 
+              src='https://raw.githubusercontent.com/MetaMask/brand-resources/c3c894bb8c460a2e9f47c07f6ef32e234190a7aa/SVG/metamask-fox.svg' 
+              height='100px'
+              alt="MetaMask"
+            />
+            <br/>GridPlus MetaMask extension 
+          </a>
+          <br/><br/><br/>
+          <a href='https://frame.sh/' target='_blank' rel='noopener noreferrer'>
+            <img 
+              src='/frame_logo.jpeg' 
+              height='100px'
+              alt="Frame"  
+            />
+            <br/><br/>Frame (beta)
+          </a>
+        </i></p>
+      )
+    } else if (hasAddresses) {
       return (
         <div>
           {this.renderBalance()}
