@@ -11,6 +11,7 @@ export { default as Send } from './send'
 export { default as EthContracts} from './ethContracts'
 export { default as Permissions } from './permissions'
 export { default as Settings } from './settings'
+export { default as KvFiles } from './kvFiles'
 
 // Stateless components
 export { default as Loading } from './loading'

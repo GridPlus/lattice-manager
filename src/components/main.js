@@ -3,7 +3,7 @@ import 'antd/dist/antd.css'
 import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig } from './index'
+import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles } from './index'
 import { constants, getCurrencyText, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -572,6 +572,10 @@ class Main extends React.Component {
           <Icon type="audit" />
           <span>Contracts</span>
         </Menu.Item>
+        <Menu.Item key="menu-kv-records">
+          <Icon type="audit" />
+          <span>Addresses</span>
+        </Menu.Item>
         <Menu.Item key="menu-permissions">
           <Icon type="dollar" />
           <span>Limits</span>
@@ -599,6 +603,10 @@ class Main extends React.Component {
           <Menu.Item key="menu-eth-contracts">
             <Icon type="audit" />
             <span>Contract Data</span>
+          </Menu.Item>
+          <Menu.Item key="menu-kv-records">
+            <Icon type="audit" />
+            <span>Saved Addresses</span>
           </Menu.Item>
           <Menu.Item key="menu-permissions">
             <Icon type="dollar" />
@@ -746,6 +754,13 @@ class Main extends React.Component {
       case 'menu-settings':
         return (
           <Settings
+            isMobile={() => this.isMobile()}
+          />
+        )
+      case 'menu-kv-records':
+        return (
+          <KvFiles
+            session={this.state.session}
             isMobile={() => this.isMobile()}
           />
         )
