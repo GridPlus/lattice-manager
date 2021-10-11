@@ -96,10 +96,9 @@ class KVFiles extends React.Component {
         return
       }
       this.setState({ 
-        recordToAdd: { key: '' , val: '' },
-        error: null,
-        loading: false
+        recordToAdd: { key: '' , val: '' }
       })
+      this.fetchRecords()
     })
   }
 
