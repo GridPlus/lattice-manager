@@ -573,8 +573,8 @@ class Main extends React.Component {
           <span>Contracts</span>
         </Menu.Item>
         <Menu.Item key="menu-kv-records">
-          <Icon type="audit" />
-          <span>Addresses</span>
+          <Icon type="tag" />
+          <span>Tags</span>
         </Menu.Item>
         <Menu.Item key="menu-permissions">
           <Icon type="dollar" />
@@ -602,11 +602,11 @@ class Main extends React.Component {
           </Menu.Item>
           <Menu.Item key="menu-eth-contracts">
             <Icon type="audit" />
-            <span>Contract Data</span>
+            <span>Contracts</span>
           </Menu.Item>
           <Menu.Item key="menu-kv-records">
-            <Icon type="audit" />
-            <span>Saved Addresses</span>
+            <Icon type="tag" />
+            <span>Address Tags</span>
           </Menu.Item>
           <Menu.Item key="menu-permissions">
             <Icon type="dollar" />

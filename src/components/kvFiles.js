@@ -161,7 +161,7 @@ class KVFiles extends React.Component {
       <Button type="link" onClick={() => { this.setState({ isAdding: false })}}>View Addresses</Button>
     )
     return (
-      <Card title={'Save Address'} extra={extraLink} bordered={true}>
+      <Card title={'Save Address Tag'} extra={extraLink} bordered={true}>
         {this.state.loading ? this.renderLoading() : (
           <center>
             <p>Add a new address name. If this address is used in future transactions your Lattice will display the name you save below.</p>
