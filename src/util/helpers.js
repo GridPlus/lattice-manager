@@ -32,11 +32,37 @@ const constants = {
     LATTICE_CERT_SIGNER: process.env.REACT_APP_LATTICE_CERT_SIGNER || '0477816e8e83bb17c4309cc2e5aa134c573a5943154940095a423149f7cc0384ad52d33f1b4cd89c967bf211c039202df3a7899cb7543de4738c96a81cfde4b117'
 }
 
+const devConstants = {
+    BASE_SIGNING_URL: 'https://signing.staging-gridpl.us',
+    GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3333',
+    // Deprecating because using two different stores was very tricky and we don't
+    // need the second one anyway
+    // ROOT_STORE: 'gridplus-dev', 
+    BTC_COIN: 2147483649,
+    BTC_DEFAULT_FEE_RATE: 10,
+    ETH_TX_BASE_URL: 'https://rinkeby.etherscan.io/tx',
+    BTC_TX_BASE_URL: 'https://www.blockchain.com/btc-testnet/tx',
+    ERC20_TOKENS_LIST_PATH: './devTokens.json',
+    ETH_TESTNET: 'Rinkeby',
+    BTC_TESTNET: 'Testnet3',
+    LATTICE_CERT_SIGNER: '045cfdf77a00b4b6b4a5b8bb26b5497dbc7a4d01cbefd7aaeaf5f6f8f8865976e7941ab0ec1651209c444009fd48d925a17de5040ba47eaf3f5b51720dd40b2f9d',
+}
+
+// OLD: You can run this with dev constants enabled by default: `npm run start-dev`
 constants.ERC20_TOKENS = constants.ENV === 'dev' ? require('./devTokens.json') : require('./prodTokens.json');
 constants.BIP44_PURPOSE = constants.HARDENED_OFFSET + 44;
 // NOTE: For v1, the Lattice only supports p2sh-p2wpkh addresses, which
 //       use the BIP49 purpose (49') in their derivation paths.
 constants.BIP_PURPOSE_P2SH_P2WPKH = constants.HARDENED_OFFSET + 49;
+
+// NEW: If you have checked the "Using Dev Lattice" box in settings, the constants
+// are swapped out here
+const localSettings = getLocalStorageSettings();
+if (localSettings.devLattice) {
+    Object.keys(devConstants).forEach((key) => {
+        constants[key] = devConstants[key];
+    })
+}
 exports.constants = constants;
 
 //--------------------------------------------
@@ -233,11 +259,12 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
 //--------------------------------------------
 // LOCAL STORAGE HELPERS
 //--------------------------------------------
-exports.getLocalStorageSettings = function() {
+function getLocalStorageSettings() {
     const storage = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}');
     const settings = storage.settings ? storage.settings : {};
     return settings;
 }
+exports.getLocalStorageSettings = getLocalStorageSettings;
 
 //--------------------------------------------
 // END LOCAL STORAGE HELPERS
