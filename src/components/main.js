@@ -86,14 +86,17 @@ class Main extends React.Component {
     const params = new URLSearchParams(window.location.search);
     const keyringName = params.get('keyring')
     const hwCheck = params.get('hwCheck')
+    const forceLogin = params.get('forceLogin')
     if (keyringName) {
       window.onload = this.handleWindowLoaded();
       this.setState({ name: keyringName }, () => {
         // Check if this keyring has already logged in. This login should expire after a period of time.
         const prevKeyringLogin = this.getPrevKeyringLogin();
         const keyringTimeoutBoundary = new Date().getTime() - constants.KEYRING_LOGOUT_MS;
-        if (prevKeyringLogin && prevKeyringLogin.lastLogin > keyringTimeoutBoundary) {
-          this.connect(prevKeyringLogin.deviceID, prevKeyringLogin.password, () => this.connectSession(prevKeyringLogin))
+        if (!forceLogin && prevKeyringLogin && prevKeyringLogin.lastLogin > keyringTimeoutBoundary) {
+          this.connect( prevKeyringLogin.deviceID, 
+                        prevKeyringLogin.password, 
+                        () => this.connectSession(prevKeyringLogin));
         } else {
           // If the login has expired, clear it now.
           this.clearPrevKeyringLogin();
