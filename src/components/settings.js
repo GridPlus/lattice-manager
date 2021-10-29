@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.css'
-import { Button, Card, Col, Collapse, Icon, Input, Row, Switch, Table } from 'antd'
+import { Button, Card, Checkbox, Col, Collapse, Icon, Input, Row, Switch, Table } from 'antd'
 import './styles.css'
 import { constants, getLocalStorageSettings } from '../util/helpers';
 const settingsPath = `${constants.ROOT_STORE}/settings`
@@ -55,6 +55,12 @@ class Settings extends React.Component {
     this.setState({ settings });
   }
 
+  updateUseDevLattice(evt) {
+    const settings = JSON.parse(JSON.stringify(this.state.settings));
+    settings.devLattice = evt.target.checked
+    this.setState({ settings })
+  }
+
   removeKeyring(login) {
     const settings = this.state.settings || {};
     delete settings.keyringLogins[login.name]
@@ -84,6 +90,18 @@ class Settings extends React.Component {
                     onChange={this.updateCustomEndpoint.bind(this)}/>
           </div>
         ) : null}
+        <br/>
+      </Card>
+    )
+  }
+
+  renderDevLatticeSetting() {
+    const { devLattice } = this.state.settings;
+    return (
+      <Card>
+        <Checkbox onChange={this.updateUseDevLattice.bind(this)} checked={devLattice}>
+          Using Dev Lattice
+        </Checkbox>
         <br/>
       </Card>
     )
@@ -130,6 +148,7 @@ class Settings extends React.Component {
       <div>
         {this.renderKeyringsSetting()}
         {this.renderCustomEndpointSetting()}
+        {this.renderDevLatticeSetting()}
         <br/>
         <Button type="primary" onClick={this.submit.bind(this)}>
           Update and Reload
