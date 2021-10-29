@@ -12,17 +12,35 @@ const INPUT_STYLE = {
 }
 
 class Pair extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      code: '',
+    }
+  }
 
   componentDidMount() {
+    this.setState({ code: '' })
     this.input.focus()
     const height = document.getElementById("secret").offsetHeight
     if (height > 0)
       INPUT_STYLE['fontSize'] = 0.9 * height
   }
 
+  componentDidUnmount() {
+    this.setState({ code: '' })
+  }
+
   handleUpdate(e) {
-    if (e.target.value.length > 7)
-      this.props.submit(e.target.value)
+    try {
+      this.setState({ code: e.target.value.toUpperCase() }, () => {
+        if (this.state.code.length > 7) {
+          this.props.submit(this.state.code)
+        }
+      })
+    } catch (err) {
+      ;
+    }
   }
 
   render() {
@@ -38,11 +56,12 @@ class Pair extends React.Component {
               <p></p>
               <p>Please enter the pairing secret displayed on your Lattice screen:</p>
               <Input 
-                size={size} 
+                size={size}
                 id="secret"
                 ref={i => {this.input = i}}
                 onChange={this.handleUpdate.bind(this)}
                 style={{width: searchWidth, ...INPUT_STYLE}}
+                value={this.state.code}
               />
             </Card>
           </center>
