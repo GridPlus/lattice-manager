@@ -7,6 +7,7 @@ import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthC
 import { constants, getCurrencyText, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
+const LOGIN_PARAM = 'loginCache';
 
 class Main extends React.Component {
   constructor(props) {
@@ -39,7 +40,6 @@ class Main extends React.Component {
       // Track changes in the active wallet so we can refresh addresses when we detect one
       walletIsExternal: null,
       // Window params
-      keyringOrigin: null,
       keyringName: null,
       // If testnet is disabled on BTC, we will not be able to fetch addresses
       // if we are in dev config
@@ -53,7 +53,7 @@ class Main extends React.Component {
     this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
     this.handleMenuChange = this.handleMenuChange.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
-    this.handleWindowLoaded = this.handleWindowLoaded.bind(this);
+    this.handleKeyringOpener = this.handleKeyringOpener.bind(this);
     this.syncActiveWalletState = this.syncActiveWalletState.bind(this);
 
     // Bind callbacks whose calls may originate elsewhere
@@ -87,8 +87,16 @@ class Main extends React.Component {
     const keyringName = params.get('keyring')
     const hwCheck = params.get('hwCheck')
     const forceLogin = params.get('forceLogin')
+    
+    // Workaround to support Firefox extensions. See `returnKeyringData` below.
+    const hasLoggedIn = params.get(LOGIN_PARAM)
+    if (hasLoggedIn) {
+      this.setState({ waiting: true, pendingMsg: 'Connecting...' })
+      return;
+    }
+    
     if (keyringName) {
-      window.onload = this.handleWindowLoaded();
+      window.onload = this.handleKeyringOpener();
       this.setState({ name: keyringName }, () => {
         // Check if this keyring has already logged in. This login should expire after a period of time.
         const prevKeyringLogin = this.getPrevKeyringLogin();
@@ -208,18 +216,12 @@ class Main extends React.Component {
     }
   }
 
-  // If this window was loaded by a window opener (Metamask)
-  // we need to log the opener so we can dispatch a message to
-  // it when our credentials are loaded
-  handleWindowLoaded() {
-    if (window.opener)
-      this.setState({ keyringOrigin: true });
+  handleKeyringOpener() {
+    this.setState({ openedByKeyring: true })
   }
 
-  // Use window.postMessage to let the keyring requester know
-  // we have connected.
   returnKeyringData() {
-    if (!this.state.keyringOrigin)
+    if (!this.state.openedByKeyring)
       return;
     // Save the login for later
     this.saveKeyringLogin();
@@ -235,8 +237,19 @@ class Main extends React.Component {
       data.endpoint = settings.customEndpoint;
     }
     this.handleLogout();
-    window.opener.postMessage(JSON.stringify(data), "*");
-    window.close();
+    if (window.opener) {
+      // If there is a `window.opener` we can just post back
+      window.opener.postMessage(JSON.stringify(data), "*");
+      window.close();
+    } else {
+      // Otherwise we need a workaround to let the originator
+      // know we have logged in. We will put the login data
+      // into the URL and the requesting app will fetch that.
+      // Note that the requesting extension is now responsible for
+      // closing this web page.
+      const enc = Buffer.from(JSON.stringify(data)).toString('base64');
+      window.location.href = `${window.location.href}&${LOGIN_PARAM}=${enc}`;
+    }
   }
   //------------------------------------------
   // END KEYRING HANDLERS
@@ -388,7 +401,7 @@ class Main extends React.Component {
         } else {
           // We connected!
           // 1. Save these credentials to localStorage if this is NOT a keyring
-          if (!this.state.keyringOrigin) {
+          if (!this.state.openedByKeyring) {
             window.localStorage.setItem('gridplus_web_wallet_id', deviceID);
             window.localStorage.setItem('gridplus_web_wallet_password', password);
           }
@@ -396,15 +409,12 @@ class Main extends React.Component {
           this.setError();
           this.setAlertMessage();
           this.tick();
-
-          // If we are paired already, set a waiting message. Addresses will
-          // be fetched via `this.refreshWallets`
-          if (isPaired && this.state.keyringOrigin === null)	
-            this.fetchAddresses(this.fetchData)
-          // If the app is paired and this connection came from a keyring origin
-          // (e.g. metamask), exit the app and return data
-          else if (isPaired && this.state.keyringOrigin)
-            this.returnKeyringData();
+          // 3. Proceed based on state
+          if (isPaired && this.state.openedByKeyring) {
+            return this.returnKeyringData();
+          } else if (isPaired) {
+            return this.fetchAddresses(this.fetchData)
+          }
         }
       });
     })
@@ -540,7 +550,7 @@ class Main extends React.Component {
         // If there was an error here, the user probably entered the wrong secret
         const pairErr = 'Failed to pair. You either entered the wrong code or have already connected to this app.'
         this.setError({ msg: pairErr, cb: this.connectSession });
-      } else if (this.state.keyringOrigin === null) {
+      } else if (!this.state.openedByKeyring) {
         // Success! Load our addresses from this wallet.
         this.fetchAddresses(this.fetchData);
       } else {
@@ -804,7 +814,8 @@ class Main extends React.Component {
         <Pair submit={this.handlePair}
               isMobile={() => this.isMobile()}/>
       );
-    } else if (this.state.keyringOrigin !== null) {
+    } else if (this.state.openedByKeyring) {
+      // The window should close automatically, but just in case something goes wrong...
       return (
         <Loading isMobile={() => { this.isMobile() }}
                   msg={"Successfully connected to your Lattice1! You may close this window."}
