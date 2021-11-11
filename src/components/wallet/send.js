@@ -1,9 +1,12 @@
 import React from 'react';
 import 'antd/dist/antd.css'
 import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Statistic, notification, Select, Slider } from 'antd'
-import { allChecks } from '../util/sendChecks';
-import { constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes, getCurrencyText, isValidENS, resolveENS, toHexStr } from '../util/helpers'
-import './styles.css'
+import { allChecks } from '../../util/sendChecks';
+import { DeprecatedEthWallet } from '../index'
+import { 
+  constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes, getCurrencyText, isValidENS, resolveENS, toHexStr 
+} from '../../util/helpers'
+import '../styles.css'
 const BN = require('bignumber.js');
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
@@ -587,33 +590,7 @@ class Send extends React.Component {
     const hasAddresses =  hasAddressesSlot ? 
                           this.props.session.addresses[this.props.currency].length > 0 : 
                           false;
-    if (this.props.currency === 'ETH') {
-      return (
-        <p><i>
-          Sending ETH using the web wallet has been deprecated.<br/>
-          Please use one of these fine wallets instead:<br/><br/>
-
-
-          <a href='https://chrome.google.com/webstore/detail/metamask-gridplus-fork/ginmdlhabcljcbgnmladjeimmkblldle' target='_blank' rel="noopener noreferrer">
-            <img 
-              src='https://raw.githubusercontent.com/MetaMask/brand-resources/c3c894bb8c460a2e9f47c07f6ef32e234190a7aa/SVG/metamask-fox.svg' 
-              height='100px'
-              alt="MetaMask"
-            />
-            <br/>GridPlus MetaMask extension 
-          </a>
-          <br/><br/><br/>
-          <a href='https://frame.sh/' target='_blank' rel='noopener noreferrer'>
-            <img 
-              src='/frame_logo.jpeg' 
-              height='100px'
-              alt="Frame"  
-            />
-            <br/><br/>Frame (beta)
-          </a>
-        </i></p>
-      )
-    } else if (hasAddresses) {
+    if (hasAddresses) {
       return (
         <div>
           {this.renderBalance()}
@@ -652,6 +629,9 @@ class Send extends React.Component {
   }
 
   render() {
+    if (this.props.currency === 'ETH') {
+      return (<DeprecatedEthWallet/>)
+    }
     const content = (
       <center>
         {this.renderBanner()}

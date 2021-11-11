@@ -1,7 +1,8 @@
 import React from 'react';
 import 'antd/dist/antd.css'
 import { Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
-import { getCurrencyText, validateBtcAddr } from '../util/helpers'
+import { getCurrencyText, validateBtcAddr } from '../../util/helpers'
+import { DeprecatedEthWallet } from '../index'
 const QRCode = require('qrcode.react');
 const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
@@ -30,7 +31,6 @@ class Receive extends React.Component {
   updateWidth() {
     this.setState({ windowWidth:  document.getElementById('main-content-inner').offsetWidth });
   }
-
 
   updateDisplayAddress() {
     const displayAddr = this.props.session.getDisplayAddress(this.props.currency);
@@ -103,6 +103,9 @@ class Receive extends React.Component {
   }
 
   render() {
+    if (this.props.currency === 'ETH') {
+      return (<DeprecatedEthWallet/>)
+    }
     const content = (
       <center>
         <Card title={`Receive ${getCurrencyText(this.props.currency)}`} bordered={true} id="receive-card">

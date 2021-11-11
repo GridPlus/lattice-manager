@@ -293,13 +293,12 @@ class EthContracts extends React.Component {
     if (isLoadingDefs && !onCurrentKey)
       return;
     return (
-      <Card>
-        <br/>
-        <h3>{PACKS[key].name}</h3>
+      <div>
+      <Card bordered={false}>
+        <center>
+        <p class='lattice-h3'>{PACKS[key].name}</p>
         {this.state.packData[key] ? (
           <p>
-            {PACKS[key].desc}
-            <br/>
             (
               <a onClick={() => { 
                   this.setState({ selectedPackKey: key, success: false, loading: false }, 
@@ -307,8 +306,7 @@ class EthContracts extends React.Component {
               >View Contents</a>
             )
           </p>
-        ) : <p>{PACKS[key].desc}</p>}
-        <br/>
+        ) : null}
         {this.state.packData[key] ? (
           <div>
             {(this.state.success && onCurrentKey) 
@@ -347,7 +345,10 @@ class EthContracts extends React.Component {
         )
         :
         null}
+      </center>
       </Card>
+      <hr/>
+      </div>
     )
   }
 

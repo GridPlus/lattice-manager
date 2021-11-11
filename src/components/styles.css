@@ -23,6 +23,13 @@
   /* background: #001529; */
   background: #000;
 }
+.ant-layout-content {
+  background: #000;
+}
+.ant-layout-footer {
+  background: #000;
+  color: #fff;
+}
 .ant-menu-dark, .ant-menu-dark .ant-menu-sub {
   background: #000;
 }
@@ -32,3 +39,36 @@
 .ant-menu-item {
   background: #000;
 }
+/*
+.ant-card {
+  border-color: #94B3FD;
+}
+
+.ant-card-head {
+  background: #261C2C;
+  color: #fff;
+}
+.ant-card-body {
+  background: #3E2C41;
+  color: #fff;
+}
+
+.ant-tabs-nav {
+  color: #6E85B2;
+}
+
+.ant-input-wrapper, .ant-input-group-addon, .ant-select, .ant-select-arrow, .ant-select-selection, .ant-select-enabled, .ant-input {
+  background: #3E2C41;
+  border-color: #6E85B2;
+  color: #fff;
+}
+
+.ant-table-wrapper, .ant-table-thead, .ant-table-content, .ant-table-column-sorter, .ant-table-header-column {
+  background: #6E85B2;
+}
+
+.lattice-h3 {
+  color: #fff;
+  font-size: 20px;
+}
+*/
