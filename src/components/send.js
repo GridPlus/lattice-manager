@@ -43,7 +43,7 @@ class Send extends React.Component {
     this.renderValueLabel = this.renderValueLabel.bind(this);
     this.submit = this.submit.bind(this);
     this.buildEthRequest = this.buildEthRequest.bind(this);
-    this.buildBtcrequest = this.buildBtcRequest.bind(this);
+    this.buildBtcRequest = this.buildBtcRequest.bind(this);
     this.updateBtcFeeRate = this.updateBtcFeeRate.bind(this);
   }
 
@@ -488,8 +488,8 @@ class Send extends React.Component {
         <Row>
           <p style={{textAlign: 'left'}}><b>{`Fee: ${this.state.btcFeeRate} sat/byte`}</b></p>
           <Slider
-            min={10}
-            max={200}
+            min={1}
+            max={40}
             onChange={this.updateBtcFeeRate}
             value={this.state.btcFeeRate}
           />

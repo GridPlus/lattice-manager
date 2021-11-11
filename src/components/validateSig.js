@@ -40,7 +40,6 @@ class ValidateSig extends React.Component {
     // We sign metadata with 0 length at the outset because we won't know the eventual length.
     // Therefore this byte needs to be reuturned to its initial 0 value in order to validate the "cert".
     // preimage[1] = 0;
-    console.log('preimage', Buffer.from(preimage).toString('hex'))
     const pubkey = Buffer.from(_certData.slice((METADATA_LEN), (METADATA_LEN + PUBKEY_LEN))).toString('hex');
     const _sig = Buffer.from(_certData.slice((METADATA_LEN + PUBKEY_LEN), (METADATA_LEN + PUBKEY_LEN + SIG_TEMPLATE_LEN)));
     const sig = _sig.slice(0, (2 + _sig[1]));
