@@ -506,7 +506,7 @@ class Send extends React.Component {
         // to spend them all
         const txBytes = getBtcNumTxBytes(this.props.session.getUtxos('BTC').length);
         const feeSat = this.state.btcFeeRate * txBytes;
-        return Math.max(balance - (feeSat / BTC_FACTOR), 0);
+        return Math.max((balance - (feeSat / BTC_FACTOR)).toFixed(8), 0);
       case 'ETH':
         if (this.state.erc20Addr !== null)
           return balance;
