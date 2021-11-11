@@ -3,7 +3,9 @@ import 'antd/dist/antd.css'
 import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles } from './index'
+import { 
+  Connect, Error, Landing, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
+} from './index'
 import { constants, getCurrencyText, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
@@ -14,8 +16,8 @@ class Main extends React.Component {
     super(props)
     this.state = {
       name: constants.DEFAULT_APP_NAME,
-      currency: 'ETH',
-      menuItem: 'menu-wallet',
+      currency: 'BTC',
+      menuItem: 'menu-landing',
       // GridPlusSDK session object
       session: null,
       // WebWorker that will periodically lookup state on available addrs
@@ -543,52 +545,11 @@ class Main extends React.Component {
   // RENDERERS
   //------------------------------------------
   renderMenu() {
-    return this.isMobile() ? (
-      <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="horizontal" onSelect={this.handleMenuChange}>
-        <Menu.Item key="menu-wallet">
-          <Icon type="wallet" />
-          <span>Wallet</span>
-        </Menu.Item>
-        <Menu.Item key="menu-send">
-          <Icon type="arrow-up" />
-          <span>Send</span>
-        </Menu.Item>
-        <Menu.Item key="menu-receive">
-          <Icon type="arrow-down" />
-          <span>Receive</span>
-        </Menu.Item>
-        <Menu.Item key="menu-eth-contracts">
-          <Icon type="audit" />
-          <span>Contracts</span>
-        </Menu.Item>
-        <Menu.Item key="menu-kv-records">
-          <Icon type="tag" />
-          <span>Tags</span>
-        </Menu.Item>
-        <Menu.Item key="menu-permissions">
-          <Icon type="dollar" />
-          <span>Limits</span>
-        </Menu.Item>
-        <Menu.Item key="menu-settings">
-          <Icon type="setting" />
-          <span>Settings</span>
-        </Menu.Item>
-      </Menu>
-    ) : (
-      <Sider collapsed={this.isMobile()}>
-        <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
-          <Menu.Item key="menu-wallet">
-            <Icon type="wallet" />
-            <span>Wallet</span>
-          </Menu.Item>
-          <Menu.Item key="menu-send">
-            <Icon type="arrow-up" />
-            <span>Send</span>
-          </Menu.Item>
-          <Menu.Item key="menu-receive">
-            <Icon type="arrow-down" />
-            <span>Receive</span>
-          </Menu.Item>
+    const collapsed = this.isMobile();
+    const mode = collapsed ? 'horizontal' : 'inline';
+    return (
+      <Sider collapsed={collapsed}>
+        <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode={mode} onSelect={this.handleMenuChange}>
           <Menu.Item key="menu-eth-contracts">
             <Icon type="audit" />
             <span>Contracts</span>
@@ -605,6 +566,20 @@ class Main extends React.Component {
             <Icon type="setting" />
             <span>Settings</span>
           </Menu.Item>
+          <Menu.SubMenu title="Wallet">
+            <Menu.Item key="menu-wallet">
+              <Icon type="wallet" />
+              <span>Wallet</span>
+            </Menu.Item>
+            <Menu.Item key="menu-send">
+              <Icon type="arrow-up" />
+              <span>Send</span>
+            </Menu.Item>
+            <Menu.Item key="menu-receive">
+              <Icon type="arrow-down" />
+              <span>Receive</span>
+            </Menu.Item>
+          </Menu.SubMenu>
         </Menu>
       </Sider>
     )
@@ -656,8 +631,8 @@ class Main extends React.Component {
     // Add the currency switch
     extra.push(
       (<Select key="currency-select" defaultValue={this.state.currency} onChange={this.handleCurrencyChange} size={size}>
-        <Option value="ETH">{getCurrencyText('ETH')}</Option>
         <Option value="BTC">{getCurrencyText('BTC')}</Option>
+        <Option value="ETH">{getCurrencyText('ETH')}</Option>
       </Select>)
     );
     extra.push(
@@ -753,6 +728,10 @@ class Main extends React.Component {
             isMobile={() => this.isMobile()}
           />
         )
+      case 'menu-landing':
+        return (
+          <Landing isMobile={() => { this.isMobile() }}/>
+        );
       default:
         return;
     }

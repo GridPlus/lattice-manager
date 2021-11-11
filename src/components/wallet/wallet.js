@@ -2,7 +2,8 @@
 import React from 'react';
 import 'antd/dist/antd.css'
 import { Button, Avatar, Divider, Statistic, List, Row, Card, Icon, Tag, Spin} from 'antd';
-import { constants, getCurrencyText } from '../util/helpers'
+import { constants, getCurrencyText } from '../../util/helpers'
+import { DeprecatedEthWallet } from '../index'
 const GREEN = "#00FF00";
 const RED = "#FF0000";
 
@@ -295,9 +296,11 @@ class Wallet extends React.Component {
     )
   }
 
-  render() {
+  renderContent() {
+    if (this.props.currency === 'ETH')
+      return (<DeprecatedEthWallet/>);
     return (
-      <div style={{width: this.getInnerWidth() - 10}}>
+      <div>
         <Row gutter={16}>
           <Card title={`${getCurrencyText(this.props.currency)} Wallet`} bordered={true}>
             <Row>
@@ -321,6 +324,14 @@ class Wallet extends React.Component {
           {this.renderList()}
           {this.renderPages()}
         </Row>
+      </div>
+    )
+  }
+
+  render() {
+    return (
+      <div style={{width: this.getInnerWidth() - 10}}>
+        {this.renderContent()}
       </div>
     )
   }
