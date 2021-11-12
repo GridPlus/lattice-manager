@@ -188,6 +188,8 @@ class SDKSession {
   }
 
   fetchDataHandler(data, usingChange=false) {
+    // if (!data)
+    //   return; // Sometimes we get back nothing... need to look into why
     let { currency } = data; // Will be adjusted if this is a change addresses request
     const { balance, transactions, firstUnused, lastUnused, utxos, erc20Balances, ethNonce } = data;
     let switchToChange = false;

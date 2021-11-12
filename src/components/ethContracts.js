@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Input, Modal, Result, Table, Tabs, Tag } from 'antd'
+import { Alert, Button, Card, Input, Modal, Result, Row, Table, Tabs, Tag } from 'antd'
 import { PageContent } from './index'
 import './styles.css'
 import { constants, } from '../util/helpers';
@@ -76,6 +76,7 @@ const PACKS = {
     url: 'v2_yearn'
   },
 }
+const PACKS_PER_ROW = 3;
 const manualPlaceholder = '[{"inputs":[{"internalType":"address[]","name":"_components","type":"address[]"},{"internalType":"int256[]","name":"_units","type":"int256[]"},{"internalType":"address[]","name":"_modules","type":"address[]"},{"internalType":"contract IController","name":"_controller","type":"address"},{"internalType":"address","name":"_manager","type":"address"},{"internalType":"string","name":"_name","type":"string"},'
 
 
@@ -216,14 +217,15 @@ class EthContracts extends React.Component {
           onOk={this.hideModal.bind(this)}
           onCancel={this.hideModal.bind(this)}
         >
-          <Table dataSource={contracts}>
+          <Table dataSource={contracts} key="main-table">
             <Table.Column title='Address' dataIndex='address' key='address'
               render={addr => (
-                <Tag color="blue">
+                <Tag color="blue" key={`tag-${addr}`}>
                   <a className="lattice-a"
                       href={`https://etherscan.io/address/${addr}`} 
                       target={"_blank"}
                       rel={"noopener noreferrer"}
+                      key={`a-${addr}`}
                   >
                     {`${addr.slice(0, 10)}...${addr.slice(addr.length-8, addr.length)}`}
                   </a>
@@ -233,7 +235,14 @@ class EthContracts extends React.Component {
             <Table.Column title='App' dataIndex='app' key='app'/>
             <Table.Column title='Source' dataIndex='website' key='website'
               render={url => (
-                <a className="lattice-a" href={url} target={"_blank"} rel={"noopener noreferrer"}>Link</a>
+                <a  className="lattice-a" 
+                    href={url} 
+                    target={"_blank"} 
+                    rel={"noopener noreferrer"}
+                    key={`a-${url}`}
+                >
+                  Link
+                </a>
               )}
             />
           </Table>
@@ -298,17 +307,17 @@ class EthContracts extends React.Component {
     if (isLoadingDefs && !onCurrentKey)
       return;
     return (
-      <div>
-      <Card bordered={false}>
+      <Card bordered={true} key={`card-${key}`}>
         <center>
-        <p class='lattice-h3'>{PACKS[key].name}</p>
+        <p className='lattice-h3'>{PACKS[key].name}</p>
         {this.state.packData[key] ? (
           <p>
             (
-              <a onClick={() => { 
+              <Button type="link" onClick={() => {
+                console.log('setting key', key)
                   this.setState({ selectedPackKey: key, success: false, loading: false }, 
                   this.showModal.bind(this)) }}
-              >View Contents</a>
+              >View Contents</Button>
             )
           </p>
         ) : null}
@@ -352,8 +361,6 @@ class EthContracts extends React.Component {
         null}
       </center>
       </Card>
-      <hr/>
-      </div>
     )
   }
 
@@ -490,22 +497,23 @@ class EthContracts extends React.Component {
   }
 
   renderPackCard() {
+    const numRows = Object.keys(PACKS).length / PACKS_PER_ROW;
+    const rows = []
+    for (let i = 0; i < numRows; i++) {
+      const cards = [];
+      for (let j = 0; j < PACKS_PER_ROW; j++) {
+        cards.push(this.renderPack(Object.keys(PACKS)[(i * PACKS_PER_ROW) + j]))        
+      }
+      rows.push(
+        <Row justify="center" key={`row-${i}`}>{cards}</Row>
+      )
+    }
     return (
       <div>
         <p>
           Once loaded, please click View Contents to see the specific contracts being loaded.
         </p>
-        {this.renderPack('AAVE')}
-        {this.renderPack('ALCHEMIX')}
-        {this.renderPack('BALANCER')}
-        {this.renderPack('CRYPTEX')}
-        {this.renderPack('CURVE')}
-        {this.renderPack('MAKER')}
-        {this.renderPack('GNOSIS')}
-        {this.renderPack('OPYN')}
-        {this.renderPack('SUSHISWAP')}
-        {this.renderPack('UNISWAP')}
-        {this.renderPack('YEARN')}
+        {rows}
       </div>
     )
   }
@@ -543,6 +551,7 @@ class EthContracts extends React.Component {
   render() {
     const content = (
       <div>
+        {this.renderModal()}
         {this.renderBanner()}
         <Card title={<div>
           <h3>Load Contract Data&nbsp;
