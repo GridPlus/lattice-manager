@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, Col, Row, Input } from 'antd'
+import { Card, Input } from 'antd'
+import { PageContent } from './index'
 import 'antd/dist/antd.dark.css'
 
 const INPUT_STYLE = {
@@ -44,29 +45,26 @@ class Pair extends React.Component {
   }
 
   render() {
-    const spanWidth = this.props.isMobile() ? 24 : 10;
-    const spanOffset = this.props.isMobile() ? 0 : 7;
     const size = this.props.isMobile() ? 'small' : 'large';
     const searchWidth = this.props.isMobile() ? "100%" : "80%";
+    const content = (
+      <center>
+        <Card title="Enter Secret" bordered={true}>
+          <p></p>
+          <p>Please enter the pairing secret displayed on your Lattice screen:</p>
+          <Input 
+            size={size}
+            id="secret"
+            ref={i => {this.input = i}}
+            onChange={this.handleUpdate.bind(this)}
+            style={{width: searchWidth, ...INPUT_STYLE}}
+            value={this.state.code}
+          />
+        </Card>
+      </center>
+    )
     return (
-     <Row>
-        <Col span={spanWidth} offset={spanOffset}>
-          <center>
-            <Card title="Enter Secret" bordered={true}>
-              <p></p>
-              <p>Please enter the pairing secret displayed on your Lattice screen:</p>
-              <Input 
-                size={size}
-                id="secret"
-                ref={i => {this.input = i}}
-                onChange={this.handleUpdate.bind(this)}
-                style={{width: searchWidth, ...INPUT_STYLE}}
-                value={this.state.code}
-              />
-            </Card>
-          </center>
-        </Col>
-      </Row>
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }

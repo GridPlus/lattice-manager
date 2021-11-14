@@ -2,6 +2,7 @@ import React from 'react';
 import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Col, Row, Input, Empty, Statistic, notification, Select, Slider } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { PageContent } from '../index'
 import { allChecks } from '../../util/sendChecks';
 import { DeprecatedEthWallet } from '../index'
 import { 
@@ -641,12 +642,8 @@ class Send extends React.Component {
         </Card>
       </center>      
     )
-    return this.props.isMobile() ? content : (
-      <Row justify={'center'}>
-        <Col span={14} offset={5}>
-          {content}
-        </Col>
-      </Row>
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }

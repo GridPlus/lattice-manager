@@ -1,9 +1,8 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Col, Collapse, Input, Row, Modal } from 'antd'
-import { LinkOutlined, WalletOutlined } from '@ant-design/icons';
+import { Alert, Button, Card, Col, Input, Row, Modal } from 'antd'
+import { DesktopOutlined, LinkOutlined } from '@ant-design/icons';
 import { Settings } from './index'
-const { Panel } = Collapse;
 
 class Connect extends React.Component {
   constructor(props) {
@@ -82,19 +81,19 @@ class Connect extends React.Component {
   renderForm(getFieldDecorator) {
     return (
       <div>
-        <Row>
+        <Row justify="center">
           <Input  placeholder="DeviceID" 
                   id="deviceIdInput" 
                   ref={i => {this.input = i}}
                   style={{ margin: '10px 0 0 0', width: "70%"}} />
         </Row>
-        <Row>
+        <Row justify="center">
           <Input.Password placeholder="Password (create for new logins)" 
                           id="passwordInput" 
                           onPressEnter={this.handleSubmit} 
                           style={{ margin: '20px 0 0 0', width: "70%"}} />
         </Row>
-        <Row>
+        <Row justify="center">
           {this.renderConnectButton()}
         </Row>
       </div>
@@ -122,8 +121,8 @@ class Connect extends React.Component {
         <p>
           You can use this page to establish a connection between <b>{this.props.name}</b>&nbsp; and your Lattice 
           hardware wallet device.&nbsp;
-          <i>For more general device setup information, please see the 
-            <a href="https://gridplus.io/setup" target={"_blank"} rel={"noopener noreferrer"}>
+          <i>For more general device setup information, please see the&nbsp;
+            <a className="lattice-a" href="https://gridplus.io/setup" target={"_blank"} rel={"noopener noreferrer"}>
             Lattice setup page
             </a>.</i>
         </p>
@@ -208,12 +207,11 @@ class Connect extends React.Component {
           <center>
             {this.renderMsg()}
             <Card bordered={true}>
-              <a href="https://gridplus.io/lattice" target={"_blank"}>
-                <img alt="GridPlus" src={'/gridplus-logo-black.png'}/>
+              <a href="https://gridplus.io/lattice" target={"_blank"} rel="noopener noreferrer">
                 {keyringName ? (
                   <h2 style={{margin: "10px 0 0 0"}}>Lattice Connector <LinkOutlined/></h2>
                 ) : (
-                  <h2 style={{margin: "10px 0 0 0"}}>Web Wallet <WalletOutlined/></h2>
+                  <h2 style={{margin: "10px 0 0 0"}}>Lattice Manager<br/><DesktopOutlined/></h2>
                 )}
               </a>
               {keyringName ? (<div><br/><i><h3>Connect to:</h3></i><h2>{keyringName}</h2></div>) : null}

@@ -3,6 +3,7 @@ import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Checkbox, Col, Input, Row, Spin, Table } from 'antd'
 import { allChecks } from '../util/sendChecks';
 import { LoadingOutlined } from '@ant-design/icons';
+import { PageContent } from './index'
 const ADDRESS_RECORD_TYPE = 0
 const RECORDS_PER_PAGE = 10;
 const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
@@ -364,12 +365,8 @@ class KVFiles extends React.Component {
         {this.renderCard()}
       </div>      
     )
-    return this.props.isMobile() ? content : (
-      <Row justify={'center'}>
-        <Col span={14} offset={5} style={{maxWidth: '600px'}}>
-          {content}
-        </Col>
-      </Row>
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }
