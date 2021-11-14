@@ -1,6 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Col, Icon, Input, Modal, Result, Row, Select, Spin, Table, Tabs, Tag } from 'antd'
+import { Alert, Button, Card, Input, Modal, Result, Table, Tabs, Tag } from 'antd'
+import { PageContent } from './index'
 import './styles.css'
 import { constants, } from '../util/helpers';
 
@@ -556,13 +557,8 @@ class EthContracts extends React.Component {
         </Card>
       </div>      
     )
-    return this.props.isMobile() ? content : (
-      <Row justify={'center'}>
-        {this.renderModal()}
-        <Col span={14} offset={5} style={{maxWidth: '600px'}}>
-          {content}
-        </Col>
-      </Row>
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }

@@ -334,9 +334,11 @@ class Wallet extends React.Component {
 
   render() {
     return (
-      <div style={{width: this.getInnerWidth() - 10}}>
-        {this.renderContent()}
-      </div>
+      <Row justify="center">
+        <div style={{width: this.getInnerWidth() - 10}}>
+          {this.renderContent()}
+        </div>
+      </Row>
     )
   }
 

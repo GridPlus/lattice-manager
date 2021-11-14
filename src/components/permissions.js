@@ -11,6 +11,7 @@ import React from 'react';
 import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Col, Dropdown, Input, Menu, Row, Select, Spin } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons';
+import { PageContent } from './index'
 import './styles.css'
 const BN = require('bignumber.js');
 const HOURS = 3600;
@@ -223,12 +224,8 @@ class Permissions extends React.Component {
         </Card>
       </center>      
     )
-    return this.props.isMobile() ? content : (
-      <Row justify={'center'}>
-        <Col span={14} offset={5} style={{maxWidth: '600px'}}>
-          {content}
-        </Col>
-      </Row>
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }

@@ -1,7 +1,8 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Col, Row, Input, Empty } from 'antd'
+import { Button, Card, Row, Input, Empty } from 'antd'
 import { CopyOutlined } from '@ant-design/icons';
+import { PageContent } from '../index'
 import { getCurrencyText, validateBtcAddr } from '../../util/helpers'
 import { DeprecatedEthWallet } from '../index'
 const QRCode = require('qrcode.react');
@@ -116,13 +117,8 @@ class Receive extends React.Component {
         </Card>
       </center>      
     )
-
-    return this.props.isMobile() ? content : (
-      <Row justify={'center'}>
-        <Col span={12} offset={6}>
-          {content}
-        </Col>
-      </Row>
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }

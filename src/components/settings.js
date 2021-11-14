@@ -1,6 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Checkbox, Col, Collapse, Dropdown, Input, Menu, Row, Switch, Table } from 'antd'
+import { Button, Card, Checkbox, Collapse, Dropdown, Input, Menu, Table } from 'antd'
+import { PageContent } from './index'
 import './styles.css'
 import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers';
 
@@ -217,12 +218,8 @@ class Settings extends React.Component {
         </Card>
       </center>      
     )
-    return (this.props.isMobile() || this.props.inModal) ? content : (
-      <Row justify={'center'}>
-        <Col span={14} offset={5} style={{maxWidth: '600px'}}>
-          {content}
-        </Col>
-      </Row>
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }
