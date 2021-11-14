@@ -50,10 +50,14 @@ const devConstants = {
 
 // OLD: You can run this with dev constants enabled by default: `npm run start-dev`
 constants.ERC20_TOKENS = constants.ENV === 'dev' ? require('./devTokens.json') : require('./prodTokens.json');
-constants.BIP44_PURPOSE = constants.HARDENED_OFFSET + 44;
+constants.ETH_PURPOSE = constants.HARDENED_OFFSET + 44;
+
+/*
 // By default we provide bech32 addresses derived using BIP84. However,
 // the user can change this in settings
 constants.DEFAULT_BTC_PURPOSE = constants.HARDENED_OFFSET + 84;
+*/
+constants.DEFAULT_BTC_PURPOSE = constants.HARDENED_OFFSET + 49;
 
 // NEW: If you have checked the "Using Dev Lattice" box in settings, the constants
 // are swapped out here

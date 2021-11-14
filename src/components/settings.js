@@ -2,18 +2,17 @@ import React from 'react';
 import 'antd/dist/antd.css'
 import { Button, Card, Checkbox, Col, Collapse, Dropdown, Input, Menu, Row, Switch, Table } from 'antd'
 import './styles.css'
-import { constants, getLocalStorageSettings } from '../util/helpers';
-const settingsPath = `${constants.ROOT_STORE}/settings`
+import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers';
 
 // TMP: BITCOIN CONSTANTS
 // We will be deprecating the wallet functionality so I'm going to put
 // these here for now
-const BTC_PURPOSE_LEGACY = 44;
-const BTC_PURPOSE_LEGACY_STR = 'Legacy';
-const BTC_PURPOSE_WRAPPED_SEGWIT = 49;
-const BTC_PURPOSE_WRAPPED_SEGWIT_STR = 'Wrapped Segwit';
-const BTC_PURPOSE_SEGWIT = 84;
-const BTC_PURPOSE_SEGWIT_STR = 'Segwit';
+const BTC_PURPOSE_LEGACY = constants.HARDENED_OFFSET + 44;
+const BTC_PURPOSE_LEGACY_STR = 'Legacy (prefix=1)';
+const BTC_PURPOSE_WRAPPED_SEGWIT = constants.HARDENED_OFFSET + 49;
+const BTC_PURPOSE_WRAPPED_SEGWIT_STR = 'Wrapped Segwit (prefix=3)';
+const BTC_PURPOSE_SEGWIT = constants.HARDENED_OFFSET + 84;
+const BTC_PURPOSE_SEGWIT_STR = 'Segwit (prefix=bc1)';
 
 
 class Settings extends React.Component {
@@ -114,21 +113,26 @@ class Settings extends React.Component {
   }
 
   getBtcPurposeName() {
-    if (this.state.settings.btcPurpose === BTC_PURPOSE_LEGACY) {
+    const purpose = this.state.settings.btcPurpose ?
+                    this.state.settings.btcPurpose :
+                    getBtcPurpose();
+    if (purpose === BTC_PURPOSE_LEGACY) {
       return BTC_PURPOSE_LEGACY_STR
-    } else if (this.state.settings.btcPurpose === BTC_PURPOSE_WRAPPED_SEGWIT) {
+    } else if (purpose === BTC_PURPOSE_WRAPPED_SEGWIT) {
       return BTC_PURPOSE_WRAPPED_SEGWIT_STR
-    } else {
+    } else if (purpose === BTC_PURPOSE_SEGWIT) {
       return BTC_PURPOSE_SEGWIT_STR;
+    } else {
+      return 'Error finding BTC version'
     }
   }
 
   renderBitcoinVersionSetting() {
     const menu = (
       <Menu onClick={this.handleChangeBitcoinVersionSetting.bind(this)}>
-        <Menu.Item key={BTC_PURPOSE_SEGWIT}>
+        {/* <Menu.Item key={BTC_PURPOSE_SEGWIT}>
           {BTC_PURPOSE_SEGWIT_STR}
-        </Menu.Item>
+        </Menu.Item> */}
         <Menu.Item key={BTC_PURPOSE_WRAPPED_SEGWIT}>
           {BTC_PURPOSE_WRAPPED_SEGWIT_STR}
         </Menu.Item>

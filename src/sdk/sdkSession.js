@@ -363,7 +363,7 @@ class SDKSession {
         // We will only ever use one ETH address, so callback success here.
         if (nextIdx > 0) return cb(null);
         // If we don't have any addresses here, let's get the first one
-        opts.startPath = [ constants.BIP44_PURPOSE, harden(60), harden(0), 0, nextIdx ];
+        opts.startPath = [ constants.ETH_PURPOSE, harden(60), harden(0), 0, nextIdx ];
         opts.n = 1;
         break;
       default:
