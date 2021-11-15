@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Col, Icon, Result, Row, Spin } from 'antd'
+import { Card, Col, Result, Row } from 'antd'
 import { decode } from 'bs58'
 import { constants } from '../util/helpers';
 const ReactCrypto = require('gridplus-react-crypto').default;
@@ -88,7 +88,6 @@ class ValidateSig extends React.Component {
 
 
   render() {
-    const { data, cert } = this.props;
     const spanLength = this.props.isMobile() ? 18 : 10;
     const spanOffset = this.props.isMobile() ? 3 : 7; 
     return (

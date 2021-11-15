@@ -141,7 +141,6 @@ class EthContracts extends React.Component {
   loadPackData(key) {
     if (!PACKS[key])
       return;
-    const data = {}
     fetch(`${constants.AWS_BUCKET_URL}/${PACKS[key].url}.json`)
     .then((response) => response.json())
     .then((resp) => {
@@ -178,23 +177,6 @@ class EthContracts extends React.Component {
   renderModal() {
     if (!this.state.packData[this.state.selectedPackKey])
       return
-    const cols = [
-      {
-        title: 'Address',
-        dataIndex: 'address',
-        key: 'address',
-      },
-      {
-        title: 'App',
-        dataIndex: 'app',
-        key: 'app',
-      },
-      {
-        title: 'Website',
-        dataIndex: 'website',
-        key: 'website',
-      }
-    ];
     const contracts = []
     this.state.packData[this.state.selectedPackKey].metadata.forEach((d) => {
       contracts.push({

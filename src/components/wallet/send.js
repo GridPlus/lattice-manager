@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Col, Row, Input, InputNumber, Empty, Statistic, notification, Select } from 'antd'
+import { Alert, Button, Card, Row, Input, InputNumber, Empty, Statistic, notification, Select } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { allChecks } from '../../util/sendChecks';
