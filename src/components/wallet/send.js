@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Col, Row, Input, Empty, Statistic, notification, Select, Slider } from 'antd'
+import { Alert, Button, Card, Col, Row, Input, InputNumber, Empty, Statistic, notification, Select } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { allChecks } from '../../util/sendChecks';
@@ -360,10 +360,10 @@ class Send extends React.Component {
     if (this.props.currency === 'BTC') {
       // For BTC, we don't need to worry about other assets
       return (
-        <Col span={18} offset={2}>
+        <Row justify='center'>
           {this.renderValueLabelTitle()}
           {input}
-        </Col>
+        </Row>
       );
     } else if (this.props.currency === 'ETH') {
       // For ETH, account for ERC20s in the form of a dropdown
@@ -385,19 +385,33 @@ class Send extends React.Component {
       );
       
       return (
-        <div>
-          <Col span={18} offset={2}>
-            {this.renderValueLabelTitle()}
-            <Input type="text" 
-                    id={VALUE_ID} 
-                    value={this.state.value} 
-                    onChange={this.updateValue.bind(this)}
-                    addonAfter={tokenOption}
-            />
-          </Col>
-        </div>
+        <Row justify='center'>
+          {this.renderValueLabelTitle()}
+          <Input type="text" 
+                  id={VALUE_ID} 
+                  value={this.state.value} 
+                  onChange={this.updateValue.bind(this)}
+                  addonAfter={tokenOption}
+          />
+        </Row>
       );
     }    
+  }
+
+  renderRecipientLabel() {
+    return (          
+      <Row justify='center'>  
+        <p style={{textAlign:'left'}}>
+          <b>Recipient</b>
+          &nbsp;&nbsp;&nbsp;{this.renderIcon(RECIPIENT_ID)}
+        </p>
+        <Input type="text" 
+                id={RECIPIENT_ID} 
+                value={this.state.recipient} 
+                onChange={this.updateRecipient.bind(this)}
+        />
+      </Row>
+    )
   }
 
   renderIcon(id) {
@@ -447,21 +461,21 @@ class Send extends React.Component {
     if (this.props.currency === 'ETH') {
       return (
         <div>
-            <Row>
+            <Row justify='center'>
               <p style={{textAlign: 'left'}}><b>Gas Price (GWei)</b></p>
               <Input type="text" 
                 id={"ethGasPrice"}
                 value={this.state.ethExtraData.gasPrice}
                 onChange={this.updateEthExtraData.bind(this)}/>
             </Row>
-            <Row style={{margin: "20px 0 0 0"}}>
+            <Row justify='center' style={{margin: "20px 0 0 0"}}>
               <p style={{textAlign: 'left'}}><b>Gas Limit</b></p>
               <Input type="text" 
                 id={"ethGasLimit"} 
                 value={this.state.ethExtraData.gasLimit}
                 onChange={this.updateEthExtraData.bind(this)}/>
             </Row>
-            <Row style={{margin: "20px 0 0 0"}}>
+            <Row justify='center' style={{margin: "20px 0 0 0"}}>
               <p style={{textAlign: 'left'}}>
                 <b>Nonce</b>
                 <Button onClick={() => { 
@@ -478,7 +492,7 @@ class Send extends React.Component {
                 onChange={this.updateEthExtraData.bind(this)}/>
             </Row>
             {this.state.erc20Addr === null ? (
-              <Row style={{margin: "20px 0 0 0"}}>
+              <Row justify='center' style={{margin: "20px 0 0 0"}}>
                 <p style={{textAlign: 'left'}}><b>Data</b></p>
                 <Input.TextArea rows={2} 
                                 id={"ethData"}
@@ -490,15 +504,20 @@ class Send extends React.Component {
       )
     } else if (this.props.currency === 'BTC') {
       return (
-        <Row>
-          <p style={{textAlign: 'left'}}><b>{`Fee: ${this.state.btcFeeRate} sat/byte`}</b></p>
-          <Slider
-            min={1}
-            max={100}
-            onChange={this.updateBtcFeeRate}
-            value={this.state.btcFeeRate}
-          />
-        </Row>
+        <div>
+          <Row justify='center'>
+            <b><p>Fee (sat/byte):</p></b>
+          </Row>
+          <Row justify='center'>        
+            <InputNumber
+              addonBefore='Fee'
+              min={1}
+              max={100}
+              onChange={this.updateBtcFeeRate}
+              value={this.state.btcFeeRate}
+            />
+          </Row>
+        </div>
       )
     }
   }
@@ -530,7 +549,7 @@ class Send extends React.Component {
   renderSubmitButton() {
     // If all checks have passed, display the button
     const isValidReq = (
-      (true == this.state.valueCheck) &&
+      (true === this.state.valueCheck) &&
       (allChecks[this.props.currency].full(this.state) || this.state.ensResolvedAddress !== null)
     );
 
@@ -581,7 +600,7 @@ class Send extends React.Component {
     }
     const name = token === null ? this.props.currency : token.symbol;
     return (
-      <Row style={{margin: "0 0 20px 0"}}>
+      <Row justify='center' style={{margin: "0 0 20px 0"}}>
         <Statistic title="Balance" value={`${balance} ${name}`} />
       </Row>
     )
@@ -596,27 +615,15 @@ class Send extends React.Component {
       return (
         <div>
           {this.renderBalance()}
-          <Row>
-            <Col span={18} offset={2}>
-              <p style={{textAlign:'left'}}>
-                <b>Recipient</b>
-                &nbsp;&nbsp;&nbsp;{this.renderIcon(RECIPIENT_ID)}
-              </p>
-              <Input type="text" 
-                      id={RECIPIENT_ID} 
-                      value={this.state.recipient} 
-                      onChange={this.updateRecipient.bind(this)}
-              />
-            </Col>
-          </Row>
-          <Row style={{margin: "20px 0 0 0"}}>
+          <div>
+            {this.renderRecipientLabel()}
+          </div>
+          <div style={{margin: "20px 0 0 0"}}>
             {this.renderValueLabel()}
-          </Row>
-          <Row style={{margin: "20px 0 0 0"}}>
-            <Col span={18} offset={2}>
-              {this.renderExtra()}
-            </Col>
-          </Row>
+          </div>
+          <div style={{margin: "20px 0 0 0"}}>
+            {this.renderExtra()}
+          </div>
           {this.renderSubmitButton()}
         </div>
       )

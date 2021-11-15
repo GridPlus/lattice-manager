@@ -83,13 +83,13 @@ class Receive extends React.Component {
       const w = Math.min(300, 0.8 * cardW);
       return (
         <div>
-          <Row>
-          <QRCode value={this.state.address} 
-                  size={w}
-                  style={{margin: "30px 0 0 0"}}
-          />
+          <Row justify='center'>
+            <QRCode value={this.state.address} 
+                    size={w}
+                    style={{margin: "30px 0 0 0"}}
+            />
           </Row>
-          <Row>
+          <Row justify='center'>
             {this.renderAddrBox()}
           </Row>
         </div>

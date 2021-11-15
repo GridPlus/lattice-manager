@@ -4,12 +4,14 @@ import 'antd/dist/antd.dark.css'
 import { Button, Avatar, Divider, Statistic, List, Row, Card, Tag, Spin} from 'antd';
 import { 
   CaretLeftOutlined, CaretRightOutlined, ClockCircleOutlined, 
-  DownCircleOutlined, UpCircleOutlined, LoadingOutlined 
+  DownCircleOutlined, UpCircleOutlined, LoadingOutlined, ReloadOutlined
 } from '@ant-design/icons';
+import { PageContent } from '../index'
 import { constants, getCurrencyText } from '../../util/helpers'
 import { DeprecatedEthWallet } from '../index'
 const GREEN = "#00FF00";
 const RED = "#FF0000";
+
 
 class Wallet extends React.Component {
 
@@ -153,8 +155,8 @@ class Wallet extends React.Component {
     if (this.props.isMobile()) {
       return (
         <List.Item key={item.hash}>
-          <Row>{itemMeta}</Row>
-          <Row>{label}</Row>
+          <Row justify='center'>{itemMeta}</Row>
+          <Row justify='center'>{label}</Row>
         </List.Item>
       )    
     } else {
@@ -257,10 +259,10 @@ class Wallet extends React.Component {
     if (this.props.isMobile()) {
       return (
         <div>
-          <Row style={{margin: "20px 0 0 0"}}>
+          <Row justify='center' style={{margin: "20px 0 0 0"}}>
               <Statistic title="Balance" value={`${this.convertBalance()} ${this.props.currency}`} />
           </Row>
-          <Row>
+          <Row justify='center'>
             <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
           </Row>
         </div>
@@ -268,10 +270,10 @@ class Wallet extends React.Component {
     } else {
       return (
         <div>
-          <Row style={{margin: "20px 0 0 0"}}>
+          <Row justify='center' style={{margin: "20px 0 0 0"}}>
             <Statistic title="Balance" value={`${this.convertBalance()} ${this.props.currency}`} />
           </Row>
-          <Row style={{margin: "10px 0 0 0"}}>
+          <Row justify='center' style={{margin: "10px 0 0 0"}}>
             <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
           </Row>
         </div>
@@ -305,40 +307,41 @@ class Wallet extends React.Component {
       return (<DeprecatedEthWallet/>);
     return (
       <div>
-        <Row gutter={16}>
-          <Card title={`${getCurrencyText(this.props.currency)} Wallet`} bordered={true}>
-            <Row>
-              Last Updated {this.renderLastUpdatedTag()}
-              {this.props.stillSyncingAddresses === true ? (
-                <div>
-                  <Tag color="red">Still Fetching Addresses</Tag> 
-                  <Spin indicator={<LoadingOutlined/>} size={"small"}/>
-                </div>
-              ): (
-                <Button size="small" type="link" icon="reload" onClick={() => {this.props.refreshData(null)}}></Button>
-              )}
-            </Row>
-            <Row style={{margin: "20px 0 0 0"}}>
-              {this.renderHeader()}
-            </Row>
-          </Card>
-        </Row>
+        <Card title={`${getCurrencyText(this.props.currency)} Wallet`} bordered={true}>
+          <Row justify='center'>
+            Last Update&nbsp;{this.renderLastUpdatedTag()}
+            {this.props.stillSyncingAddresses === true ? (
+              <div>
+                <Tag color="red">Still Fetching Addresses</Tag> 
+                <Spin indicator={<LoadingOutlined/>} size={"small"}/>
+              </div>
+            ): (
+              <Button size="small" type="link" onClick={() => {this.props.refreshData(null)}}>
+                <ReloadOutlined/>
+              </Button>
+            )}
+          </Row>
+          <Row justify='center' style={{margin: "20px 0 0 0"}}>
+            {this.renderHeader()}
+          </Row>
+        </Card>
         <Divider/>
-        <Row>
+        <div>
           {this.renderList()}
           {this.renderPages()}
-        </Row>
+        </div>
       </div>
     )
   }
 
   render() {
+    const content = (
+      <center>
+        {this.renderContent()}
+      </center>      
+    )
     return (
-      <Row justify="center">
-        <div style={{width: this.getInnerWidth() - 10}}>
-          {this.renderContent()}
-        </div>
-      </Row>
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 
