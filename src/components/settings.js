@@ -1,6 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Checkbox, Collapse, Dropdown, Input, Menu, Table } from 'antd'
+import { Button, Card, Checkbox, Collapse, Dropdown, Input, Menu, Row, Table } from 'antd'
+import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import './styles.css'
 import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers';
@@ -79,6 +80,11 @@ class Settings extends React.Component {
     this.setState({ settings })
   }
 
+  resetState() {
+    window.localStorage.removeItem(constants.ROOT_STORE);
+    window.location.reload();
+  }
+
   renderCustomEndpointSetting() {
     const { customEndpoint='' } = this.state.settings;
     return (
@@ -150,10 +156,17 @@ class Settings extends React.Component {
     const { devLattice } = this.state.settings;
     return (
       <Card>
-        <Checkbox onChange={this.updateUseDevLattice.bind(this)} checked={devLattice}>
-          Using Dev Lattice
-        </Checkbox>
-        <br/>
+        <h4>Debug Settings</h4>
+        <Row justify='center' style={{ margin: '10px 0 0 0'}}>
+          <Button type="link" onClick={this.resetState} className='warning-a'>
+          <WarningOutlined/>&nbsp;Reset App State
+        </Button>
+        </Row>
+        <Row justify='center' style={{ margin: '20px 0 0 0'}}>
+          <Checkbox onChange={this.updateUseDevLattice.bind(this)} checked={devLattice}>
+            Using Dev Lattice
+          </Checkbox>
+        </Row>
       </Card>
     )
   }
@@ -199,8 +212,8 @@ class Settings extends React.Component {
       <div>
         {this.renderKeyringsSetting()}
         {this.renderCustomEndpointSetting()}
-        {this.renderDevLatticeSetting()}
         {this.renderBitcoinVersionSetting()}
+        {this.renderDevLatticeSetting()}
         <br/>
         <Button type="primary" onClick={this.submit.bind(this)}>
           Update and Reload

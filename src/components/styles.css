@@ -13,3 +13,7 @@
 .ant-tabs-tab-active {
   color: #fff;
 }
+
+.warning-a:hover {
+  color: red;
+}

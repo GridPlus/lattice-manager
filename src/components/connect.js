@@ -150,6 +150,7 @@ class Connect extends React.Component {
       return (
         <Modal
           title="Settings"
+          footer={null}
           visible={this.state.modal}
           onOk={this.hideModal.bind(this)}
           onCancel={this.hideModal.bind(this)}
@@ -162,6 +163,7 @@ class Connect extends React.Component {
       <div>
         <Modal
           title={this.props.name === 'GridPlus Web Wallet' ? this.props.name : 'Lattice1 Connector 🔗'}
+          footer={null}
           visible={this.state.modal}
           onOk={this.hideModal.bind(this)}
           onCancel={this.hideModal.bind(this)}
