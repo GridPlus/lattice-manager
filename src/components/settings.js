@@ -91,8 +91,14 @@ class Settings extends React.Component {
       <Card>
         <h3>Connection Endpoint:</h3>
         <p>
-          If you wish to route messages and connections through your own endpoint, you may specify it here. Otherwise leave blank.&nbsp;
-          See <a href="https://github.com/GridPlus/lattice-connect" target="_blank" rel="noopener noreferrer">this</a> for more information.
+          If you wish to route messages and connections through your own endpoint, you may specify it here.&nbsp;
+          Otherwise leave blank.&nbsp; See&nbsp;
+          <a  href="https://github.com/GridPlus/lattice-connect"
+              className='lattice-a'
+              target="_blank" 
+              rel="noopener noreferrer">
+            this
+          </a> for more information.
         </p>
         <div>
           <Input  placeholder="host:port" 
