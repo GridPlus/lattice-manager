@@ -85,8 +85,7 @@ class Settings extends React.Component {
       <Card>
         <h3>Connection Endpoint:</h3>
         <p>
-          If you wish to route messages and connections through your own endpoint, you may specify it here. Otherwise leave blank.
-          <br/>
+          If you wish to route messages and connections through your own endpoint, you may specify it here. Otherwise leave blank.&nbsp;
           See <a href="https://github.com/GridPlus/lattice-connect" target="_blank" rel="noopener noreferrer">this</a> for more information.
         </p>
         <div>
@@ -218,6 +217,8 @@ class Settings extends React.Component {
         </Card>
       </center>      
     )
+    if (this.props.inModal)
+      return (<center>{this.renderCard()}</center>);
     return (
       <PageContent content={content} isMobile={this.props.isMobile}/>
     )

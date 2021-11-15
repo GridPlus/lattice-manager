@@ -1,7 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
 import { Col, Row } from 'antd'
-const SPAN_WIDTH = 16; // 2/3 of the inner page width
+const SPAN_WIDTH = 14; // Max 24 for 100% width
 
 class PageContent extends React.Component {
   render () {
