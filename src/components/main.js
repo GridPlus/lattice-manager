@@ -3,7 +3,7 @@ import 'antd/dist/antd.dark.css'
 import './styles.css'
 import { Alert, Button, Layout, Menu, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { 
-  HomeOutlined, AuditOutlined, Dollar, TagsOutlined, 
+  HomeOutlined, AuditOutlined, DollarOutlined, TagsOutlined, 
   WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
   ReloadOutlined, CreditCardOutlined, CheckOutlined, SettingOutlined 
 } from '@ant-design/icons';
@@ -568,7 +568,7 @@ class Main extends React.Component {
             <span>Contracts</span>
           </Menu.Item>
           {/* <Menu.Item key="menu-permissions">
-            <Icon type="dollar" />
+            <DollarOutlined/>
             <span>Limits</span>
           </Menu.Item> */}
           <Menu.Item key="menu-settings">
