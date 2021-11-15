@@ -489,7 +489,7 @@ class Send extends React.Component {
           <p style={{textAlign: 'left'}}><b>{`Fee: ${this.state.btcFeeRate} sat/byte`}</b></p>
           <Slider
             min={1}
-            max={40}
+            max={100}
             onChange={this.updateBtcFeeRate}
             value={this.state.btcFeeRate}
           />

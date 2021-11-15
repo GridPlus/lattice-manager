@@ -23,7 +23,7 @@ class Settings extends React.Component {
       settings: {
         customEndpoint: '',
         keyringLogins: {},
-        btcPurpose: BTC_PURPOSE_WRAPPED_SEGWIT,
+        btcPurpose: constants.DEFAULT_BTC_PURPOSE,
       },
       local: {},
     }
@@ -128,6 +128,8 @@ class Settings extends React.Component {
   }
 
   renderBitcoinVersionSetting() {
+    // NOTE: Firmware does not yet support segwit addresses
+    // TODO: Uncomment this when firmware is updated
     const menu = (
       <Menu onClick={this.handleChangeBitcoinVersionSetting.bind(this)}>
         {/* <Menu.Item key={BTC_PURPOSE_SEGWIT}>
@@ -136,9 +138,10 @@ class Settings extends React.Component {
         <Menu.Item key={BTC_PURPOSE_WRAPPED_SEGWIT}>
           {BTC_PURPOSE_WRAPPED_SEGWIT_STR}
         </Menu.Item>
+        {/* Don't uncomment this until segwit support is released
         <Menu.Item key={BTC_PURPOSE_LEGACY}>
           {BTC_PURPOSE_LEGACY_STR}
-        </Menu.Item>
+        </Menu.Item> */}
       </Menu>
     )
     return (

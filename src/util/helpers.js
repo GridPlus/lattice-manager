@@ -38,7 +38,7 @@ const devConstants = {
     // Deprecating because using two different stores was very tricky and we don't
     // need the second one anyway
     // ROOT_STORE: 'gridplus-dev', 
-    BTC_COIN: 2147483649,
+    BTC_COIN: 0x80000000 + 1,
     BTC_DEFAULT_FEE_RATE: 10,
     ETH_TX_BASE_URL: 'https://rinkeby.etherscan.io/tx',
     BTC_TX_BASE_URL: 'https://www.blockchain.com/btc-testnet/tx',
@@ -283,7 +283,9 @@ exports.harden = function(x) {
 
 function getBtcPurpose() {
     const localSettings = getLocalStorageSettings();
-    return localSettings.btcPurpose ? localSettings.btcPurpose : constants.DEFAULT_BTC_PURPOSE;
+    return  localSettings.btcPurpose ? 
+            localSettings.btcPurpose : 
+            constants.DEFAULT_BTC_PURPOSE;
 }
 exports.getBtcPurpose = getBtcPurpose;
 
