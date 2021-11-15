@@ -1,5 +1,5 @@
 import { Client } from 'gridplus-sdk';
-import { harden, fetchStateData, constants, getBtcVersion } from '../util/helpers';
+import { harden, fetchStateData, constants, getBtcPurpose } from '../util/helpers';
 import { default as StorageSession } from '../util/storageSession';
 import worker from '../stateWorker.js';
 import WebWorker from '../WebWorker';
@@ -39,9 +39,6 @@ class SDKSession {
     // This way we can simply check state on change rather than pulling new
     // addresses.
     this.hasCheckedBtcChange = false
-
-    // The type of Bitcoin addresses the lattice is currently providing us
-    this.btcAddrType = null;
 
     // Current page of results (transactions) for the wallet
     this.page = 1; // (1-indexed)
@@ -99,11 +96,8 @@ class SDKSession {
       });
       // Remove all transactions where the sender and recipient are both
       // our addresses (regular or change)
-      const baseAddrs = this.addresses[currency];
-      const changeAddrs = this.addresses[`${currency}_CHANGE`];
-      console.log('txs superset', allTxs)
-      console.log('baseAddrs', baseAddrs)
-      console.log('changeAddrs', changeAddrs)
+      const baseAddrs = this.addresses[currency] || [];
+      const changeAddrs = this.addresses[`${currency}_CHANGE`] || [];
       JSON.parse(JSON.stringify(allTxs)).forEach((t, i) => {
         if (
           (baseAddrs.indexOf(t.to) > -1 || changeAddrs.indexOf(t.to) > -1) &&
@@ -112,7 +106,6 @@ class SDKSession {
           allTxs.splice(i, 1);
         }
       })
-      console.log('trimmed txs', allTxs)
       return allTxs;
     } else {
       return base;
@@ -279,7 +272,6 @@ class SDKSession {
     this.usdValues[currency] = balance.dollarAmount || 0;
     this.txs[currency] = transactions || [];
     this.utxos[currency] = utxos || [];
-    console.log('utxos for', currency, utxos)
     // Tell the main component if we are done syncing. Note that this also captures the case
     // where we are switching to syncing change addresses/data
     const stillSyncingIndicator = stillSyncingAddresses === true || switchToChange === true;
@@ -350,19 +342,20 @@ class SDKSession {
     let currentAddresses = this.addresses[currency] || [];
     if (!currentAddresses) currentAddresses = [];
     const nextIdx = currentAddresses.length;
+    const BTC_PURPOSE = getBtcPurpose();
     switch(currency) {
       case 'BTC':
         // Skip the initial sync if we have GAP_LIMIT addresses -- we will assume we have
         // already synced and this function will get called if we discover <20 unused addresses
         // (via `fetchDataHandler`)
         if (force !== true && nextIdx >= constants.BTC_MAIN_GAP_LIMIT) return cb(null);
-        opts.startPath = [ constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, harden(0), 0, nextIdx ];
+        opts.startPath = [ BTC_PURPOSE, constants.BTC_COIN, harden(0), 0, nextIdx ];
         opts.n = nextIdx >= constants.BTC_MAIN_GAP_LIMIT ? 1 : constants.BTC_ADDR_BLOCK_LEN;
         break;
       case 'BTC_CHANGE':
         // Skip the initial sync if we have at least one change address (GAP_LIMIT=1)
         if (force !== true && nextIdx >= constants.BTC_CHANGE_GAP_LIMIT) return cb(null);
-        opts.startPath = [ constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, harden(0), 1, nextIdx ];
+        opts.startPath = [ BTC_PURPOSE, constants.BTC_COIN, harden(0), 1, nextIdx ];
         opts.n = nextIdx >= constants.BTC_CHANGE_GAP_LIMIT ? 1 : constants.BTC_CHANGE_GAP_LIMIT;
         break;
       case 'ETH':
@@ -370,14 +363,15 @@ class SDKSession {
         // We will only ever use one ETH address, so callback success here.
         if (nextIdx > 0) return cb(null);
         // If we don't have any addresses here, let's get the first one
-        opts.startPath = [ constants.BIP44_PURPOSE, harden(60), harden(0), 0, nextIdx ];
+        opts.startPath = [ constants.ETH_PURPOSE, harden(60), harden(0), 0, nextIdx ];
         opts.n = 1;
         break;
       default:
         return cb('Invalid currency to request addresses');
     }
-    // Make sure we are using the cache in this app
-    opts.skipCache = false;
+    // We have to skip the cache because caching only works for wrapped segwit addresses
+    // Note that we will still cache addresses here in the browser - this is the firmware cache
+    opts.skipCache = true;
     // Get the addresses
     this.client.getAddresses(opts, (err, addresses) => {
       // Catch an error, but if the device is busy it probably means it is currently
@@ -414,13 +408,14 @@ class SDKSession {
     };
     const hasBTCAddrs = this.addresses.BTC && this.addresses.BTC.length > 0;
     const hasBTCChangeAddrs = this.addresses.BTC_CHANGE && this.addresses.BTC_CHANGE.length > 0;
-    if (this.btcAddrType !== null && hasBTCAddrs) {
+    const BTC_PURPOSE = getBtcPurpose();
+    if (hasBTCAddrs) {
       driedAddrs.BTC = {};
-      driedAddrs.BTC[this.btcAddrType] = this.addresses.BTC || [];
+      driedAddrs.BTC[BTC_PURPOSE] = this.addresses.BTC || [];
     }
-    if (this.btcAddrType !== null && hasBTCChangeAddrs) {
+    if (hasBTCChangeAddrs) {
       driedAddrs.BTC_CHANGE = {};
-      driedAddrs.BTC_CHANGE[this.btcAddrType] = this.addresses.BTC_CHANGE || [];
+      driedAddrs.BTC_CHANGE[BTC_PURPOSE] = this.addresses.BTC_CHANGE || [];
     }
     return driedAddrs;
   }
@@ -428,13 +423,14 @@ class SDKSession {
   // Pull addresses out of cached localStorage data
   rehydrateAddresses(allAddrs={}) {
     const rehydratedAddrs = {};
+    const BTC_PURPOSE = getBtcPurpose();
     if (allAddrs.ETH)
       rehydratedAddrs.ETH = allAddrs.ETH;
-    if (this.btcAddrType !== null && allAddrs.BTC) {
-      rehydratedAddrs.BTC = allAddrs.BTC[this.btcAddrType];
+    if (allAddrs.BTC) {
+      rehydratedAddrs.BTC = allAddrs.BTC[BTC_PURPOSE];
     }
-    if (this.btcAddrType !== null && allAddrs.BTC_CHANGE) {
-      rehydratedAddrs.BTC_CHANGE = allAddrs.BTC_CHANGE[this.btcAddrType];
+    if (allAddrs.BTC_CHANGE) {
+      rehydratedAddrs.BTC_CHANGE = allAddrs.BTC_CHANGE[BTC_PURPOSE];
     }
     this.addresses = rehydratedAddrs;
   }
@@ -481,23 +477,6 @@ class SDKSession {
         this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
       }
     }
-  }
-
-  // Request the first BTC address so we can know what data to rehydrate
-  loadBtcAddrType(cb) {
-    const opts = {
-      startPath: [ constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, harden(0), 0, 0 ],
-      n: 1,
-      skipCache: false,
-    };
-    this.client.getAddresses(opts, (err, addresses) => {
-      if (err) return cb(err);
-      const version = getBtcVersion(addresses[0]);
-      if (version === null) return cb('Failed to load addresses from the Lattice');
-      this.btcAddrType = version;
-      this.getStorage();
-      return cb(null);
-    })
   }
 
   _tryConnect(deviceID, pw, cb, _triedLocal=false) {

@@ -16,7 +16,7 @@ const constants = {
     BTC_ADDR_BLOCK_LEN: 10,
     BTC_CHANGE_GAP_LIMIT: 1,
     BTC_CHANGE_ADDR_BLOCK_LEN: 1,
-    BTC_DEFAULT_FEE_RATE: process.env.REACT_APP_BTC_DEFAULT_FEE_RATE || 40, // 40 sat/byte
+    BTC_DEFAULT_FEE_RATE: process.env.REACT_APP_BTC_DEFAULT_FEE_RATE || 10, // 10 sat/byte
     ETH_DEFAULT_FEE_RATE: process.env.REACT_APP_ETH_DEFAULT_FEE_RATE || 100, //  100 GWei
     ETH_TX_BASE_URL: process.env.REACT_APP_ETH_TX_BASE_URL || 'https://etherscan.io/tx',
     BTC_TX_BASE_URL: process.env.REACT_APP_BTC_TX_BASE_URL || 'https://www.blockchain.com/btc/tx',
@@ -38,7 +38,7 @@ const devConstants = {
     // Deprecating because using two different stores was very tricky and we don't
     // need the second one anyway
     // ROOT_STORE: 'gridplus-dev', 
-    BTC_COIN: 2147483649,
+    BTC_COIN: 0x80000000 + 1,
     BTC_DEFAULT_FEE_RATE: 10,
     ETH_TX_BASE_URL: 'https://rinkeby.etherscan.io/tx',
     BTC_TX_BASE_URL: 'https://www.blockchain.com/btc-testnet/tx',
@@ -50,10 +50,14 @@ const devConstants = {
 
 // OLD: You can run this with dev constants enabled by default: `npm run start-dev`
 constants.ERC20_TOKENS = constants.ENV === 'dev' ? require('./devTokens.json') : require('./prodTokens.json');
-constants.BIP44_PURPOSE = constants.HARDENED_OFFSET + 44;
-// NOTE: For v1, the Lattice only supports p2sh-p2wpkh addresses, which
-//       use the BIP49 purpose (49') in their derivation paths.
-constants.BIP_PURPOSE_P2SH_P2WPKH = constants.HARDENED_OFFSET + 49;
+constants.ETH_PURPOSE = constants.HARDENED_OFFSET + 44;
+
+/*
+// By default we provide bech32 addresses derived using BIP84. However,
+// the user can change this in settings
+constants.DEFAULT_BTC_PURPOSE = constants.HARDENED_OFFSET + 84;
+*/
+constants.DEFAULT_BTC_PURPOSE = constants.HARDENED_OFFSET + 49;
 
 // NEW: If you have checked the "Using Dev Lattice" box in settings, the constants
 // are swapped out here
@@ -277,23 +281,13 @@ exports.harden = function(x) {
   return x + constants.HARDENED_OFFSET;
 }
 
-function getBtcVersion(addrs) {
-    const addr = Array.isArray(addrs) ? addrs[0] : addrs;
-    switch (addr.slice(0, 1)) {
-        case '1':
-            return 'LEGACY';
-        case '3':
-            return 'SEGWIT';
-        case '2':
-            return 'SEGWIT_TESTNET';
-        case 'm':
-        case 'n':
-            return 'TESTNET';
-        default:
-            return null;
-    }
+function getBtcPurpose() {
+    const localSettings = getLocalStorageSettings();
+    return  localSettings.btcPurpose ? 
+            localSettings.btcPurpose : 
+            constants.DEFAULT_BTC_PURPOSE;
 }
-exports.getBtcVersion = getBtcVersion;
+exports.getBtcPurpose = getBtcPurpose;
 
 function getBtcNumTxBytes(numInputs) {
     return (numInputs+1)*180 + 2*34 + 10;
@@ -306,12 +300,6 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     }
     // Convert value to satoshis
     const satValue = Math.round(Number(btcValue) * Math.pow(10, 8));
-    // Determine if these are testnet or mainnet addresses
-    const network = addrs[0].slice(0, 1) === '1' || addrs[0].slice(0, 1) === '3' ? 'MAINNET' : 'TESTNET';
-    // Determine the change version
-    const changeVersion = getBtcVersion(changeAddrs);
-    if (changeVersion === null)
-        return { error: 'Unrecognized change address.' };
     // Sort utxos by value
     // First deduplicate utxos
     const hashes = [];
@@ -345,7 +333,7 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     }
     const fee = Math.floor(bytesUsed * feeRate);
     // Build the request inputs
-    const BASE_SIGNER_PATH = [constants.BIP_PURPOSE_P2SH_P2WPKH, constants.BTC_COIN, constants.HARDENED_OFFSET];
+    const BASE_SIGNER_PATH = [getBtcPurpose(), constants.BTC_COIN, constants.HARDENED_OFFSET];
     const prevOuts = [];
     for (let i = 0; i < numInputs; i++) {
         const utxo = sortedUtxos[i];
@@ -374,12 +362,9 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
         recipient,
         value: satValue,
         fee,
-        isSegwit: changeVersion === 'SEGWIT' || changeVersion === 'SEGWIT_TESTNET',
         // Note we send change to the latest change address. Once this becomes used, the web worker
         // should fetch a new change address and update state
         changePath: BASE_SIGNER_PATH.concat([1, changeAddrs.length -1]),
-        changeVersion,
-        network,
     };
     return { currency: 'BTC', data: req }
 }

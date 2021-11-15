@@ -41,9 +41,6 @@ class Main extends React.Component {
       walletIsExternal: null,
       // Window params
       keyringName: null,
-      // If testnet is disabled on BTC, we will not be able to fetch addresses
-      // if we are in dev config
-      btcDisabled: false,
       // Validation check on Lattice hardware. Should draw a separate component
       hwCheck: null,
     };
@@ -306,15 +303,6 @@ class Main extends React.Component {
   //------------------------------------------
 
   handleCurrencyChange(value) {
-    if (value === 'BTC' && this.state.btcDisabled === true) {
-      // If BTC is disabled, we should tell the user and kick them back
-      // to the ETH currency
-      this.setError({ 
-        msg: 'BTC testnet is disabled. Please enable it on your Lattice.', 
-        cb: () => { this.handleCurrencyChange('ETH') },
-      })
-      return;
-    }
     this.setState({ currency: value, error: { msg: null, cb: null } }, function() {
       // Load addresses for new currency once it is updated
       // If we get a callback, this worked (i.e. we either already)
@@ -449,28 +437,16 @@ class Main extends React.Component {
     if (this.state.waiting === true)
       return;
     this.wait("Syncing addresses")
-    // Load the first BTC address so we can rehydrate the correct set, if applicable
-    this.state.session.loadBtcAddrType((err) => {
-      if (err === 'Disabled')
-        return this.setState({ btcDisabled: true });
-      else if (err)
+    this.state.session.loadAddresses(this.state.currency, (err) => {
+      this.unwait();
+      // Catch an error if there is one
+      if (err) {
+        // If we catch an error, do a recursive call (preserving the callback)
         return this.setError({ msg: err, cb: () => { this.fetchAddresses(cb) } });
-      else
-        this.setState({ btcDisabled: false });
-
-      // Once we've recorded the address type for BTC, we can start fetching as we normally
-      // would. This involves rehydrating the localStorage addresses if possible.
-      this.state.session.loadAddresses(this.state.currency, (err) => {
-        this.unwait();
-        // Catch an error if there is one
-        if (err) {
-          // If we catch an error, do a recursive call (preserving the callback)
-          return this.setError({ msg: err, cb: () => { this.fetchAddresses(cb) } });
-        } else if (cb) {
-          return cb(null);
-        }
-      });
-    })
+      } else if (cb) {
+        return cb(null);
+      }
+    });
   }
 
   handleLostPairing() {

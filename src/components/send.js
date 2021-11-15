@@ -43,7 +43,7 @@ class Send extends React.Component {
     this.renderValueLabel = this.renderValueLabel.bind(this);
     this.submit = this.submit.bind(this);
     this.buildEthRequest = this.buildEthRequest.bind(this);
-    this.buildBtcrequest = this.buildBtcRequest.bind(this);
+    this.buildBtcRequest = this.buildBtcRequest.bind(this);
     this.updateBtcFeeRate = this.updateBtcFeeRate.bind(this);
   }
 
@@ -212,7 +212,7 @@ class Send extends React.Component {
       currency: 'ETH',
       data: {
         signerPath: [
-          constants.BIP44_PURPOSE, 
+          constants.ETH_PURPOSE, 
           constants.HARDENED_OFFSET+60, 
           constants.HARDENED_OFFSET, 
           0, 
@@ -488,8 +488,8 @@ class Send extends React.Component {
         <Row>
           <p style={{textAlign: 'left'}}><b>{`Fee: ${this.state.btcFeeRate} sat/byte`}</b></p>
           <Slider
-            min={10}
-            max={200}
+            min={1}
+            max={100}
             onChange={this.updateBtcFeeRate}
             value={this.state.btcFeeRate}
           />
@@ -506,7 +506,7 @@ class Send extends React.Component {
         // to spend them all
         const txBytes = getBtcNumTxBytes(this.props.session.getUtxos('BTC').length);
         const feeSat = this.state.btcFeeRate * txBytes;
-        return Math.max(balance - (feeSat / BTC_FACTOR), 0);
+        return Math.max((balance - (feeSat / BTC_FACTOR)).toFixed(8), 0);
       case 'ETH':
         if (this.state.erc20Addr !== null)
           return balance;
