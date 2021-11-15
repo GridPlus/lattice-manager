@@ -17,3 +17,9 @@
 .warning-a:hover {
   color: red;
 }
+
+.ant-btn-background-ghost.ant-btn-primary {
+  color: #94B3FD;
+  border-color: #94B3FD;
+  text-shadow: none;
+}

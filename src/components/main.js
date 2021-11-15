@@ -603,7 +603,7 @@ class Main extends React.Component {
 
   renderHeaderText() {
     return (
-      <a href="https://gridplus.io" target={"_blank"}>
+      <a href="https://gridplus.io" target='_blank' rel='noopener noreferrer'>
         <img  alt="GridPlus" 
               src={'/logo-on-black.png'}
               style={{height: '1em'}}/>
