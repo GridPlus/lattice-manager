@@ -1,7 +1,10 @@
 import React from 'react'
 import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Icon, Input, Row, Spin, Table } from 'antd'
+import { Alert, Button, Card, Checkbox, Col, Icon, Input, Row, Spin, Table } from 'antd'
+import { allChecks } from '../util/sendChecks';
 const ADDRESS_RECORD_TYPE = 0
+const RECORDS_PER_PAGE = 10;
+const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
 
 class KVFiles extends React.Component {
   constructor(props) {
@@ -11,7 +14,6 @@ class KVFiles extends React.Component {
       page: 0,
       totalRecords: 0,
       records: [],
-      recordsPerPage: 10,
       error: null,
       retryFunc: null,
       loading: false,
@@ -43,10 +45,42 @@ class KVFiles extends React.Component {
     this.setState({ recordToAdd })
   }
 
+  recordIsChecked(id) {
+    let isChecked = false;
+    this.state.records.forEach((_record) => {
+      if (_record.id === id) {
+        isChecked = _record.isChecked === true;
+      }
+    })
+    return isChecked;
+  }
+
+  changeRecordChecked(id) {
+    const records = JSON.parse(JSON.stringify(this.state.records));
+    if (!records)
+      return;
+    for (let i = 0; i < records.length; i++) {
+      if (records[i].id === id) {
+        records[i].isChecked = records[i].isChecked === true ? false : true;
+        this.setState({ records });
+        return;
+      }
+    }
+  }
+
+  getNumSelected() {
+    let selected = 0;
+    this.state.records.forEach((record) => {
+      if (record.isChecked)
+        selected += 1;
+    })
+    return selected;
+  }
+
   fetchRecords(retries=1) {
-    const opts = { 
-      start: this.state.page * this.state.recordsPerPage, 
-      n: this.state.recordsPerPage 
+    const opts = {
+      start: this.state.page * RECORDS_PER_PAGE, 
+      n: RECORDS_PER_PAGE
     }
     // Sanity check to make sure we didn't overrun the current page
     if (opts.start > this.state.records.length) {
@@ -82,6 +116,16 @@ class KVFiles extends React.Component {
   }
 
   addRecord() {
+    let isDup = false;
+    this.state.records.forEach((record) => {
+      if ((record.key === this.state.recordToAdd.key) ||
+          (record.val === this.state.recordToAdd.val))
+        isDup = true;
+    })
+    if (isDup) {
+      this.setState({ error: 'Tag already exists on your device' });
+      return;
+    }
     const opts = {
       caseSensitive: false,
       type: ADDRESS_RECORD_TYPE,
@@ -102,26 +146,28 @@ class KVFiles extends React.Component {
     })
   }
 
-  removeRecord(id) {
-    const records = JSON.parse(JSON.stringify(this.state.records))
-    // Make sure this id exists in our state
-    this.state.records.forEach((record, idx) => {
-      if (record.id === id) {
-        records.splice(idx, 1)
+  removeSelected() {
+    const ids = [];
+    const remainingRecords = [];
+    this.state.records.forEach((record) => {
+      if (record.isChecked) {
+        ids.push(record.id)
+      } else {
+        remainingRecords.push(record);
       }
     })
-    // If we found a match we can tell the lattice to remove the record
-    if (records.length < this.state.records.length) {
-      this.setState({ loading: true })
-      this.props.session.client.removeKvRecords({ ids: [id] }, (err) => {
-        if (err) {
-          this.setState({ error: err, loading: false})
-          return
-        }
-        this.setState({ records, loading: false})
+    if (ids.length === 0)
+      return;
+    this.setState({ loading: true })
+    this.props.session.client.removeKvRecords({ ids }, (err) => {
+      if (err) {
+        this.setState({ error: err, loading: false})
+        return
+      }
+      this.setState({ records: remainingRecords}, () => {
+        this.fetchRecords();
       })
-    }
-
+    })
   }
 
   renderError() {
@@ -156,6 +202,17 @@ class KVFiles extends React.Component {
     }
   }
 
+  shouldDisplaySend() {
+    const key = this.state.recordToAdd.key;
+    const val = this.state.recordToAdd.val;
+    if (!key || !val)
+      return false;
+    const isValidAddress =  (allChecks.ETH.recipient(key)) || 
+                            (allChecks.BTC.recipient(key));
+    const isValidLen = (key.length < MAX_RECORD_LEN) && (val.length < MAX_RECORD_LEN);
+    return isValidAddress && isValidLen;
+  }
+
   renderAddCard() {
     const extraLink = (
       <Button type="link" onClick={() => { this.setState({ isAdding: false })}}>View Addresses</Button>
@@ -177,7 +234,11 @@ class KVFiles extends React.Component {
               </Col>
             </Row>
             <br/>
-            <Button type="primary" onClick={this.addRecord}>Save</Button>
+            {this.shouldDisplaySend() ? (
+              <Button type="primary" onClick={this.addRecord}>Save</Button>
+            ) : (
+              <Button type="primary" disabled>Save</Button>
+            )}
           </center>
         )}
       </Card>
@@ -185,10 +246,14 @@ class KVFiles extends React.Component {
   }
 
   renderDisplayCard() {
-    const thisPage = this.state.page + 1;
-    const totalPages = Math.floor(this.state.totalRecords / this.state.recordsPerPage) + 1;
-    const hasNextPage = totalPages > thisPage;
-    const hasPrevPage = thisPage > 1;
+    const displayPage = this.state.page + 1;
+    const totalPages = Math.ceil(this.state.totalRecords / RECORDS_PER_PAGE);
+    const fetchedPages = Math.ceil(this.state.records.length / RECORDS_PER_PAGE);
+    const hasNextPage = totalPages > displayPage;
+    const hasPrevPage = displayPage > 1;
+    const start = this.state.page * RECORDS_PER_PAGE;
+    const end = (1 + this.state.page) * RECORDS_PER_PAGE;
+    const data = this.state.records.slice(start, end)
     const extraLink = (
         <Button type="link" onClick={() => { this.setState({ isAdding: true })}}>Add Addresses</Button>
     )
@@ -196,7 +261,7 @@ class KVFiles extends React.Component {
       <Card title={'Saved Addresses'} extra={extraLink} bordered={true}>
         {this.state.loading ? this.renderLoading() : (
           <div>
-            <Table dataSource={this.state.records} pagination={false}>
+            <Table dataSource={data} pagination={false}>
               <Table.Column title="Name" dataIndex="val" key="val"
                 render={val => (
                   <div><b>{val}</b></div>
@@ -211,7 +276,10 @@ class KVFiles extends React.Component {
               />
               <Table.Column title="" dataIndex="id" key="id"
                 render={id => (
-                  <Button type="danger" onClick={() => { this.removeRecord(id) }}>Delete</Button>
+                  <Checkbox checked={this.recordIsChecked(id)}
+                            onChange={() => {this.changeRecordChecked(id)}}
+                            key={id}
+                  />
                 )}
               />
             </Table>
@@ -219,14 +287,37 @@ class KVFiles extends React.Component {
             <center>
               <Row>
                 <Col span={3} offset={4}>
-                  <Button disabled={!hasPrevPage}>Prev</Button>
+                  <Button disabled={!hasPrevPage} 
+                          onClick={() => { this.setState({ page: this.state.page - 1 })}}
+                  >
+                    Prev
+                  </Button>
                 </Col>
                 <Col span={5} offset={2}>
-                  <center><p>Page {thisPage} of {totalPages}</p></center>
+                  <center><p>Page {displayPage} of {totalPages}</p></center>
                 </Col>
                 <Col span={3} offset={2}>
-                  <Button disabled={!hasNextPage}>Next</Button>
+                  <Button disabled={!hasNextPage} 
+                          onClick={() => { 
+                            this.setState(
+                              { page: this.state.page + 1 }, 
+                              () => { if (fetchedPages < totalPages) this.fetchRecords(); }
+                            );
+                          }}
+                  >
+                    Next
+                  </Button>
                 </Col>
+              </Row>
+              <Row>
+                {this.getNumSelected() > 0 ? (
+                  <Button type="danger" 
+                          onClick={this.removeSelected.bind(this)}
+                          style={{ margin: '5px 0 0 0' }}
+                  >
+                    Remove Selected
+                  </Button>
+                ) : null}
               </Row>
             </center>
           </div>
