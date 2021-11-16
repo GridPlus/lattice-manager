@@ -9,7 +9,8 @@
 
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Col, Dropdown, Icon, Input, Menu, Row, Select, Spin } from 'antd'
+import { Alert, Button, Card, Col, Dropdown, Input, Menu, Row, Select, Spin } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons';
 import './styles.css'
 const BN = require('bignumber.js');
 const HOURS = 3600;
@@ -117,7 +118,7 @@ class Permissions extends React.Component {
     } else if (this.state.loading) {
       return (
         <div>
-          <Spin indicator={(<Icon type="loading"/>)}/>
+          <Spin indicator={(<LoadingOutlined/>)}/>
           <br/>
         </div>
       )

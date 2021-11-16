@@ -1,6 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Col, Icon, Row, Spin } from 'antd'
+import { Button, Card, Col, Row, Spin } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons';
 
 class Loading extends React.Component {
   render() {
@@ -12,7 +13,7 @@ class Loading extends React.Component {
           <center>
             <Card title="Loading" bordered={true}>
               {this.props.spin !== false ? (
-                <Spin indicator={<Icon type="loading"/>} />
+                <Spin indicator={<LoadingOutlined/>} />
               ) : null}
               <p>{this.props.msg ? this.props.msg : "Waiting for data from your Lattice1"}</p>
               {this.props.onCancel ? (

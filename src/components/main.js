@@ -1,7 +1,12 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
 import './styles.css'
-import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
+import { Alert, Button, Layout, Menu, Select, PageHeader, Tag, Tooltip } from 'antd';
+import { 
+  HomeOutlined, AuditOutlined, Dollar, TagsOutlined, 
+  WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
+  ReloadOutlined, CreditCardOutlined, CheckOutlined, SettingOutlined 
+} from '@ant-design/icons';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { 
   Connect, Error, Landing, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
@@ -549,17 +554,17 @@ class Main extends React.Component {
     const mode = collapsed ? 'horizontal' : 'inline';
     return (
       <Sider collapsed={collapsed}>
-        <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode={mode} onSelect={this.handleMenuChange}>
+        <Menu theme="dark" mode={mode} onSelect={this.handleMenuChange}>
           <Menu.Item key="menu-landing">
-            <Icon type="home" />
+            <HomeOutlined/>
             <span>Home</span>
           </Menu.Item>          
           <Menu.Item key="menu-kv-records">
-            <Icon type="tag" />
+            <TagsOutlined/>
             <span>Address Tags</span>
           </Menu.Item>
           <Menu.Item key="menu-eth-contracts">
-            <Icon type="audit" />
+            <AuditOutlined/>
             <span>Contracts</span>
           </Menu.Item>
           {/* <Menu.Item key="menu-permissions">
@@ -567,20 +572,20 @@ class Main extends React.Component {
             <span>Limits</span>
           </Menu.Item> */}
           <Menu.Item key="menu-settings">
-            <Icon type="setting" />
+            <SettingOutlined/>
             <span>Settings</span>
           </Menu.Item>
-          <Menu.SubMenu title="Wallet">
+          <Menu.SubMenu title="Wallet" key="submenu-wallet">
             <Menu.Item key="menu-wallet">
-              <Icon type="wallet" />
+              <WalletOutlined/>
               <span>Wallet</span>
             </Menu.Item>
             <Menu.Item key="menu-send">
-              <Icon type="arrow-up" />
+              <ArrowUpOutlined/>
               <span>Send</span>
             </Menu.Item>
             <Menu.Item key="menu-receive">
-              <Icon type="arrow-down" />
+              <ArrowDownOutlined/>
               <span>Receive</span>
             </Menu.Item>
           </Menu.SubMenu>
@@ -620,13 +625,13 @@ class Main extends React.Component {
 
     if (activeWallet === null) {
       walletTag = ( 
-        <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet <Icon type="reload"/></Button>
+        <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet <ReloadOutlined/></Button>
       )
     } else {
       walletTag = activeWallet.external === true ?  (
-        <Button type="primary" ghost onClick={this.refreshWallets} size={size}><Icon type="credit-card"/> SafeCard <Icon type="reload"/></Button>
+        <Button type="primary" ghost onClick={this.refreshWallets} size={size}><CreditCardOutlined/> SafeCard <ReloadOutlined/></Button>
       ) : (
-        <Button type="default" ghost onClick={this.refreshWallets} size={size}><Icon type="check"/> Lattice1 <Icon type="reload"/></Button>
+        <Button type="default" ghost onClick={this.refreshWallets} size={size}><CheckOutlined/> Lattice1 <ReloadOutlined/></Button>
       )
     }
     if (walletTag) extra.push((

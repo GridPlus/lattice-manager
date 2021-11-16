@@ -373,7 +373,9 @@ class SDKSession {
     // Note that we will still cache addresses here in the browser - this is the firmware cache
     opts.skipCache = true;
     // Get the addresses
+    console.log('getAddresses', opts)
     this.client.getAddresses(opts, (err, addresses) => {
+      console.log('got addresses', addresses)
       // Catch an error, but if the device is busy it probably means it is currently
       // caching a batch of new addresses. Continue the loop through this request until
       // it hits.
@@ -433,6 +435,7 @@ class SDKSession {
       rehydratedAddrs.BTC_CHANGE = allAddrs.BTC_CHANGE[BTC_PURPOSE];
     }
     this.addresses = rehydratedAddrs;
+    console.log('purpose', BTC_PURPOSE, this.addresses)
   }
 
   saveStorage() {

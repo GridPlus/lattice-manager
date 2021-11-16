@@ -1,6 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
+import { Button, Card, Col, Row, Input, Empty } from 'antd'
+import { CopyOutlined } from '@ant-design/icons';
 import { getCurrencyText, validateBtcAddr } from '../../util/helpers'
 import { DeprecatedEthWallet } from '../index'
 const QRCode = require('qrcode.react');
@@ -55,7 +56,7 @@ class Receive extends React.Component {
           <Button type="primary"
                   style={{margin: "20px 0 0 0"}}
                   onClick={this.copyAddress}>
-            Copy <Icon type="copy"/>
+            Copy <CopyOutlined/>
           </Button>
         </div>
       )
@@ -64,7 +65,7 @@ class Receive extends React.Component {
          <Search type="text" 
                   id={SEARCH_ID} 
                   value={this.state.address} 
-                  enterButton={<Icon type="copy" />}
+                  enterButton={<CopyOutlined/>}
                   onSearch={this.copyAddress}
                   style={{margin: "30px 0 0 0", "textAlign": "center"}}
           />
