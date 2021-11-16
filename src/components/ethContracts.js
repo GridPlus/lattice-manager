@@ -4,6 +4,8 @@ import { Alert, Button, Card, Col, Icon, Input, Modal, Result, Row, Select, Spin
 import './styles.css'
 import { constants, } from '../util/helpers';
 
+const HELP_LINK = "https://docs.gridplus.io/gridplus-web-wallet/use-ethereum-smart-contract-abi-function-definitions"
+
 // Approximate of seconds each def takes to load. 2 defs load per request
 // This is just a guesstimate for display purposes
 const SEC_PER_DEF = 1.2; 
@@ -515,7 +517,13 @@ class EthContracts extends React.Component {
     return (
       <div>
         <p><i>Add smart contract data for more readable transactions on your Lattice1! Note that not all
-        functions may be added for a given app.</i></p>
+        functions may be added for a given app.&nbsp;
+        <a  href={HELP_LINK}
+            target={"_blank"}
+            rel={"noopener noreferrer"}>
+          (More info)
+        </a>
+        </i></p>
         {this.renderTabs()}
         {f()}
       </div>
@@ -526,7 +534,15 @@ class EthContracts extends React.Component {
     const content = (
       <div>
         {this.renderBanner()}
-        <Card title={'Contract Data'} bordered={true}>
+        <Card title={<div>
+          <h3>Load Contract Data&nbsp;
+            <a  href={HELP_LINK}
+              target={"_blank"}
+              rel={"noopener noreferrer"}>
+              <Icon type="question-circle"/>
+            </a>
+          </h3>
+        </div>} bordered={true}>
           {this.renderCard()}
         </Card>
       </div>      

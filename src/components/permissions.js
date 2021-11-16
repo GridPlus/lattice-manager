@@ -16,6 +16,7 @@ const assets = {
     decimals: 8,
   }
 }
+const HELP_LINK = "https://docs.gridplus.io/gridplus-web-wallet/how-to-set-and-use-spending-limits"
 
 class Permissions extends React.Component {
   constructor(props) {
@@ -143,9 +144,17 @@ class Permissions extends React.Component {
         <p>
           You can set spending limits for ETH and BTC. If you make a request from this web wallet that is under your
           spending limit, your Lattice will auto-sign the transaction. Note that this currently only works for simple 
-          ETH and BTC transfers.
+          ETH and BTC transfers.&nbsp;
+          <a  href={HELP_LINK}
+              target={"_blank"}
+              rel={"noopener noreferrer"}>
+            (More info)
+          </a>        
         </p>
         <br/>
+        <i>This is a feature prototype. In the future, GridPlus intends to expand this functionality
+        to other assets and more general contract interactions.</i>
+        <br/><br/>
         <p><b>Spending Limit:</b></p>
         <Row>
           <Col span={12} offset={6}>
@@ -181,7 +190,15 @@ class Permissions extends React.Component {
     const content = (
       <center>
         {this.renderBanner()}
-        <Card title={'Auto-sign Spending Limits'} bordered={true}>
+        <Card title={<div>
+          <h3>Spending Limits (Beta)&nbsp;
+            <a  href={HELP_LINK}
+              target={"_blank"}
+              rel={"noopener noreferrer"}>
+              <Icon type="question-circle"/>
+            </a>
+          </h3>
+        </div>} bordered={true}>
           {this.renderCard()}
         </Card>
       </center>      
