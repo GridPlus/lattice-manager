@@ -96,6 +96,9 @@ class KVFiles extends React.Component {
         } else {
           return this.fetchRecords(retries-1)
         }
+      } else if (!res.records) {
+        this.setState({ loading: false, error: 'Failed to fetch tags' });
+        return;
       }
       // Update state with the new records. Swap existing records if needed
       // or add new records if the current state doesn't include their indices.
@@ -256,8 +259,8 @@ class KVFiles extends React.Component {
 
   renderDisplayCard() {
     const displayPage = this.state.page + 1;
-    const totalPages = Math.ceil(this.state.totalRecords / RECORDS_PER_PAGE);
-    const fetchedPages = Math.ceil(this.state.records.length / RECORDS_PER_PAGE);
+    const totalPages = Math.max(1, Math.ceil(this.state.totalRecords / RECORDS_PER_PAGE));
+    const fetchedPages = Math.max(1, Math.ceil(this.state.records.length / RECORDS_PER_PAGE));
     const hasNextPage = totalPages > displayPage;
     const hasPrevPage = displayPage > 1;
     const start = this.state.page * RECORDS_PER_PAGE;
