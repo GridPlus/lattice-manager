@@ -1,5 +1,5 @@
 import React from 'react';
-import 'antd/dist/antd.css'
+import 'antd/dist/antd.dark.css'
 import './styles.css'
 import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
 import { default as SDKSession } from '../sdk/sdkSession';
@@ -550,18 +550,22 @@ class Main extends React.Component {
     return (
       <Sider collapsed={collapsed}>
         <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode={mode} onSelect={this.handleMenuChange}>
-          <Menu.Item key="menu-eth-contracts">
-            <Icon type="audit" />
-            <span>Contracts</span>
-          </Menu.Item>
+          <Menu.Item key="menu-landing">
+            <Icon type="home" />
+            <span>Home</span>
+          </Menu.Item>          
           <Menu.Item key="menu-kv-records">
             <Icon type="tag" />
             <span>Address Tags</span>
           </Menu.Item>
-          <Menu.Item key="menu-permissions">
+          <Menu.Item key="menu-eth-contracts">
+            <Icon type="audit" />
+            <span>Contracts</span>
+          </Menu.Item>
+          {/* <Menu.Item key="menu-permissions">
             <Icon type="dollar" />
             <span>Limits</span>
-          </Menu.Item>
+          </Menu.Item> */}
           <Menu.Item key="menu-settings">
             <Icon type="setting" />
             <span>Settings</span>
@@ -629,12 +633,17 @@ class Main extends React.Component {
       <Tooltip title="Refresh" key="WalletTagTooltip">{walletTag}</Tooltip>));
 
     // Add the currency switch
-    extra.push(
-      (<Select key="currency-select" defaultValue={this.state.currency} onChange={this.handleCurrencyChange} size={size}>
-        <Option value="BTC">{getCurrencyText('BTC')}</Option>
-        <Option value="ETH">{getCurrencyText('ETH')}</Option>
-      </Select>)
-    );
+    // extra.push((
+    //   <Menu onClick={this.handleCurrencyChange}>
+    //     <Menu.Item key="BTC">
+    //       BTC
+    //     </Menu.Item>
+    //     <Menu.Item key="ETH">
+    //       ETH
+    //     </Menu.Item>
+    //   </Menu>
+    // ))
+
     extra.push(
       ( <Button key="logout-button" type="primary" onClick={this.handleLogout} size={size}>
         Logout
@@ -708,13 +717,13 @@ class Main extends React.Component {
             isMobile={() => this.isMobile()}
           />
         )
-      case 'menu-permissions':
-        return (
-          <Permissions
-            session={this.state.session}
-            isMobile={() => this.isMobile()}
-          />
-        )   
+      // case 'menu-permissions':
+      //   return (
+      //     <Permissions
+      //       session={this.state.session}
+      //       isMobile={() => this.isMobile()}
+      //     />
+      //   )   
       case 'menu-settings':
         return (
           <Settings

@@ -1,5 +1,5 @@
 import React from 'react';
-import 'antd/dist/antd.css'
+import 'antd/dist/antd.dark.css'
 import { Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
 import { getCurrencyText, validateBtcAddr } from '../../util/helpers'
 import { DeprecatedEthWallet } from '../index'

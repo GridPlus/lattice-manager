@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Col, Row, Input } from 'antd'
-import 'antd/dist/antd.css'
+import 'antd/dist/antd.dark.css'
 
 const INPUT_STYLE = {
   'margin': '20px 0 0 0',
