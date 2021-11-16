@@ -10,7 +10,8 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Col, Dropdown, Input, Menu, Row, Select, Spin } from 'antd'
-import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { constants, } from '../util/helpers';
 import { PageContent } from './index'
 import './styles.css'
 const BN = require('bignumber.js');
@@ -26,7 +27,6 @@ const assets = {
     decimals: 8,
   }
 }
-const HELP_LINK = "https://docs.gridplus.io/gridplus-web-wallet/how-to-set-and-use-spending-limits"
 
 class Permissions extends React.Component {
   constructor(props) {
@@ -158,9 +158,11 @@ class Permissions extends React.Component {
           You can set spending limits for ETH and BTC. If you make a request from this web wallet that is under your
           spending limit, your Lattice will auto-sign the transaction. Note that this currently only works for simple 
           ETH and BTC transfers.&nbsp;
-          <a  href={HELP_LINK}
-              target={"_blank"}
-              rel={"noopener noreferrer"}>
+           <a className='lattice-a'
+              href={constants.PERMISSIONS_HELP_LINK}
+              target='_blank'
+              rel='noopener noreferrer'
+          >
             (More info)
           </a>        
         </p>
@@ -213,10 +215,12 @@ class Permissions extends React.Component {
         {this.renderBanner()}
         <Card title={<div>
           <h3>Spending Limits (Beta)&nbsp;
-            <a  href={HELP_LINK}
-              target={"_blank"}
-              rel={"noopener noreferrer"}>
-              <Icon type="question-circle"/>
+            <a  className='lattice-a'
+                href={constants.PERMISSIONS_HELP_LINK}
+                target='_blank'
+                rel='noopener noreferrer'
+            >
+              <QuestionCircleOutlined/>
             </a>
           </h3>
         </div>} bordered={true}>

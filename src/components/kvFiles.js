@@ -7,7 +7,6 @@ import { PageContent } from './index'
 const ADDRESS_RECORD_TYPE = 0
 const RECORDS_PER_PAGE = 10;
 const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
-const HELP_LINK = 'https://docs.gridplus.io/gridplus-web-wallet/address-tags';
 
 class KVFiles extends React.Component {
   constructor(props) {
@@ -233,15 +232,6 @@ class KVFiles extends React.Component {
       <Card title={'Save Address Tag'} extra={extraLink} bordered={true}>
         {this.state.loading ? this.renderLoading() : (
           <center>
-            <p>
-              Add a new address name. If this address is used in future transactions your Lattice will display the name you save below.
-              &nbsp;
-              <a  href={HELP_LINK}
-                  target={"_blank"}
-                  rel={"noopener noreferrer"}>
-                (More info)
-              </a>
-            </p>
             <Row>
               <Col span={18} offset={3}>
                 <Input placeholder={"Address"} onChange={this.updateAddKey} />
@@ -275,7 +265,7 @@ class KVFiles extends React.Component {
     const end = (1 + this.state.page) * RECORDS_PER_PAGE;
     const data = this.state.records.slice(start, end)
     const extraLink = (
-        <Button type="link" onClick={() => { this.setState({ isAdding: true })}}>Add Addresses</Button>
+      <Button type="link" onClick={() => { this.setState({ isAdding: true })}}>Add Addresses</Button>
     )
     return (
       <Card title={'Saved Addresses'} extra={extraLink} bordered={true}>
@@ -309,8 +299,8 @@ class KVFiles extends React.Component {
             </Table>
             <br/>
             <center>
-              <Row>
-                <Col span={3} offset={4}>
+              <Row justify='center'>
+                <Col span={3}>
                   <Button disabled={!hasPrevPage} 
                           onClick={() => { this.setState({ page: this.state.page - 1 })}}
                   >
@@ -333,7 +323,7 @@ class KVFiles extends React.Component {
                   </Button>
                 </Col>
               </Row>
-              <Row>
+              <Row justify='center'>
                 {this.getNumSelected() > 0 ? (
                   <Button type="danger" 
                           onClick={this.removeSelected.bind(this)}
