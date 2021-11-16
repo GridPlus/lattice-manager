@@ -209,7 +209,11 @@ class Connect extends React.Component {
           <center>
             {this.renderMsg()}
             <Card bordered={true}>
-              <a href="https://gridplus.io/lattice" target={"_blank"} rel="noopener noreferrer">
+              <a  className='lattice-a'
+                  href="https://gridplus.io/lattice" 
+                  target='_blank' 
+                  rel='noopener noreferrer'
+              >
                 {keyringName ? (
                   <h2 style={{margin: "10px 0 0 0"}}>Lattice Connector <LinkOutlined/></h2>
                 ) : (

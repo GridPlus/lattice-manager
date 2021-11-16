@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Checkbox, Collapse, Dropdown, Input, Menu, Row, Table } from 'antd'
+import { Button, Card, Checkbox, Col, Collapse, Dropdown, Input, Menu, Row, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import './styles.css'
@@ -89,23 +89,26 @@ class Settings extends React.Component {
     const { customEndpoint='' } = this.state.settings;
     return (
       <Card>
-        <h3>Connection Endpoint:</h3>
-        <p>
-          If you wish to route messages and connections through your own endpoint, you may specify it here.&nbsp;
-          Otherwise leave blank.&nbsp; See&nbsp;
-          <a  href="https://github.com/GridPlus/lattice-connect"
-              className='lattice-a'
-              target="_blank" 
-              rel="noopener noreferrer">
-            this
-          </a> for more information.
-        </p>
-        <div>
-          <Input  placeholder="host:port" 
-                  defaultValue={customEndpoint} 
-                  onChange={this.updateCustomEndpoint.bind(this)}/>
-        </div>
-        <br/>
+        <Row justify='center'>
+          <Col span={20}>
+            <h3>Connection Endpoint:</h3>
+            <p>
+              If you wish to route messages and connections through your own endpoint, you may specify it here.&nbsp;
+              Otherwise leave blank.&nbsp; See&nbsp;
+              <a  href="https://github.com/GridPlus/lattice-connect"
+                  className='lattice-a'
+                  target="_blank" 
+                  rel="noopener noreferrer">
+                this
+              </a> for more information.
+            </p>
+            <div>
+              <Input  placeholder="host:port" 
+                      defaultValue={customEndpoint} 
+                      onChange={this.updateCustomEndpoint.bind(this)}/>
+            </div>
+          </Col>
+        </Row>
       </Card>
     )
   }
@@ -200,15 +203,19 @@ class Settings extends React.Component {
       .forEach((name) => { data.push({ name }) })
     return (
       <Card>
-        <h3>Third Party Connections</h3>
-        <p>
-          Manage connections to your Lattice. Third party apps should be listed here if they are connected to your device.
-        </p>
-        <Collapse>
-          <Collapse.Panel header={`Connections List (${data.length})`}>
-            <Table dataSource={data} columns={cols}/>
-          </Collapse.Panel>
-        </Collapse>
+        <Row justify='center'>
+          <Col span={20}>
+            <h3>Third Party Connections</h3>
+            <p>
+              Manage connections to your Lattice. Third party apps should be listed here if they are connected to your device.
+            </p>
+            <Collapse>
+              <Collapse.Panel header={`Connections List (${data.length})`}>
+                <Table dataSource={data} columns={cols}/>
+              </Collapse.Panel>
+            </Collapse>
+          </Col>
+        </Row>
       </Card>
     )
   }

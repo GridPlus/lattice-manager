@@ -1,10 +1,10 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Col, Input, Modal, Result, Row, Table, Tabs, Tag } from 'antd'
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import './styles.css'
-import { constants, } from '../util/helpers';
-const HELP_LINK = "https://docs.gridplus.io/gridplus-web-wallet/use-ethereum-smart-contract-abi-function-definitions"
+import { constants } from '../util/helpers';
 const MAX_SPAN_W = 24;
 const defaultState = {
   contract: null, defs: [], success: false, loading: false, customDefs: [], customDefsStr: '',
@@ -517,17 +517,6 @@ class EthContracts extends React.Component {
     }
     return (
       <div>
-<<<<<<< HEAD
-        <p><i>Add smart contract data for more readable transactions on your Lattice1! Note that not all
-        functions may be added for a given app.&nbsp;
-        <a  href={HELP_LINK}
-            target={"_blank"}
-            rel={"noopener noreferrer"}>
-          (More info)
-        </a>
-        </i></p>
-=======
->>>>>>> 79431ef (Finishes landing page)
         {this.renderTabs()}
         {f()}
       </div>
@@ -540,11 +529,13 @@ class EthContracts extends React.Component {
         {this.renderModal()}
         {this.renderBanner()}
         <Card title={<div>
-          <h3>Load Contract Data&nbsp;
-            <a  href={HELP_LINK}
-              target={"_blank"}
-              rel={"noopener noreferrer"}>
-              <Icon type="question-circle"/>
+          <h3>Load Contract Data&nbsp;&nbsp;
+            <a  className='lattice-a'
+                href={constants.CONTRACTS_HELP_LINK}
+                target='_blank'
+                rel='noopener noreferrer'
+            >
+              <QuestionCircleOutlined/>
             </a>
           </h3>
         </div>} bordered={true}>
