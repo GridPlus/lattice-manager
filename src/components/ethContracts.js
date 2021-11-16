@@ -1,16 +1,11 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Input, Modal, Result, Row, Table, Tabs, Tag } from 'antd'
+import { Alert, Button, Card, Col, Input, Modal, Result, Row, Table, Tabs, Tag } from 'antd'
 import { PageContent } from './index'
 import './styles.css'
 import { constants, } from '../util/helpers';
-
 const HELP_LINK = "https://docs.gridplus.io/gridplus-web-wallet/use-ethereum-smart-contract-abi-function-definitions"
-
-// Approximate of seconds each def takes to load. 2 defs load per request
-// This is just a guesstimate for display purposes
-const SEC_PER_DEF = 1.2; 
-
+const MAX_SPAN_W = 24;
 const defaultState = {
   contract: null, defs: [], success: false, loading: false, customDefs: [], customDefsStr: '',
 }
@@ -311,15 +306,11 @@ class EthContracts extends React.Component {
         <center>
         <p className='lattice-h3'>{PACKS[key].name}</p>
         {this.state.packData[key] ? (
-          <p>
-            (
-              <Button type="link" onClick={() => {
-                console.log('setting key', key)
-                  this.setState({ selectedPackKey: key, success: false, loading: false }, 
-                  this.showModal.bind(this)) }}
-              >View Contents</Button>
-            )
-          </p>
+          <Button type="link" onClick={() => {
+            console.log('setting key', key)
+              this.setState({ selectedPackKey: key, success: false, loading: false }, 
+              this.showModal.bind(this)) }}
+          >View Contents</Button>
         ) : null}
         {this.state.packData[key] ? (
           <div>
@@ -336,7 +327,7 @@ class EthContracts extends React.Component {
             null
             :
             (
-              <Button size="large" type="primary" loading={shouldLoad}
+              <Button type="primary" loading={shouldLoad}
                       onClick={() => {
                         this.setState({ defs: this.state.packData[key].defs, selectedPackKey: key, success: false, loading: false }, 
                         this.addDefs)}}
@@ -353,7 +344,7 @@ class EthContracts extends React.Component {
         isLoadingDefs === false
         ?
         (
-          <Button size="large" onClick={() => { this.loadPackData(key) }}>
+          <Button type='link' onClick={() => { this.loadPackData(key) }}>
             Check Latest
           </Button>
         )
@@ -369,7 +360,13 @@ class EthContracts extends React.Component {
       <div>
         <p>
           You can install contract data from any supported contract which has been verified by&nbsp;
-          <a href="https://etherscan.io" target={"_blank"}>Etherscan</a>. Search for a verified smart contract:
+          <a  className='lattice-a' 
+              href="https://etherscan.io" 
+              target='_blank'
+              rel='noopener noreferrer'
+          >
+            Etherscan
+          </a>. Search for a verified smart contract:
         </p>
         <Input.Search
           placeholder="Contract address"
@@ -502,7 +499,11 @@ class EthContracts extends React.Component {
     for (let i = 0; i < numRows; i++) {
       const cards = [];
       for (let j = 0; j < PACKS_PER_ROW; j++) {
-        cards.push(this.renderPack(Object.keys(PACKS)[(i * PACKS_PER_ROW) + j]))        
+        cards.push(
+          <Col span={Math.floor(MAX_SPAN_W / PACKS_PER_ROW)}>
+            {this.renderPack(Object.keys(PACKS)[(i * PACKS_PER_ROW) + j])}
+          </Col>
+        )        
       }
       rows.push(
         <Row justify="center" key={`row-${i}`}>{cards}</Row>
