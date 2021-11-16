@@ -110,7 +110,13 @@ class KVFiles extends React.Component {
           stateRecords[idx + opts.start] = record
         }
       })
+
+      const possiblePages = Math.floor(res.total / RECORDS_PER_PAGE);
+      const page =  this.state.page >= possiblePages ? 
+                    Math.max(0, possiblePages - 1) :
+                    this.state.page;
       this.setState({
+        page,
         totalRecords: res.total,
         records: stateRecords,
         loading: false,
