@@ -517,6 +517,7 @@ class EthContracts extends React.Component {
     }
     return (
       <div>
+<<<<<<< HEAD
         <p><i>Add smart contract data for more readable transactions on your Lattice1! Note that not all
         functions may be added for a given app.&nbsp;
         <a  href={HELP_LINK}
@@ -525,6 +526,8 @@ class EthContracts extends React.Component {
           (More info)
         </a>
         </i></p>
+=======
+>>>>>>> 79431ef (Finishes landing page)
         {this.renderTabs()}
         {f()}
       </div>
