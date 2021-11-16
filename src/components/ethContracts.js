@@ -219,7 +219,11 @@ class EthContracts extends React.Component {
             <Table.Column title='Address' dataIndex='address' key='address'
               render={addr => (
                 <Tag color="blue">
-                  <a href={`https://etherscan.io/address/${addr}`} target={"_blank"}>
+                  <a className="lattice-a"
+                      href={`https://etherscan.io/address/${addr}`} 
+                      target={"_blank"}
+                      rel={"noopener noreferrer"}
+                  >
                     {`${addr.slice(0, 10)}...${addr.slice(addr.length-8, addr.length)}`}
                   </a>
                 </Tag>
@@ -228,7 +232,7 @@ class EthContracts extends React.Component {
             <Table.Column title='App' dataIndex='app' key='app'/>
             <Table.Column title='Source' dataIndex='website' key='website'
               render={url => (
-                <a href={url} target={"_blank"}>Link</a>
+                <a className="lattice-a" href={url} target={"_blank"} rel={"noopener noreferrer"}>Link</a>
               )}
             />
           </Table>

@@ -1,7 +1,8 @@
 import React from 'react'
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Checkbox, Col, Icon, Input, Row, Spin, Table } from 'antd'
+import { Alert, Button, Card, Checkbox, Col, Input, Row, Spin, Table } from 'antd'
 import { allChecks } from '../util/sendChecks';
+import { LoadingOutlined } from '@ant-design/icons';
 const ADDRESS_RECORD_TYPE = 0
 const RECORDS_PER_PAGE = 10;
 const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
@@ -206,7 +207,7 @@ class KVFiles extends React.Component {
     if (this.state.loading) {
       return (
         <center>
-          <Spin tip="Loading..." indicator={<Icon type="loading"/>}/>
+          <Spin tip="Loading..." indicator={<LoadingOutlined/>}/>
         </center>
       )
     }
@@ -287,7 +288,7 @@ class KVFiles extends React.Component {
               />
               <Table.Column title="Address" dataIndex="key" key="key"
                 render={key => (
-                  <a  class='lattice-a' 
+                  <a  className='lattice-a' 
                       href={`https://etherscan.io/address/${key}`} 
                       target="_blank" 
                       rel="noopener noreferrer"

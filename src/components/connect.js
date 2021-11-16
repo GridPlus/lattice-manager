@@ -1,6 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Modal } from 'antd'
+import { Alert, Button, Card, Col, Collapse, Input, Row, Modal } from 'antd'
+import { LinkOutlined, WalletOutlined } from '@ant-design/icons';
 import { Settings } from './index'
 const { Panel } = Collapse;
 
@@ -210,9 +211,9 @@ class Connect extends React.Component {
               <a href="https://gridplus.io/lattice" target={"_blank"}>
                 <img alt="GridPlus" src={'/gridplus-logo-black.png'}/>
                 {keyringName ? (
-                  <h2 style={{margin: "10px 0 0 0"}}>Lattice Connector <Icon type="link"/></h2>
+                  <h2 style={{margin: "10px 0 0 0"}}>Lattice Connector <LinkOutlined/></h2>
                 ) : (
-                  <h2 style={{margin: "10px 0 0 0"}}>Web Wallet <Icon type="wallet"/></h2>
+                  <h2 style={{margin: "10px 0 0 0"}}>Web Wallet <WalletOutlined/></h2>
                 )}
               </a>
               {keyringName ? (<div><br/><i><h3>Connect to:</h3></i><h2>{keyringName}</h2></div>) : null}

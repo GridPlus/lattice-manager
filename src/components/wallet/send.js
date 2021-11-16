@@ -1,6 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Col, Row, Input, Icon, Empty, Statistic, notification, Select, Slider } from 'antd'
+import { Alert, Button, Card, Col, Row, Input, Empty, Statistic, notification, Select, Slider } from 'antd'
+import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { allChecks } from '../../util/sendChecks';
 import { DeprecatedEthWallet } from '../index'
 import { 
@@ -402,9 +403,9 @@ class Send extends React.Component {
     const name = `${id}Check`;
     const isValid = this.state[name];
     if (isValid === true) {
-      return (<Icon type="check-circle" theme="filled" style={{color: 'green'}}/>)
+      return (<CheckCircleOutlined theme="filled" style={{color: 'green'}}/>)
     } else if (isValid === false) {
-      return (<Icon type="close-circle" theme="filled" style={{color: 'red'}}/>)
+      return (<CloseCircleOutlined theme="filled" style={{color: 'red'}}/>)
     } else {
       return;
     }
