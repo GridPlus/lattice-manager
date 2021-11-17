@@ -289,7 +289,6 @@ class EthContracts extends React.Component {
         <p className='lattice-h3'>{PACKS[key].name}</p>
         {this.state.packData[key] ? (
           <Button type="link" onClick={() => {
-            console.log('setting key', key)
               this.setState({ selectedPackKey: key, success: false, loading: false }, 
               this.showModal.bind(this)) }}
           >View Contents</Button>

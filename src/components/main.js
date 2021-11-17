@@ -635,7 +635,7 @@ class Main extends React.Component {
       walletTag = activeWallet.external === true ?  (
         <Button type="primary" ghost onClick={this.refreshWallets} size={size}><CreditCardOutlined/> SafeCard <ReloadOutlined/></Button>
       ) : (
-        <Button type="default" ghost onClick={this.refreshWallets} size={size}><CheckOutlined/> Lattice1 <ReloadOutlined/></Button>
+        <Button type="default" ghost onClick={this.refreshWallets} size={size}><CheckOutlined/> Lattice <ReloadOutlined/></Button>
       )
     }
     if (walletTag) extra.push((
@@ -791,7 +791,7 @@ class Main extends React.Component {
       // The window should close automatically, but just in case something goes wrong...
       return (
         <Loading isMobile={() => { this.isMobile() }}
-                  msg={"Successfully connected to your Lattice1! You may close this window."}
+                  msg={"Successfully connected to your Lattice! You may close this window."}
                   spin={false}/>
       )
     } else if (!hasActiveWallet) {
