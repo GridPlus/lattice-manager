@@ -3,7 +3,7 @@ const bech32 = require('bech32').bech32;
 const { ethers } = require('ethers');
 
 const constants = {
-    DEFAULT_APP_NAME: 'GridPlus Web Wallet',
+    DEFAULT_APP_NAME: 'Lattice Manager',
     ENV: process.env.REACT_APP_ENV || 'prod',
     BASE_SIGNING_URL: process.env.REACT_APP_BASE_SIGNING_URL || 'https://signing.gridpl.us',
     GRIDPLUS_CLOUD_API: process.env.REACT_APP_GRIDPLUS_CLOUD_API || 'https://pay.gridplus.io:3000',
@@ -313,7 +313,6 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
         filteredUtxos.push(utxo);
       }
     })
-    console.log('utxos', utxos)
     const sortedUtxos = filteredUtxos.sort((a, b) => { return a.value-b.value });
     let sum = 0;
     let numInputs = 0;

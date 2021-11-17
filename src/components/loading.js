@@ -12,7 +12,7 @@ class Loading extends React.Component {
           {this.props.spin !== false ? (
             <Spin indicator={<LoadingOutlined/>} />
           ) : null}
-          <p>{this.props.msg ? this.props.msg : "Waiting for data from your Lattice1"}</p>
+          <p>{this.props.msg ? this.props.msg : "Waiting for data from your Lattice"}</p>
           {this.props.onCancel ? (
             <Button type='link' onClick={this.props.onCancel}>
               Cancel

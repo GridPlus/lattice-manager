@@ -3,6 +3,7 @@ import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Col, Input, Row, Modal } from 'antd'
 import { DesktopOutlined, LinkOutlined } from '@ant-design/icons';
 import { Settings } from './index'
+import { constants } from '../util/helpers'
 
 class Connect extends React.Component {
   constructor(props) {
@@ -25,7 +26,7 @@ class Connect extends React.Component {
   }
 
   componentDidUpdate() {
-    if (this.props.name !== 'GridPlus Web Wallet' && document.title !== 'Lattice Connector') {
+    if (this.props.name !== constants.DEFAULT_APP_NAME && document.title !== 'Lattice Connector') {
       document.title = 'Lattice Connector'
     }
   }
@@ -162,7 +163,7 @@ class Connect extends React.Component {
      return (
       <div>
         <Modal
-          title={this.props.name === 'GridPlus Web Wallet' ? this.props.name : 'Lattice1 Connector 🔗'}
+          title={this.props.name === constants.DEFAULT_APP_NAME ? this.props.name : 'Lattice Connector 🔗'}
           footer={null}
           visible={this.state.modal}
           onOk={this.hideModal.bind(this)}
@@ -200,7 +201,7 @@ class Connect extends React.Component {
   render() {
     const spanWidth = this.props.isMobile() ? 24 : 10;
     const spanOffset = this.props.isMobile() ? 0 : 7;
-    const keyringName = this.props.name === 'GridPlus Web Wallet' ? null : this.props.name
+    const keyringName = this.props.name === constants.DEFAULT_APP_NAME ? null : this.props.name
     const tooLong = keyringName !== null && keyringName.length < 5;
     return (
       <Row>

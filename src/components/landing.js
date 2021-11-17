@@ -11,9 +11,9 @@ class Landing extends React.Component {
       <Card bordered={true}>
         <Row justify='center'>
           <Col span={20}>
-            <p className='lattice-h1'><DesktopOutlined/>&nbsp;Lattice1 Manager</p>
+            <p className='lattice-h1'><DesktopOutlined/>&nbsp;Lattice Manager</p>
             <p className='lattice-h4'>
-              Manage secure data on your Lattice1 hardware wallet device for a better web3 experience:
+              Manage secure data on your Lattice hardware wallet device for a better web3 experience:
             </p>
           </Col>
         </Row>
