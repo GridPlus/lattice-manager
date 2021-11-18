@@ -15,6 +15,7 @@ class Landing extends React.Component {
             <p className='lattice-h4'>
               Manage secure data on your Lattice hardware wallet device for a better web3 experience:
             </p>
+            <br/>
           </Col>
         </Row>
         <Row justify='center'>
@@ -31,6 +32,7 @@ class Landing extends React.Component {
               <br/>
               <i>Give names to your favorite contracts or recipient addresses.</i>
             </p>
+            <br/>
           </Col>
         </Row>
         <Row justify='center'>
