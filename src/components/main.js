@@ -577,7 +577,7 @@ class Main extends React.Component {
             <SettingOutlined/>
             <span>Settings</span>
           </Menu.Item>
-          <Menu.SubMenu title="Wallet" key="submenu-wallet">
+          <Menu.SubMenu title="BTC Wallet" key="submenu-wallet">
             <Menu.Item key="menu-wallet">
               <WalletOutlined/>
               <span>Wallet</span>
