@@ -4,7 +4,6 @@ import { Button, Card, Row, Input, Empty } from 'antd'
 import { CopyOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { getCurrencyText, validateBtcAddr } from '../../util/helpers'
-import { DeprecatedEthWallet } from '../index'
 const QRCode = require('qrcode.react');
 const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
@@ -106,7 +105,7 @@ class Receive extends React.Component {
 
   render() {
     if (this.props.currency === 'ETH') {
-      return (<DeprecatedEthWallet/>)
+      return;
     }
     const content = (
       <center>

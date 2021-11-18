@@ -8,7 +8,6 @@ import {
 } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { constants, getCurrencyText } from '../../util/helpers'
-import { DeprecatedEthWallet } from '../index'
 const GREEN = "#00FF00";
 const RED = "#FF0000";
 
@@ -304,7 +303,7 @@ class Wallet extends React.Component {
 
   renderContent() {
     if (this.props.currency === 'ETH')
-      return (<DeprecatedEthWallet/>);
+      return;
     return (
       <div>
         <Card title={`${getCurrencyText(this.props.currency)} Wallet`} bordered={true}>

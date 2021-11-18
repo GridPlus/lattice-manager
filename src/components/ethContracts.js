@@ -28,7 +28,8 @@ const PACKS = {
   BALANCER: {
     name: 'Balancer Pack',
     desc: 'Contract definitions from Balancer V2. NOTE: Some unsupported definitions were skipped.',
-    url: 'v2_balancer'
+    url: 'v2_balancer',
+    website: 'https://docs.balancer.fi/v/v1/smart-contracts/addresses',
   },  
   CRYPTEX: {
     name: 'Cryptex Pack',
@@ -38,12 +39,14 @@ const PACKS = {
   CURVE: {
     name: 'Curve Pack',
     desc: 'Contract definitions from Curve Finance',
-    url: 'v2_curve'
+    url: 'v2_curve',
+    website: 'https://curve.readthedocs.io/ref-addresses.html',
   },
   GNOSIS: {
     name: 'Gnosis Safe Pack',
     desc: 'Contract definitions for the Gnosis Safe application',
-    url: 'v2_gnosis'
+    url: 'v2_gnosis',
+    website: 'https://github.com/gnosis/safe-contracts/blob/v1.3.0/CHANGELOG.md',
   },
   MAKER: {
     name: 'Maker Pack',
@@ -53,17 +56,21 @@ const PACKS = {
   OPYN: {
     name: 'Opyn Pack',
     desc: 'Contract definitions from Opyn V3',
-    url: 'v2_opyn'
+    url: 'v2_opyn',
+    website: 'https://opyn.gitbook.io/opyn/contracts/addressbook-1',
   },
   SUSHISWAP: {
     name: 'SushiSwap Pack',
     desc: 'Contract definitions from SushiSwap',
-    url: 'v2_uniswap'
+    url: 'v2_uniswap',
+    app: 'SushiSwap',
+    website: 'https://dev.sushi.com/sushiswap/contracts', 
   },
   UNISWAP: {
     name: 'UniSwap Pack',
     desc: 'Contract definitions from Uniswap V2 and V3.',
-    url: 'v2_uniswap'
+    url: 'v2_uniswap',
+    website: 'https://github.com/Uniswap/v3-periphery/blob/main/deploys.md',
   },
   YEARN: {
     name: 'Yearn Pack',
@@ -183,11 +190,16 @@ class EthContracts extends React.Component {
       return
     const contracts = []
     this.state.packData[this.state.selectedPackKey].metadata.forEach((d) => {
+      // Adding these hacky references since the main source of data is in an S3 bucket
+      // TODO: Overhaul how these packs are loaded/stored/sourced... eventually
+      const localPack = PACKS[this.state.selectedPackKey];
+      const website = localPack.website ? localPack.website : d.website;
+      const app = localPack.app ? localPack.app : d.app;
       contracts.push({
         key: d.key,
         address: d.address,
-        app: d.app,
-        website: d.website
+        app,
+        website
       })
     })
     return (
@@ -485,7 +497,7 @@ class EthContracts extends React.Component {
       const cards = [];
       for (let j = 0; j < PACKS_PER_ROW; j++) {
         cards.push(
-          <Col span={Math.floor(MAX_SPAN_W / PACKS_PER_ROW)}>
+          <Col span={Math.floor(MAX_SPAN_W / PACKS_PER_ROW)} key={`col_${i}_${j}`}>
             {this.renderPack(Object.keys(PACKS)[(i * PACKS_PER_ROW) + j])}
           </Col>
         )        

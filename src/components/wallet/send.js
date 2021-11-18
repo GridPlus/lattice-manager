@@ -4,7 +4,6 @@ import { Alert, Button, Card, Row, Input, InputNumber, Empty, Statistic, notific
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { allChecks } from '../../util/sendChecks';
-import { DeprecatedEthWallet } from '../index'
 import { 
   constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes, getCurrencyText, isValidENS, resolveENS, toHexStr 
 } from '../../util/helpers'
@@ -641,7 +640,7 @@ class Send extends React.Component {
 
   render() {
     if (this.props.currency === 'ETH') {
-      return (<DeprecatedEthWallet/>)
+      return;
     }
     const content = (
       <center>

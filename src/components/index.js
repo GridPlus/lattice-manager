@@ -19,9 +19,6 @@ export { default as Loading } from './loading'
 export { default as Error } from './error'
 export { default as ValidateSig } from './validateSig'
 
-// Deprecation notices
-export { DeprecatedEthWallet } from './deprecation/index'
-
 // Wallet
 export { Wallet } from './wallet/index'
 export { Receive } from './wallet/index'
