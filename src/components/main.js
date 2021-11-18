@@ -15,6 +15,7 @@ import { constants, getCurrencyText, setEthersProvider, getLocalStorageSettings 
 const { Content, Footer, Sider } = Layout;
 const { Option } = Select;
 const LOGIN_PARAM = 'loginCache';
+const DEFAULT_MENU_ITEM = 'menu-landing';
 
 class Main extends React.Component {
   constructor(props) {
@@ -22,7 +23,7 @@ class Main extends React.Component {
     this.state = {
       name: constants.DEFAULT_APP_NAME,
       currency: 'BTC',
-      menuItem: 'menu-landing',
+      menuItem: DEFAULT_MENU_ITEM,
       // GridPlusSDK session object
       session: null,
       // WebWorker that will periodically lookup state on available addrs
@@ -472,6 +473,7 @@ class Main extends React.Component {
     if (this.state.waiting === true)
       return;
     this.wait("Refreshing wallets")
+    this.setState({ waiting: true })
     this.state.session.refreshWallets((err) => {
       if (err === constants.LOST_PAIRING_ERR)
         return this.handleLostPairing();
@@ -746,7 +748,7 @@ class Main extends React.Component {
             isMobile={() => this.isMobile()}
           />
         )
-      case 'menu-landing':
+      case DEFAULT_MENU_ITEM:
         return (
           <Landing isMobile={() => { this.isMobile() }}/>
         );

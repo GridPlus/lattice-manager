@@ -29,6 +29,7 @@ class KVFiles extends React.Component {
     this.updateAddKey = this.updateAddKey.bind(this)
     this.updateAddVal = this.updateAddVal.bind(this)
     this.addRecord = this.addRecord.bind(this)
+    this.fetchRecords = this.fetchRecords.bind(this)
   }
 
   componentDidMount() {
@@ -93,17 +94,19 @@ class KVFiles extends React.Component {
     this.props.session.client.getKvRecords(opts, (err, res) => {
       if (err) {
         if (retries === 0) {
-          this.setState({ error: err, retryFunc: this.fetchRecords })
+          this.setState({ error: err, retryFunc: this.fetchRecords, loading: false })
+          return;
         } else {
           return this.fetchRecords(retries-1)
         }
-      } else if (!res.records) {
+      } else if (!res || !res.records) {
         this.setState({ loading: false, error: 'Failed to fetch tags' });
         return;
       }
       // Update state with the new records. Swap existing records if needed
       // or add new records if the current state doesn't include their indices.
-      const stateRecords = JSON.parse(JSON.stringify(this.state.records))
+      const _stateRecords = this.state && this.state.records ? this.state.records : [];
+      const stateRecords = JSON.parse(JSON.stringify(_stateRecords))
       res.records.forEach((record, idx) => {
         if (idx + opts.start > stateRecords.length) {
           stateRecords.push(record)
@@ -111,8 +114,7 @@ class KVFiles extends React.Component {
           stateRecords[idx + opts.start] = record
         }
       })
-
-      const possiblePages = Math.floor(res.total / RECORDS_PER_PAGE);
+      const possiblePages = Math.ceil(res.total / RECORDS_PER_PAGE);
       const page =  this.state.page >= possiblePages ? 
                     Math.max(0, possiblePages - 1) :
                     this.state.page;
@@ -127,14 +129,19 @@ class KVFiles extends React.Component {
   }
 
   addRecord() {
-    let isDup = false;
+    let isDupKey = false;
+    let isDupVal = false;
     this.state.records.forEach((record) => {
-      if ((record.key === this.state.recordToAdd.key) ||
-          (record.val === this.state.recordToAdd.val))
-        isDup = true;
+      if (record.key === this.state.recordToAdd.key)
+        isDupKey = true;
+      if (record.val === this.state.recordToAdd.val)
+        isDupVal = true;
     })
-    if (isDup) {
-      this.setState({ error: 'Tag already exists on your device' });
+    if (isDupKey) {
+      this.setState({ error: 'You already have a tag with this address on your device.' });
+      return;
+    } else if (isDupVal) {
+      this.setState({ error: 'You already have a tag with this name on your device.' });
       return;
     }
     const opts = {
@@ -188,16 +195,16 @@ class KVFiles extends React.Component {
           <Alert
             message="Error"
             description={this.state.error}
+            action={this.state.retryFunc ? (
+              <Button type="danger" onClick={() => {
+                this.state.retryFunc()
+                this.setState({ retryFunc: null, err: null })
+              }}>Retry</Button>
+            ) : null}
             type="error"
             closable
             onClose={() => { this.setState({ error: null })}}
           />
-          {this.retryFunc ? (
-            <Button type="danger" onClick={() => {
-              this.state.retryFunc()
-              this.setState({ retryFunc: null, err: null })
-            }}>Retry</Button>
-          ) : null}
         </div>
       )
     }

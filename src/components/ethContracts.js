@@ -121,6 +121,10 @@ class EthContracts extends React.Component {
       fetch(`${constants.GRIDPLUS_CLOUD_API}/contractData/${input}`)
       .then((response) => response.json())
       .then((resp) => {
+        // Map confusing error strings to better descriptions
+        if (resp.err === 'Contract source code not verified') {
+          resp.err = 'Contract source code not published to Etherscan or not verified. Cannot determine data.'
+        }
         if (resp.err) {
           this.setState({ error: resp.err.toString(), ...defaultState })
         } else {
