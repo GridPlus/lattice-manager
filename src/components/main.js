@@ -1,7 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
 import './styles.css'
-import { Alert, Button, Layout, Menu, Select, PageHeader, Tag, Tooltip } from 'antd';
+import { Alert, Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
 import { 
   HomeOutlined, AuditOutlined, DollarOutlined, TagsOutlined, 
   WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
@@ -11,9 +11,8 @@ import { default as SDKSession } from '../sdk/sdkSession';
 import { 
   Connect, Error, Landing, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
 } from './index'
-import { constants, getCurrencyText, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
+import { constants, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
-const { Option } = Select;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
 

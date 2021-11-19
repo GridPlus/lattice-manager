@@ -181,18 +181,11 @@ class Connect extends React.Component {
       err = this.state.errMsg;
     else if (this.props.errMsg)
       err = this.props.errMsg;
-
-      const desc = (
-            <Button onClick={this.handleSubmit} type="primary">
-              Retry
-            </Button>
-      )
     if (err)
       return (
         <Alert  message={<p><b>Error:</b><br/>{err}</p>} 
                 type={"error"} 
                 style={{margin: "20px 0 0 0"}}
-                description={desc}
                 closable/>
       );
     return;
