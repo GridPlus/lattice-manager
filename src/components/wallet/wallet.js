@@ -1,6 +1,6 @@
 
 import React from 'react';
-import 'antd/dist/antd.css'
+import 'antd/dist/antd.dark.css'
 import { Button, Avatar, Divider, Statistic, List, Row, Card, Icon, Tag, Spin} from 'antd';
 import { constants, getCurrencyText } from '../../util/helpers'
 import { DeprecatedEthWallet } from '../index'

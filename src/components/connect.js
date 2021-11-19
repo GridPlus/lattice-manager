@@ -1,5 +1,5 @@
 import React from 'react';
-import 'antd/dist/antd.css'
+import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Modal } from 'antd'
 import { Settings } from './index'
 const { Panel } = Collapse;

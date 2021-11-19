@@ -6,7 +6,7 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
-    "antd": "^3.26.18",
+    "antd": "^4.16.13",
     "bech32": "^2.0.0",
     "bignumber.js": "^9.0.1",
     "bs58check": "^2.1.2",

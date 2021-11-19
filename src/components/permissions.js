@@ -1,8 +1,16 @@
+// NOTE: This feature has been shelved for now. The problem is this:
+// 1. We deprecated the ETH wallet and are in the process of deprecating the BTC wallet too
+// 2. Only the paired requester can setup a permission and the web wallet (rebanded manager)
+//    is itself a paired requester.
+// Ideally we could have a true manager that can create a permission on behalf of a paired
+// requester, otherwise the requester needs to have an interface to setup the permission.
+// If we are to use this app as the "manager", we cannot manage permissions on it.
+// FOR NOW, I AM HIDING THIS FEATURE IN main.js
+
 import React from 'react';
-import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Icon, Input, Row, Select, Spin } from 'antd'
+import 'antd/dist/antd.dark.css'
+import { Alert, Button, Card, Col, Dropdown, Icon, Input, Menu, Row, Select, Spin } from 'antd'
 import './styles.css'
-import { constants, } from '../util/helpers';
 const BN = require('bignumber.js');
 const HOURS = 3600;
 const DAYS = 86400;
@@ -40,7 +48,7 @@ class Permissions extends React.Component {
   }
 
   updateAsset(x) {
-    this.setState({ asset: JSON.parse(x) })
+    this.setState({ asset: assets[x.key]})
   }
 
   updateTimeMultiplier(x) {
@@ -125,19 +133,22 @@ class Permissions extends React.Component {
   }
 
   renderCard() {
-    const assetSelect = (
-      <Select defaultValue={JSON.stringify(assets.ETH)} onChange={this.updateAsset}>
-        <Select.Option value={JSON.stringify(assets.ETH)}>ETH</Select.Option>
-        <Select.Option value={JSON.stringify(assets.BTC)}>BTC</Select.Option>
-      </Select>
-    )
-
     const timeMultiplierSelect = (
       <Select defaultValue={HOURS} onChange={this.updateTimeMultiplier}>
         <Select.Option value={HOURS}>hours</Select.Option>
         <Select.Option value={DAYS}>days</Select.Option>
       </Select>
     )
+
+    const currencyMenu = (
+      <Menu onClick={this.updateAsset}>
+        {Object.keys(assets).map((key) => {
+          return (
+            <Menu.Item key={key}>{key}</Menu.Item>
+          )
+        })}
+      </Menu>
+    );
 
     return (
       <div>
@@ -155,12 +166,20 @@ class Permissions extends React.Component {
         <i>This is a feature prototype. In the future, GridPlus intends to expand this functionality
         to other assets and more general contract interactions.</i>
         <br/><br/>
+        <p><b>Currency:</b></p>
+        <Row>
+          <Col span={12} offset={6}>
+            <Dropdown overlay={currencyMenu}>
+              <Button>{this.state.asset.name}</Button>
+            </Dropdown>
+          </Col>
+        </Row>
+        <br/>
         <p><b>Spending Limit:</b></p>
         <Row>
           <Col span={12} offset={6}>
             <Input type="text"
                   id="permission-value" 
-                  addonAfter={assetSelect}
                   value={this.state.value} 
                   onChange={this.updateValue.bind(this)}
             />

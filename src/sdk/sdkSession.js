@@ -486,6 +486,7 @@ class SDKSession {
       baseUrl = `http://lattice-${deviceID}.local:8080`
       tmpTimeout = 5000 // Shorten the timeout even more since we should discover quickly if device is on LAN
     }
+    console.log('trying to connect')
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
@@ -506,7 +507,9 @@ class SDKSession {
     } catch (err) {
       return cb(err.toString());
     }
+    console.log('client', client)
     client.connect(deviceID, (err) => {
+      console.log('connected?', err)
       if (err) {
         if (_triedLocal === false) {
           console.warn('Failed to connect to Lattice over LAN. Falling back to cloud routing.')

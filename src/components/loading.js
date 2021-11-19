@@ -1,5 +1,5 @@
 import React from 'react';
-import 'antd/dist/antd.css'
+import 'antd/dist/antd.dark.css'
 import { Button, Card, Col, Icon, Row, Spin } from 'antd'
 
 class Loading extends React.Component {

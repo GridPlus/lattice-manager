@@ -1,5 +1,5 @@
 import React from 'react';
-import 'antd/dist/antd.css'
+import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Col, Icon, Input, Modal, Result, Row, Select, Spin, Table, Tabs, Tag } from 'antd'
 import './styles.css'
 import { constants, } from '../util/helpers';
@@ -419,7 +419,11 @@ class EthContracts extends React.Component {
         <p>
           Here you can add ABI definitions manually. Please stick with
           Etherscan formatting (i.e. the contents of "Contract ABI" in the Contract tab -&nbsp;
-          <a href="https://etherscan.io/address/0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b#code" target={"_blank"}>
+          <a  class="lattice-a"
+              href="https://etherscan.io/address/0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b#code" 
+              target="_blank"
+              rel="noopener noreferrer"
+          >
           example</a>
           ).
         </p>

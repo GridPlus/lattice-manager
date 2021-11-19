@@ -1,5 +1,5 @@
 import React from 'react'
-import 'antd/dist/antd.css'
+import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Checkbox, Col, Icon, Input, Row, Spin, Table } from 'antd'
 import { allChecks } from '../util/sendChecks';
 const ADDRESS_RECORD_TYPE = 0
@@ -287,7 +287,11 @@ class KVFiles extends React.Component {
               />
               <Table.Column title="Address" dataIndex="key" key="key"
                 render={key => (
-                  <a href={`https://etherscan.io/address/${key}`} target="_blank" rel="noopener noreferrer">
+                  <a  class='lattice-a' 
+                      href={`https://etherscan.io/address/${key}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                  >
                     {`${key.slice(0, 10)}...${key.slice(key.length-8, key.length)}`}
                   </a>
                 )}
