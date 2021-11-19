@@ -1,34 +1,45 @@
-.site-collapse-custom-collapse .site-collapse-custom-panel {
-  background: #ffffff;
-  margin-bottom: 24px;
-  border: 0px;
-  overflow: hidden;
+.ant-btn-link {
+  color: #94B3FD;
 }
 
-.ant-menu-vertical .ant-menu-item, .ant-menu-vertical-left .ant-menu-item, .ant-menu-vertical-right .ant-menu-item, .ant-menu-inline .ant-menu-item, .ant-menu-vertical .ant-menu-submenu-title, .ant-menu-vertical-left .ant-menu-submenu-title, .ant-menu-vertical-right .ant-menu-submenu-title, .ant-menu-inline .ant-menu-submenu-title {
-  margin-top: 0px;
+.ant-tabs-tab {
+  color: #94B3FD;
 }
-
-.ant-page-header-heading-title {
-  /* color: rgba(255, 255, 255, 0.65); */
+.ant-tabs-tab-active {
   color: #fff;
 }
 
-.ant-page-header {
-  /* background: #001529; */
-  background: #000;
+.warning-a:hover {
+  color: red;
 }
 
-.ant-layout-sider {
-  /* background: #001529; */
-  background: #000;
+.ant-btn-background-ghost.ant-btn-primary {
+  color: #94B3FD;
+  border-color: #94B3FD;
+  text-shadow: none;
 }
-.ant-menu-dark, .ant-menu-dark .ant-menu-sub {
-  background: #000;
+
+.ant-spin {
+  color: #94B3FD;
 }
-.ant-menu .ant-menu-dark .ant-menu-root .ant-menu-inline {
-  background: #000;
+
+.lattice-a {
+  color: #94B3FD;
 }
-.ant-menu-item {
-  background: #000;
+
+.lattice-h1 {
+  font-size: 26px;
+}
+
+.lattice-h4 {
+  font-size: 16px;
+}
+
+.lattice-pairing-box {
+  border-radius: 25px;
+  letter-spacing: 20px;
+  margin: '20px 0 0 0';
+  text-align: center;
+  background-color: #94B3FD;
+  color: #141414;
 }

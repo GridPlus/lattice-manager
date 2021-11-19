@@ -1,8 +1,19 @@
+// NOTE: This feature has been shelved for now. The problem is this:
+// 1. We deprecated the ETH wallet and are in the process of deprecating the BTC wallet too
+// 2. Only the paired requester can setup a permission and the web wallet (rebanded manager)
+//    is itself a paired requester.
+// Ideally we could have a true manager that can create a permission on behalf of a paired
+// requester, otherwise the requester needs to have an interface to setup the permission.
+// If we are to use this app as the "manager", we cannot manage permissions on it.
+// FOR NOW, I AM HIDING THIS FEATURE IN main.js
+
 import React from 'react';
-import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Icon, Input, Row, Select, Spin } from 'antd'
-import './styles.css'
+import 'antd/dist/antd.dark.css'
+import { Alert, Button, Card, Col, Dropdown, Input, Menu, Row, Select, Spin } from 'antd'
+import { LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { constants, } from '../util/helpers';
+import { PageContent } from './index'
+import './styles.css'
 const BN = require('bignumber.js');
 const HOURS = 3600;
 const DAYS = 86400;
@@ -16,7 +27,6 @@ const assets = {
     decimals: 8,
   }
 }
-const HELP_LINK = "https://docs.gridplus.io/gridplus-web-wallet/how-to-set-and-use-spending-limits"
 
 class Permissions extends React.Component {
   constructor(props) {
@@ -40,7 +50,7 @@ class Permissions extends React.Component {
   }
 
   updateAsset(x) {
-    this.setState({ asset: JSON.parse(x) })
+    this.setState({ asset: assets[x.key]})
   }
 
   updateTimeMultiplier(x) {
@@ -109,7 +119,7 @@ class Permissions extends React.Component {
     } else if (this.state.loading) {
       return (
         <div>
-          <Spin indicator={(<Icon type="loading"/>)}/>
+          <Spin indicator={(<LoadingOutlined/>)}/>
           <br/>
         </div>
       )
@@ -125,13 +135,6 @@ class Permissions extends React.Component {
   }
 
   renderCard() {
-    const assetSelect = (
-      <Select defaultValue={JSON.stringify(assets.ETH)} onChange={this.updateAsset}>
-        <Select.Option value={JSON.stringify(assets.ETH)}>ETH</Select.Option>
-        <Select.Option value={JSON.stringify(assets.BTC)}>BTC</Select.Option>
-      </Select>
-    )
-
     const timeMultiplierSelect = (
       <Select defaultValue={HOURS} onChange={this.updateTimeMultiplier}>
         <Select.Option value={HOURS}>hours</Select.Option>
@@ -139,15 +142,27 @@ class Permissions extends React.Component {
       </Select>
     )
 
+    const currencyMenu = (
+      <Menu onClick={this.updateAsset}>
+        {Object.keys(assets).map((key) => {
+          return (
+            <Menu.Item key={key}>{key}</Menu.Item>
+          )
+        })}
+      </Menu>
+    );
+
     return (
       <div>
         <p>
           You can set spending limits for ETH and BTC. If you make a request from this web wallet that is under your
           spending limit, your Lattice will auto-sign the transaction. Note that this currently only works for simple 
           ETH and BTC transfers.&nbsp;
-          <a  href={HELP_LINK}
-              target={"_blank"}
-              rel={"noopener noreferrer"}>
+           <a className='lattice-a'
+              href={constants.PERMISSIONS_HELP_LINK}
+              target='_blank'
+              rel='noopener noreferrer'
+          >
             (More info)
           </a>        
         </p>
@@ -155,12 +170,20 @@ class Permissions extends React.Component {
         <i>This is a feature prototype. In the future, GridPlus intends to expand this functionality
         to other assets and more general contract interactions.</i>
         <br/><br/>
+        <p><b>Currency:</b></p>
+        <Row>
+          <Col span={12} offset={6}>
+            <Dropdown overlay={currencyMenu}>
+              <Button>{this.state.asset.name}</Button>
+            </Dropdown>
+          </Col>
+        </Row>
+        <br/>
         <p><b>Spending Limit:</b></p>
         <Row>
           <Col span={12} offset={6}>
             <Input type="text"
                   id="permission-value" 
-                  addonAfter={assetSelect}
                   value={this.state.value} 
                   onChange={this.updateValue.bind(this)}
             />
@@ -192,10 +215,12 @@ class Permissions extends React.Component {
         {this.renderBanner()}
         <Card title={<div>
           <h3>Spending Limits (Beta)&nbsp;
-            <a  href={HELP_LINK}
-              target={"_blank"}
-              rel={"noopener noreferrer"}>
-              <Icon type="question-circle"/>
+            <a  className='lattice-a'
+                href={constants.PERMISSIONS_HELP_LINK}
+                target='_blank'
+                rel='noopener noreferrer'
+            >
+              <QuestionCircleOutlined/>
             </a>
           </h3>
         </div>} bordered={true}>
@@ -203,12 +228,8 @@ class Permissions extends React.Component {
         </Card>
       </center>      
     )
-    return this.props.isMobile() ? content : (
-      <Row justify={'center'}>
-        <Col span={14} offset={5} style={{maxWidth: '600px'}}>
-          {content}
-        </Col>
-      </Row>
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }

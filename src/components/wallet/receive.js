@@ -1,7 +1,9 @@
 import React from 'react';
-import 'antd/dist/antd.css'
-import { Button, Card, Col, Row, Input, Icon, Empty } from 'antd'
-import { getCurrencyText, validateBtcAddr } from '../util/helpers'
+import 'antd/dist/antd.dark.css'
+import { Button, Card, Row, Input, Empty } from 'antd'
+import { CopyOutlined } from '@ant-design/icons';
+import { PageContent } from '../index'
+import { getCurrencyText, validateBtcAddr } from '../../util/helpers'
 const QRCode = require('qrcode.react');
 const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
@@ -31,7 +33,6 @@ class Receive extends React.Component {
     this.setState({ windowWidth:  document.getElementById('main-content-inner').offsetWidth });
   }
 
-
   updateDisplayAddress() {
     const displayAddr = this.props.session.getDisplayAddress(this.props.currency);
     if (displayAddr) this.setState({ address:  displayAddr });
@@ -55,7 +56,7 @@ class Receive extends React.Component {
           <Button type="primary"
                   style={{margin: "20px 0 0 0"}}
                   onClick={this.copyAddress}>
-            Copy <Icon type="copy"/>
+            Copy <CopyOutlined/>
           </Button>
         </div>
       )
@@ -64,7 +65,7 @@ class Receive extends React.Component {
          <Search type="text" 
                   id={SEARCH_ID} 
                   value={this.state.address} 
-                  enterButton={<Icon type="copy" />}
+                  enterButton={<CopyOutlined/>}
                   onSearch={this.copyAddress}
                   style={{margin: "30px 0 0 0", "textAlign": "center"}}
           />
@@ -81,13 +82,13 @@ class Receive extends React.Component {
       const w = Math.min(300, 0.8 * cardW);
       return (
         <div>
-          <Row>
-          <QRCode value={this.state.address} 
-                  size={w}
-                  style={{margin: "30px 0 0 0"}}
-          />
+          <Row justify='center'>
+            <QRCode value={this.state.address} 
+                    size={w}
+                    style={{margin: "30px 0 0 0"}}
+            />
           </Row>
-          <Row>
+          <Row justify='center'>
             {this.renderAddrBox()}
           </Row>
         </div>
@@ -103,6 +104,9 @@ class Receive extends React.Component {
   }
 
   render() {
+    if (this.props.currency === 'ETH') {
+      return;
+    }
     const content = (
       <center>
         <Card title={`Receive ${getCurrencyText(this.props.currency)}`} bordered={true} id="receive-card">
@@ -112,13 +116,8 @@ class Receive extends React.Component {
         </Card>
       </center>      
     )
-
-    return this.props.isMobile() ? content : (
-      <Row justify={'center'}>
-        <Col span={12} offset={6}>
-          {content}
-        </Col>
-      </Row>
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }

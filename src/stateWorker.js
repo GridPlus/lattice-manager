@@ -39,6 +39,7 @@ export default () => {
                 break;
             case 'restart':
                 tick();
+                break;
             default:
                 break;
         }

@@ -1,8 +1,9 @@
 import React from 'react';
-import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Collapse, Icon, Input, Row, Modal } from 'antd'
+import 'antd/dist/antd.dark.css'
+import { Alert, Button, Card, Col, Input, Row, Modal } from 'antd'
+import { DesktopOutlined, LinkOutlined } from '@ant-design/icons';
 import { Settings } from './index'
-const { Panel } = Collapse;
+import { constants } from '../util/helpers'
 
 class Connect extends React.Component {
   constructor(props) {
@@ -25,7 +26,7 @@ class Connect extends React.Component {
   }
 
   componentDidUpdate() {
-    if (this.props.name !== 'GridPlus Web Wallet' && document.title !== 'Lattice Connector') {
+    if (this.props.name !== constants.DEFAULT_APP_NAME && document.title !== 'Lattice Connector') {
       document.title = 'Lattice Connector'
     }
   }
@@ -81,19 +82,19 @@ class Connect extends React.Component {
   renderForm(getFieldDecorator) {
     return (
       <div>
-        <Row>
+        <Row justify="center">
           <Input  placeholder="DeviceID" 
                   id="deviceIdInput" 
                   ref={i => {this.input = i}}
                   style={{ margin: '10px 0 0 0', width: "70%"}} />
         </Row>
-        <Row>
+        <Row justify="center">
           <Input.Password placeholder="Password (create for new logins)" 
                           id="passwordInput" 
                           onPressEnter={this.handleSubmit} 
                           style={{ margin: '20px 0 0 0', width: "70%"}} />
         </Row>
-        <Row>
+        <Row justify="center">
           {this.renderConnectButton()}
         </Row>
       </div>
@@ -121,8 +122,8 @@ class Connect extends React.Component {
         <p>
           You can use this page to establish a connection between <b>{this.props.name}</b>&nbsp; and your Lattice 
           hardware wallet device.&nbsp;
-          <i>For more general device setup information, please see the 
-            <a href="https://gridplus.io/setup" target={"_blank"} rel={"noopener noreferrer"}>
+          <i>For more general device setup information, please see the&nbsp;
+            <a className="lattice-a" href="https://gridplus.io/setup" target={"_blank"} rel={"noopener noreferrer"}>
             Lattice setup page
             </a>.</i>
         </p>
@@ -150,6 +151,7 @@ class Connect extends React.Component {
       return (
         <Modal
           title="Settings"
+          footer={null}
           visible={this.state.modal}
           onOk={this.hideModal.bind(this)}
           onCancel={this.hideModal.bind(this)}
@@ -161,7 +163,8 @@ class Connect extends React.Component {
      return (
       <div>
         <Modal
-          title={this.props.name === 'GridPlus Web Wallet' ? this.props.name : 'Lattice1 Connector 🔗'}
+          title={this.props.name === constants.DEFAULT_APP_NAME ? this.props.name : 'Lattice Connector 🔗'}
+          footer={null}
           visible={this.state.modal}
           onOk={this.hideModal.bind(this)}
           onCancel={this.hideModal.bind(this)}
@@ -178,18 +181,11 @@ class Connect extends React.Component {
       err = this.state.errMsg;
     else if (this.props.errMsg)
       err = this.props.errMsg;
-
-      const desc = (
-            <Button onClick={this.handleSubmit} type="primary">
-              Retry
-            </Button>
-      )
     if (err)
       return (
         <Alert  message={<p><b>Error:</b><br/>{err}</p>} 
                 type={"error"} 
                 style={{margin: "20px 0 0 0"}}
-                description={desc}
                 closable/>
       );
     return;
@@ -198,7 +194,7 @@ class Connect extends React.Component {
   render() {
     const spanWidth = this.props.isMobile() ? 24 : 10;
     const spanOffset = this.props.isMobile() ? 0 : 7;
-    const keyringName = this.props.name === 'GridPlus Web Wallet' ? null : this.props.name
+    const keyringName = this.props.name === constants.DEFAULT_APP_NAME ? null : this.props.name
     const tooLong = keyringName !== null && keyringName.length < 5;
     return (
       <Row>
@@ -207,12 +203,15 @@ class Connect extends React.Component {
           <center>
             {this.renderMsg()}
             <Card bordered={true}>
-              <a href="https://gridplus.io/lattice" target={"_blank"}>
-                <img alt="GridPlus" src={'/gridplus-logo-black.png'}/>
+              <a  className='lattice-a'
+                  href="https://gridplus.io/lattice" 
+                  target='_blank' 
+                  rel='noopener noreferrer'
+              >
                 {keyringName ? (
-                  <h2 style={{margin: "10px 0 0 0"}}>Lattice Connector <Icon type="link"/></h2>
+                  <h2 style={{margin: "10px 0 0 0"}}>Lattice Connector <LinkOutlined/></h2>
                 ) : (
-                  <h2 style={{margin: "10px 0 0 0"}}>Web Wallet <Icon type="wallet"/></h2>
+                  <h2 style={{margin: "10px 0 0 0"}}>Lattice Manager<br/><DesktopOutlined/></h2>
                 )}
               </a>
               {keyringName ? (<div><br/><i><h3>Connect to:</h3></i><h2>{keyringName}</h2></div>) : null}

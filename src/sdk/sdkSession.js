@@ -11,7 +11,7 @@ class SDKSession {
   constructor(deviceID, stateUpdateHandler, name=null, opts={}) {
     this.client = null;
     this.crypto = null;
-    this.name = name || 'GridPlus Web Wallet'; // app name
+    this.name = name || constants.DEFAULT_APP_NAME; // app name
     // Cached list of addresses, indexed by currency
     this.addresses = {};
     // Cached balances (in currency units), indexed by currency
@@ -164,8 +164,10 @@ class SDKSession {
       switch (e.data.type) {
         case 'dataResp':
           // Got data; update state here and let the main component know
-          this.fetchDataHandler(e.data.data);
-          this.stateUpdateHandler();
+          if (e.data.data) {
+            this.fetchDataHandler(e.data.data);
+            this.stateUpdateHandler();
+          }
           break;
         case 'error':
           // Error requesting data, report it to the main component.
@@ -188,6 +190,8 @@ class SDKSession {
   }
 
   fetchDataHandler(data, usingChange=false) {
+    // if (!data)
+    //   return; // Sometimes we get back nothing... need to look into why
     let { currency } = data; // Will be adjusted if this is a change addresses request
     const { balance, transactions, firstUnused, lastUnused, utxos, erc20Balances, ethNonce } = data;
     let switchToChange = false;
@@ -213,7 +217,8 @@ class SDKSession {
       
       // Determine if we need new addresses or if we are fully synced. This is based on the gap
       // limit (20 for regular addresses, 1 for change)
-      const gapLimit = usingChange === true ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
+      // const gapLimit = usingChange === true ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
+      
       // Sometimes if we switch wallet context, the addresses will get cleared out. Make sure they
       // are always in array format
       if (!this.addresses[currency])

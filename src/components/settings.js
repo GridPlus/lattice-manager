@@ -1,6 +1,8 @@
 import React from 'react';
-import 'antd/dist/antd.css'
-import { Button, Card, Checkbox, Col, Collapse, Dropdown, Input, Menu, Row, Switch, Table } from 'antd'
+import 'antd/dist/antd.dark.css'
+import { Button, Card, Checkbox, Col, Collapse, Dropdown, Input, Menu, Row, Table } from 'antd'
+import { WarningOutlined } from '@ant-design/icons';
+import { PageContent } from './index'
 import './styles.css'
 import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers';
 
@@ -78,30 +80,35 @@ class Settings extends React.Component {
     this.setState({ settings })
   }
 
+  resetState() {
+    window.localStorage.removeItem(constants.ROOT_STORE);
+    window.location.reload();
+  }
+
   renderCustomEndpointSetting() {
     const { customEndpoint='' } = this.state.settings;
-    let { useCustomEndpoint=false } = this.state.local;
-    if (customEndpoint !== '')
-      useCustomEndpoint = true;
     return (
       <Card>
-        <h3>(Advanced) Connection Endpoint:</h3>
-        <p><i>
-          If you wish to route messages and connections through your own endpoint, you may specify it here. 
-          See <a href="https://github.com/GridPlus/lattice-connect" target="_blank">this</a> for more information.
-        </i></p>
-        <p><b>Use Custom:</b></p>
-        <Switch checked={useCustomEndpoint} onChange={this.updateUseCustomEndpoint.bind(this)}/>
-        {useCustomEndpoint === true ? (
-          <div>
-            <br/>
-            <p><b>Custom Endpoint:</b></p>
-            <Input  placeholder="host:port" 
-                    defaultValue={customEndpoint} 
-                    onChange={this.updateCustomEndpoint.bind(this)}/>
-          </div>
-        ) : null}
-        <br/>
+        <Row justify='center'>
+          <Col span={20}>
+            <h3>Connection Endpoint:</h3>
+            <p>
+              If you wish to route messages and connections through your own endpoint, you may specify it here.&nbsp;
+              Otherwise leave blank.&nbsp; See&nbsp;
+              <a  href="https://github.com/GridPlus/lattice-connect"
+                  className='lattice-a'
+                  target="_blank" 
+                  rel="noopener noreferrer">
+                this
+              </a> for more information.
+            </p>
+            <div>
+              <Input  placeholder="host:port" 
+                      defaultValue={customEndpoint} 
+                      onChange={this.updateCustomEndpoint.bind(this)}/>
+            </div>
+          </Col>
+        </Row>
       </Card>
     )
   }
@@ -158,10 +165,17 @@ class Settings extends React.Component {
     const { devLattice } = this.state.settings;
     return (
       <Card>
-        <Checkbox onChange={this.updateUseDevLattice.bind(this)} checked={devLattice}>
-          Using Dev Lattice
-        </Checkbox>
-        <br/>
+        <h4>Debug Settings</h4>
+        <Row justify='center' style={{ margin: '10px 0 0 0'}}>
+          <Button type="link" onClick={this.resetState} className='warning-a'>
+          <WarningOutlined/>&nbsp;Reset App State
+        </Button>
+        </Row>
+        <Row justify='center' style={{ margin: '20px 0 0 0'}}>
+          <Checkbox onChange={this.updateUseDevLattice.bind(this)} checked={devLattice}>
+            Using Dev Lattice
+          </Checkbox>
+        </Row>
       </Card>
     )
   }
@@ -189,15 +203,19 @@ class Settings extends React.Component {
       .forEach((name) => { data.push({ name }) })
     return (
       <Card>
-        <h3>Third Party Connections</h3>
-        <p><i>
-          You may forget a third party here and next time you use the app you will be prompted to create a new one.
-        </i></p>
-        <Collapse>
-          <Collapse.Panel header={`Connections List (${data.length})`}>
-            <Table dataSource={data} columns={cols}/>
-          </Collapse.Panel>
-        </Collapse>
+        <Row justify='center'>
+          <Col span={20}>
+            <h3>Third Party Connections</h3>
+            <p>
+              Manage connections to your Lattice. Third party apps should be listed here if they are connected to your device.
+            </p>
+            <Collapse>
+              <Collapse.Panel header={`Connections List (${data.length})`}>
+                <Table dataSource={data} columns={cols}/>
+              </Collapse.Panel>
+            </Collapse>
+          </Col>
+        </Row>
       </Card>
     )
   }
@@ -207,8 +225,8 @@ class Settings extends React.Component {
       <div>
         {this.renderKeyringsSetting()}
         {this.renderCustomEndpointSetting()}
-        {this.renderDevLatticeSetting()}
         {this.renderBitcoinVersionSetting()}
+        {this.renderDevLatticeSetting()}
         <br/>
         <Button type="primary" onClick={this.submit.bind(this)}>
           Update and Reload
@@ -225,12 +243,10 @@ class Settings extends React.Component {
         </Card>
       </center>      
     )
-    return (this.props.isMobile() || this.props.inModal) ? content : (
-      <Row justify={'center'}>
-        <Col span={14} offset={5} style={{maxWidth: '600px'}}>
-          {content}
-        </Col>
-      </Row>
+    if (this.props.inModal)
+      return (<center>{this.renderCard()}</center>);
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }

@@ -1,15 +1,11 @@
 import React from 'react';
-import 'antd/dist/antd.css'
-import { Alert, Button, Card, Col, Icon, Input, Modal, Result, Row, Select, Spin, Table, Tabs, Tag } from 'antd'
+import 'antd/dist/antd.dark.css'
+import { Alert, Button, Card, Col, Input, Modal, Result, Row, Table, Tabs, Tag } from 'antd'
+import { QuestionCircleOutlined } from '@ant-design/icons';
+import { PageContent } from './index'
 import './styles.css'
-import { constants, } from '../util/helpers';
-
-const HELP_LINK = "https://docs.gridplus.io/gridplus-web-wallet/use-ethereum-smart-contract-abi-function-definitions"
-
-// Approximate of seconds each def takes to load. 2 defs load per request
-// This is just a guesstimate for display purposes
-const SEC_PER_DEF = 1.2; 
-
+import { constants } from '../util/helpers';
+const MAX_SPAN_W = 24;
 const defaultState = {
   contract: null, defs: [], success: false, loading: false, customDefs: [], customDefsStr: '',
 }
@@ -32,7 +28,8 @@ const PACKS = {
   BALANCER: {
     name: 'Balancer Pack',
     desc: 'Contract definitions from Balancer V2. NOTE: Some unsupported definitions were skipped.',
-    url: 'v2_balancer'
+    url: 'v2_balancer',
+    website: 'https://docs.balancer.fi/v/v1/smart-contracts/addresses',
   },  
   CRYPTEX: {
     name: 'Cryptex Pack',
@@ -42,12 +39,14 @@ const PACKS = {
   CURVE: {
     name: 'Curve Pack',
     desc: 'Contract definitions from Curve Finance',
-    url: 'v2_curve'
+    url: 'v2_curve',
+    website: 'https://curve.readthedocs.io/ref-addresses.html',
   },
   GNOSIS: {
     name: 'Gnosis Safe Pack',
     desc: 'Contract definitions for the Gnosis Safe application',
-    url: 'v2_gnosis'
+    url: 'v2_gnosis',
+    website: 'https://github.com/gnosis/safe-contracts/blob/v1.3.0/CHANGELOG.md',
   },
   MAKER: {
     name: 'Maker Pack',
@@ -57,17 +56,21 @@ const PACKS = {
   OPYN: {
     name: 'Opyn Pack',
     desc: 'Contract definitions from Opyn V3',
-    url: 'v2_opyn'
+    url: 'v2_opyn',
+    website: 'https://opyn.gitbook.io/opyn/contracts/addressbook-1',
   },
   SUSHISWAP: {
     name: 'SushiSwap Pack',
     desc: 'Contract definitions from SushiSwap',
-    url: 'v2_uniswap'
+    url: 'v2_uniswap',
+    app: 'SushiSwap',
+    website: 'https://dev.sushi.com/sushiswap/contracts', 
   },
   UNISWAP: {
     name: 'UniSwap Pack',
     desc: 'Contract definitions from Uniswap V2 and V3.',
-    url: 'v2_uniswap'
+    url: 'v2_uniswap',
+    website: 'https://github.com/Uniswap/v3-periphery/blob/main/deploys.md',
   },
   YEARN: {
     name: 'Yearn Pack',
@@ -75,6 +78,7 @@ const PACKS = {
     url: 'v2_yearn'
   },
 }
+const PACKS_PER_ROW = 3;
 const manualPlaceholder = '[{"inputs":[{"internalType":"address[]","name":"_components","type":"address[]"},{"internalType":"int256[]","name":"_units","type":"int256[]"},{"internalType":"address[]","name":"_modules","type":"address[]"},{"internalType":"contract IController","name":"_controller","type":"address"},{"internalType":"address","name":"_manager","type":"address"},{"internalType":"string","name":"_name","type":"string"},'
 
 
@@ -124,6 +128,10 @@ class EthContracts extends React.Component {
       fetch(`${constants.GRIDPLUS_CLOUD_API}/contractData/${input}`)
       .then((response) => response.json())
       .then((resp) => {
+        // Map confusing error strings to better descriptions
+        if (resp.err === 'Contract source code not verified') {
+          resp.err = 'Contract source code not published to Etherscan or not verified. Cannot determine data.'
+        }
         if (resp.err) {
           this.setState({ error: resp.err.toString(), ...defaultState })
         } else {
@@ -144,7 +152,6 @@ class EthContracts extends React.Component {
   loadPackData(key) {
     if (!PACKS[key])
       return;
-    const data = {}
     fetch(`${constants.AWS_BUCKET_URL}/${PACKS[key].url}.json`)
     .then((response) => response.json())
     .then((resp) => {
@@ -181,30 +188,18 @@ class EthContracts extends React.Component {
   renderModal() {
     if (!this.state.packData[this.state.selectedPackKey])
       return
-    const cols = [
-      {
-        title: 'Address',
-        dataIndex: 'address',
-        key: 'address',
-      },
-      {
-        title: 'App',
-        dataIndex: 'app',
-        key: 'app',
-      },
-      {
-        title: 'Website',
-        dataIndex: 'website',
-        key: 'website',
-      }
-    ];
     const contracts = []
     this.state.packData[this.state.selectedPackKey].metadata.forEach((d) => {
+      // Adding these hacky references since the main source of data is in an S3 bucket
+      // TODO: Overhaul how these packs are loaded/stored/sourced... eventually
+      const localPack = PACKS[this.state.selectedPackKey];
+      const website = localPack.website ? localPack.website : d.website;
+      const app = localPack.app ? localPack.app : d.app;
       contracts.push({
         key: d.key,
         address: d.address,
-        app: d.app,
-        website: d.website
+        app,
+        website
       })
     })
     return (
@@ -215,11 +210,16 @@ class EthContracts extends React.Component {
           onOk={this.hideModal.bind(this)}
           onCancel={this.hideModal.bind(this)}
         >
-          <Table dataSource={contracts}>
+          <Table dataSource={contracts} key="main-table">
             <Table.Column title='Address' dataIndex='address' key='address'
               render={addr => (
-                <Tag color="blue">
-                  <a href={`https://etherscan.io/address/${addr}`} target={"_blank"}>
+                <Tag color="blue" key={`tag-${addr}`}>
+                  <a className="lattice-a"
+                      href={`https://etherscan.io/address/${addr}`} 
+                      target={"_blank"}
+                      rel={"noopener noreferrer"}
+                      key={`a-${addr}`}
+                  >
                     {`${addr.slice(0, 10)}...${addr.slice(addr.length-8, addr.length)}`}
                   </a>
                 </Tag>
@@ -228,7 +228,14 @@ class EthContracts extends React.Component {
             <Table.Column title='App' dataIndex='app' key='app'/>
             <Table.Column title='Source' dataIndex='website' key='website'
               render={url => (
-                <a href={url} target={"_blank"}>Link</a>
+                <a  className="lattice-a" 
+                    href={url} 
+                    target={"_blank"} 
+                    rel={"noopener noreferrer"}
+                    key={`a-${url}`}
+                >
+                  Link
+                </a>
               )}
             />
           </Table>
@@ -293,22 +300,15 @@ class EthContracts extends React.Component {
     if (isLoadingDefs && !onCurrentKey)
       return;
     return (
-      <Card>
-        <br/>
-        <h3>{PACKS[key].name}</h3>
+      <Card bordered={true} key={`card-${key}`}>
+        <center>
+        <p className='lattice-h3'>{PACKS[key].name}</p>
         {this.state.packData[key] ? (
-          <p>
-            {PACKS[key].desc}
-            <br/>
-            (
-              <a onClick={() => { 
-                  this.setState({ selectedPackKey: key, success: false, loading: false }, 
-                  this.showModal.bind(this)) }}
-              >View Contents</a>
-            )
-          </p>
-        ) : <p>{PACKS[key].desc}</p>}
-        <br/>
+          <Button type="link" onClick={() => {
+              this.setState({ selectedPackKey: key, success: false, loading: false }, 
+              this.showModal.bind(this)) }}
+          >View Contents</Button>
+        ) : null}
         {this.state.packData[key] ? (
           <div>
             {(this.state.success && onCurrentKey) 
@@ -324,7 +324,7 @@ class EthContracts extends React.Component {
             null
             :
             (
-              <Button size="large" type="primary" loading={shouldLoad}
+              <Button type="primary" loading={shouldLoad}
                       onClick={() => {
                         this.setState({ defs: this.state.packData[key].defs, selectedPackKey: key, success: false, loading: false }, 
                         this.addDefs)}}
@@ -341,12 +341,13 @@ class EthContracts extends React.Component {
         isLoadingDefs === false
         ?
         (
-          <Button size="large" onClick={() => { this.loadPackData(key) }}>
+          <Button type='link' onClick={() => { this.loadPackData(key) }}>
             Check Latest
           </Button>
         )
         :
         null}
+      </center>
       </Card>
     )
   }
@@ -356,7 +357,13 @@ class EthContracts extends React.Component {
       <div>
         <p>
           You can install contract data from any supported contract which has been verified by&nbsp;
-          <a href="https://etherscan.io" target={"_blank"}>Etherscan</a>. Search for a verified smart contract:
+          <a  className='lattice-a' 
+              href="https://etherscan.io" 
+              target='_blank'
+              rel='noopener noreferrer'
+          >
+            Etherscan
+          </a>. Search for a verified smart contract:
         </p>
         <Input.Search
           placeholder="Contract address"
@@ -418,7 +425,11 @@ class EthContracts extends React.Component {
         <p>
           Here you can add ABI definitions manually. Please stick with
           Etherscan formatting (i.e. the contents of "Contract ABI" in the Contract tab -&nbsp;
-          <a href="https://etherscan.io/address/0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b#code" target={"_blank"}>
+          <a  class="lattice-a"
+              href="https://etherscan.io/address/0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b#code" 
+              target="_blank"
+              rel="noopener noreferrer"
+          >
           example</a>
           ).
         </p>
@@ -480,22 +491,27 @@ class EthContracts extends React.Component {
   }
 
   renderPackCard() {
+    const numRows = Object.keys(PACKS).length / PACKS_PER_ROW;
+    const rows = []
+    for (let i = 0; i < numRows; i++) {
+      const cards = [];
+      for (let j = 0; j < PACKS_PER_ROW; j++) {
+        cards.push(
+          <Col span={Math.floor(MAX_SPAN_W / PACKS_PER_ROW)} key={`col_${i}_${j}`}>
+            {this.renderPack(Object.keys(PACKS)[(i * PACKS_PER_ROW) + j])}
+          </Col>
+        )        
+      }
+      rows.push(
+        <Row justify="center" key={`row-${i}`}>{cards}</Row>
+      )
+    }
     return (
       <div>
         <p>
           Once loaded, please click View Contents to see the specific contracts being loaded.
         </p>
-        {this.renderPack('AAVE')}
-        {this.renderPack('ALCHEMIX')}
-        {this.renderPack('BALANCER')}
-        {this.renderPack('CRYPTEX')}
-        {this.renderPack('CURVE')}
-        {this.renderPack('MAKER')}
-        {this.renderPack('GNOSIS')}
-        {this.renderPack('OPYN')}
-        {this.renderPack('SUSHISWAP')}
-        {this.renderPack('UNISWAP')}
-        {this.renderPack('YEARN')}
+        {rows}
       </div>
     )
   }
@@ -516,14 +532,6 @@ class EthContracts extends React.Component {
     }
     return (
       <div>
-        <p><i>Add smart contract data for more readable transactions on your Lattice1! Note that not all
-        functions may be added for a given app.&nbsp;
-        <a  href={HELP_LINK}
-            target={"_blank"}
-            rel={"noopener noreferrer"}>
-          (More info)
-        </a>
-        </i></p>
         {this.renderTabs()}
         {f()}
       </div>
@@ -533,13 +541,16 @@ class EthContracts extends React.Component {
   render() {
     const content = (
       <div>
+        {this.renderModal()}
         {this.renderBanner()}
         <Card title={<div>
-          <h3>Load Contract Data&nbsp;
-            <a  href={HELP_LINK}
-              target={"_blank"}
-              rel={"noopener noreferrer"}>
-              <Icon type="question-circle"/>
+          <h3>Load Contract Data&nbsp;&nbsp;
+            <a  className='lattice-a'
+                href={constants.CONTRACTS_HELP_LINK}
+                target='_blank'
+                rel='noopener noreferrer'
+            >
+              <QuestionCircleOutlined/>
             </a>
           </h3>
         </div>} bordered={true}>
@@ -547,13 +558,8 @@ class EthContracts extends React.Component {
         </Card>
       </div>      
     )
-    return this.props.isMobile() ? content : (
-      <Row justify={'center'}>
-        {this.renderModal()}
-        <Col span={14} offset={5} style={{maxWidth: '600px'}}>
-          {content}
-        </Col>
-      </Row>
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
 }

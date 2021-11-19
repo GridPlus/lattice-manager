@@ -1,21 +1,28 @@
 import React from 'react';
-import 'antd/dist/antd.css'
+import 'antd/dist/antd.dark.css'
 import './styles.css'
-import { Alert, Button, Layout, Menu, Icon, Select, PageHeader, Tag, Tooltip } from 'antd';
+import { Alert, Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
+import { 
+  HomeOutlined, AuditOutlined, DollarOutlined, TagsOutlined, 
+  WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
+  ReloadOutlined, CreditCardOutlined, CheckOutlined, SettingOutlined 
+} from '@ant-design/icons';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { Connect, Error, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles } from './index'
-import { constants, getCurrencyText, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
+import { 
+  Connect, Error, Landing, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
+} from './index'
+import { constants, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
-const { Option } = Select;
 const LOGIN_PARAM = 'loginCache';
+const DEFAULT_MENU_ITEM = 'menu-landing';
 
 class Main extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       name: constants.DEFAULT_APP_NAME,
-      currency: 'ETH',
-      menuItem: 'menu-wallet',
+      currency: 'BTC',
+      menuItem: DEFAULT_MENU_ITEM,
       // GridPlusSDK session object
       session: null,
       // WebWorker that will periodically lookup state on available addrs
@@ -465,6 +472,7 @@ class Main extends React.Component {
     if (this.state.waiting === true)
       return;
     this.wait("Refreshing wallets")
+    this.setState({ waiting: true })
     this.state.session.refreshWallets((err) => {
       if (err === constants.LOST_PAIRING_ERR)
         return this.handleLostPairing();
@@ -543,68 +551,45 @@ class Main extends React.Component {
   // RENDERERS
   //------------------------------------------
   renderMenu() {
-    return this.isMobile() ? (
-      <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="horizontal" onSelect={this.handleMenuChange}>
-        <Menu.Item key="menu-wallet">
-          <Icon type="wallet" />
-          <span>Wallet</span>
-        </Menu.Item>
-        <Menu.Item key="menu-send">
-          <Icon type="arrow-up" />
-          <span>Send</span>
-        </Menu.Item>
-        <Menu.Item key="menu-receive">
-          <Icon type="arrow-down" />
-          <span>Receive</span>
-        </Menu.Item>
-        <Menu.Item key="menu-eth-contracts">
-          <Icon type="audit" />
-          <span>Contracts</span>
-        </Menu.Item>
-        <Menu.Item key="menu-kv-records">
-          <Icon type="tag" />
-          <span>Tags</span>
-        </Menu.Item>
-        <Menu.Item key="menu-permissions">
-          <Icon type="dollar" />
-          <span>Limits</span>
-        </Menu.Item>
-        <Menu.Item key="menu-settings">
-          <Icon type="setting" />
-          <span>Settings</span>
-        </Menu.Item>
-      </Menu>
-    ) : (
-      <Sider collapsed={this.isMobile()}>
-        <Menu theme="dark" defaultSelectedKeys={['menu-wallet']} mode="inline" onSelect={this.handleMenuChange}>
-          <Menu.Item key="menu-wallet">
-            <Icon type="wallet" />
-            <span>Wallet</span>
-          </Menu.Item>
-          <Menu.Item key="menu-send">
-            <Icon type="arrow-up" />
-            <span>Send</span>
-          </Menu.Item>
-          <Menu.Item key="menu-receive">
-            <Icon type="arrow-down" />
-            <span>Receive</span>
-          </Menu.Item>
-          <Menu.Item key="menu-eth-contracts">
-            <Icon type="audit" />
-            <span>Contracts</span>
-          </Menu.Item>
+    const collapsed = this.isMobile();
+    const mode = collapsed ? 'horizontal' : 'inline';
+    return (
+      <Sider collapsed={collapsed}>
+        <Menu theme="dark" mode={mode} onSelect={this.handleMenuChange}>
+          <Menu.Item key="menu-landing">
+            <HomeOutlined/>
+            <span>Home</span>
+          </Menu.Item>          
           <Menu.Item key="menu-kv-records">
-            <Icon type="tag" />
+            <TagsOutlined/>
             <span>Address Tags</span>
           </Menu.Item>
-          <Menu.Item key="menu-permissions">
-            <Icon type="dollar" />
-            <span>Limits</span>
+          <Menu.Item key="menu-eth-contracts">
+            <AuditOutlined/>
+            <span>Contracts</span>
           </Menu.Item>
+          {/* <Menu.Item key="menu-permissions">
+            <DollarOutlined/>
+            <span>Limits</span>
+          </Menu.Item> */}
           <Menu.Item key="menu-settings">
-            <Icon type="setting" />
+            <SettingOutlined/>
             <span>Settings</span>
           </Menu.Item>
+          <Menu.SubMenu title="Wallet" key="submenu-wallet">
+            <Menu.Item key="menu-wallet">
+              <WalletOutlined/>
+              <span>Wallet</span>
+            </Menu.Item>
+            <Menu.Item key="menu-send">
+              <ArrowUpOutlined/>
+              <span>Send</span>
+            </Menu.Item>
+            <Menu.Item key="menu-receive">
+              <ArrowDownOutlined/>
+              <span>Receive</span>
+            </Menu.Item>
+          </Menu.SubMenu>
         </Menu>
       </Sider>
     )
@@ -619,7 +604,11 @@ class Main extends React.Component {
 
   renderHeaderText() {
     return (
-      <a href="https://gridplus.io" target={"_blank"}>
+      <a  className='lattice-a'
+          href='https://gridplus.io' 
+          target='_blank' 
+          rel='noopener noreferrer'
+      >
         <img  alt="GridPlus" 
               src={'/logo-on-black.png'}
               style={{height: '1em'}}/>
@@ -641,25 +630,30 @@ class Main extends React.Component {
 
     if (activeWallet === null) {
       walletTag = ( 
-        <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet <Icon type="reload"/></Button>
+        <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet <ReloadOutlined/></Button>
       )
     } else {
       walletTag = activeWallet.external === true ?  (
-        <Button type="primary" ghost onClick={this.refreshWallets} size={size}><Icon type="credit-card"/> SafeCard <Icon type="reload"/></Button>
+        <Button type="primary" ghost onClick={this.refreshWallets} size={size}><CreditCardOutlined/> SafeCard <ReloadOutlined/></Button>
       ) : (
-        <Button type="default" ghost onClick={this.refreshWallets} size={size}><Icon type="check"/> Lattice1 <Icon type="reload"/></Button>
+        <Button type="default" ghost onClick={this.refreshWallets} size={size}><CheckOutlined/> Lattice <ReloadOutlined/></Button>
       )
     }
     if (walletTag) extra.push((
       <Tooltip title="Refresh" key="WalletTagTooltip">{walletTag}</Tooltip>));
 
     // Add the currency switch
-    extra.push(
-      (<Select key="currency-select" defaultValue={this.state.currency} onChange={this.handleCurrencyChange} size={size}>
-        <Option value="ETH">{getCurrencyText('ETH')}</Option>
-        <Option value="BTC">{getCurrencyText('BTC')}</Option>
-      </Select>)
-    );
+    // extra.push((
+    //   <Menu onClick={this.handleCurrencyChange}>
+    //     <Menu.Item key="BTC">
+    //       BTC
+    //     </Menu.Item>
+    //     <Menu.Item key="ETH">
+    //       ETH
+    //     </Menu.Item>
+    //   </Menu>
+    // ))
+
     extra.push(
       ( <Button key="logout-button" type="primary" onClick={this.handleLogout} size={size}>
         Logout
@@ -733,13 +727,13 @@ class Main extends React.Component {
             isMobile={() => this.isMobile()}
           />
         )
-      case 'menu-permissions':
-        return (
-          <Permissions
-            session={this.state.session}
-            isMobile={() => this.isMobile()}
-          />
-        )   
+      // case 'menu-permissions':
+      //   return (
+      //     <Permissions
+      //       session={this.state.session}
+      //       isMobile={() => this.isMobile()}
+      //     />
+      //   )   
       case 'menu-settings':
         return (
           <Settings
@@ -753,6 +747,10 @@ class Main extends React.Component {
             isMobile={() => this.isMobile()}
           />
         )
+      case DEFAULT_MENU_ITEM:
+        return (
+          <Landing isMobile={() => { this.isMobile() }}/>
+        );
       default:
         return;
     }
@@ -794,7 +792,7 @@ class Main extends React.Component {
       // The window should close automatically, but just in case something goes wrong...
       return (
         <Loading isMobile={() => { this.isMobile() }}
-                  msg={"Successfully connected to your Lattice1! You may close this window."}
+                  msg={"Successfully connected to your Lattice! You may close this window."}
                   spin={false}/>
       )
     } else if (!hasActiveWallet) {
