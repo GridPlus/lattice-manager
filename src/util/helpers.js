@@ -77,6 +77,8 @@ function _fetchGET(url, cb) {
     .catch((err) => cb(err))
 }
 
+
+//====== UTXOS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
 function _fetchBtcUtxos(addresses, cb) {
 
@@ -85,116 +87,82 @@ function _fetchBtcUtxos(addresses, cb) {
 // For testnet we cannot use blockchain.com - we have to request stuff from each
 // address individually.
 function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
-    if (addresses.length === 0)
-        return cb(null, utxos);
+    console.log(1, addresses)
     const address = addresses.pop()
+    console.log(2, addresses)
     const url = `${constants.BTC_DEV_DATA_API}/address/${address}/utxo`;
     console.log('url', url)
     _fetchGET(url, (err, data) => {
-        console.log('data', data)
+        if (err)
+            return cb(err)
+        if (addresses.length === 0)
+            return cb(null, utxos);
         setTimeout(() => {
-            return _fetchBtcUtxosTestnet(addresses, cb)
-        }, 500)
+            return _fetchBtcUtxosTestnet(addresses, cb, utxos)
+        }, 5000)
     })
 }
 
-function fetchBtcUtxos(addresses) {
-    return new Promise((resolve, reject) => {
-        const f = constants.BTC_DEV_DATA_API ? _fetchBtcUtxosTestnet : _fetchBtcUtxos;
-        f(addresses, (err, utxos) => {
-            if (err)
-                return reject(err)
-            return resolve(utxos)
-        })
-    })
+exports.fetchBtcUtxos = function(addresses, cb) {
+    console.log('FETCHING', addresses.length)
+    const addrsCopy = JSON.parse(JSON.stringify(addresses));
+    const f = constants.BTC_DEV_DATA_API ? _fetchBtcUtxosTestnet : _fetchBtcUtxos;
+    f(addrsCopy, cb);
+}
+//====== END UTXOS ==================
+
+//====== TXS ==================
+// For mainnet (production env) we can bulk request data from the blockchain.com API
+function _fetchBtcTxs(addresses, cb) {
+
 }
 
-function fetchCurrencyData(currency, addresses, page) {
-    return new Promise((resolve, reject) => {
-        // Account for change addresses
-        const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/get-data`
-        const data = {
-            method: 'POST',
-            body: JSON.stringify([{ currency, addresses, page }]),
-            headers,
-        }
-        // Fetch currency balance and transaction history
-        fetch(url, data)
-        .then((response) => response.json())
-        .then((resp) => {
-            const mainData = resp.data[0];
-            if (mainData.error) {
-                return reject(mainData.error);
-            } else {
-                return resolve(mainData);
+// For testnet we cannot use blockchain.com - we have to request stuff from each
+// address individually.
+function _fetchBtcTxsTestnet(addresses, cb, txs=[]) {
+    const address = addresses.pop()
+    const url = `${constants.BTC_DEV_DATA_API}/address/${address}/txs`;
+    _fetchGET(url, (err, data) => {
+        if (err)
+            return cb(err)
+        let formattedTxs = [];
+        data.forEach((t) => {
+            const ftx = {
+                timestamp: t.status.block_time * 1000,
+                id: t.txid,
+                fee: t.fee,
+                inputs: [],
+                outputs: [],                
             }
+            t.vin.forEach((input) => {
+                ftx.inputs.push({
+                    addr: input.prevout.scriptpubkey_address,
+                    value: input.prevout.value
+                })
+            })
+            t.vout.forEach((output) => {
+                ftx.outputs.push({
+                    addr: output.scriptpubkey_address,
+                    value: output.value
+                })
+            })
+            formattedTxs.push(ftx)
         })
-        .catch((err) => {
-            return reject('Failed to fetch data. Please refresh to try again.');
-        });
+        txs = txs.concat(formattedTxs)
+        if (addresses.length === 0)
+            return cb(null, txs);
+        setTimeout(() => {
+            return _fetchBtcTxsTestnet(addresses, cb, txs)
+        }, 5000)
     })
 }
 
-// Fetch state data for a set of addresses
-// @param currency  {string}   -- abbreviation of the currency (e.g. ETH, BTC)
-// @param addresses {object}   -- objecty containing arrays of addresses, indexed by currency
-// @param page      {number}   -- page of transactions to request (ignored if currency!=ETH)
-// @param cb        {function} -- callback function of form cb(err, data)
-exports.fetchStateData = function(currency, addresses, page, cb) {
-    console.log('fetch state data')
-    // The change currency types are second class citizens. Recast to the main type.
-    if (currency.indexOf('_CHANGE') > -1)
-        currency = currency.slice(0, currency.indexOf('_CHANGE'))
-    
-    // If there are change addresses, append them to the main addresses
-    let reqAddresses = addresses[currency];
-    if (addresses[`${currency}_CHANGE`] && addresses[`${currency}_CHANGE`].length > 0)
-        reqAddresses = reqAddresses.concat(addresses[`${currency}_CHANGE`])
-
-    // Exit if we don't have addresses to use in the request
-    if (!reqAddresses || reqAddresses.length === 0) 
-        return cb(null);
-
-    let stateData = {
-        currency,
-        transactions: [], // ETH + ERC20 transactions
-        balance: {}, // ETH balance
-        erc20Balances: [], // ERC20 balances
-        ethNonce: null,
-        utxos: [],
-    };
-    console.log(reqAddresses)
-    // fetchBtcUtxos([reqAddresses[0]])
-    // .then(() => {
-    //     return fetchCurrencyData(currency, reqAddresses, page)
-    // })
-    fetchCurrencyData(currency, reqAddresses, page)
-    .then((mainData) => {
-        stateData.currency = mainData.currency;
-        stateData.balance = mainData.balance;
-        stateData.transactions = stateData.transactions.concat(mainData.transactions);
-        stateData.utxos = mainData.utxos || [];
-        stateData.firstUnused = mainData.firstUnused;
-        stateData.lastUnused = mainData.lastUnused;
-        // Remove duplicates. Since the ERC20 transactions came first, they
-        // take precedence
-        let hashes = [];
-        stateData.transactions.forEach((t, i) => {
-            if (hashes.indexOf(t.hash.toLowerCase()) > -1)
-                stateData.transactions.splice(i, 1);
-            else
-                hashes.push(t.hash.toLowerCase())
-        })
-        // Now sort the transactions by block height
-        stateData.transactions = stateData.transactions.sort((a, b) => {
-            return a.height < b.height ? 1 : -1; 
-        })
-        return cb(null, stateData);
-    })
-    .catch((err) => {
-        return cb(err);
-    });
+exports.fetchBtcTxs = function(addresses, cb) {
+    const addrsCopy = JSON.parse(JSON.stringify(addresses));
+    const f = constants.BTC_DEV_DATA_API ? _fetchBtcTxsTestnet : _fetchBtcTxs;
+    f(addrsCopy, cb);
 }
+//====== END TXS ==================
 //--------------------------------------------
 // END CHAIN DATA SYNCING HELPERS
 //--------------------------------------------
@@ -306,19 +274,6 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     return { currency: 'BTC', data: req }
 }
 
-function leftPad(x, n) {
-    let y = '';
-    for (let i = 0; i < n - x.length; i++)
-        y = `0${y}`;
-    return `${y}${x}`;
-}
-
-exports.buildERC20Data = function(recipient, value, decimals) {
-    const decValue = value * Math.pow(10, decimals);
-    const strippedRec = recipient.indexOf('0x') > -1 ? recipient.slice(2) : recipient;
-    return `0xa9059cbb${leftPad(strippedRec, 64)}${leftPad(decValue.toString(16), 64)}`;
-}
-
 exports.getCurrencyText = function(currency) {
     if (constants.ENV === 'dev') {
       switch (currency) {
@@ -350,6 +305,22 @@ exports.toHexStr = function(bn) {
     const s = bn.toString(16);
     const base = s.length % 2 === 0 ? s : `0${s}`;
     return `0x${base}`; 
+}
+
+// Consolidate two sets of objects, adding all unique `newItems`
+// to a list of `existingItems`.
+exports.addUniqueItems = function(newItems, existingItems=[]) {
+    const items = JSON.parse(JSON.stringify(existingItems));
+    const existingItemsJson = []
+    existingItems.forEach((ei) => {
+      existingItemsJson.push(JSON.stringify(ei))
+    })
+    newItems.forEach((ni) =>{ 
+      if (existingItemsJson.indexOf(JSON.stringify(ni)) === -1) {
+        items.push(ni)
+      }
+    })
+    return items;
 }
 //--------------------------------------------
 // END OTHER HELPERS

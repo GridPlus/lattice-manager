@@ -61,7 +61,6 @@ class Main extends React.Component {
     this.cancelConnect = this.cancelConnect.bind(this);
     this.connectSession = this.connectSession.bind(this);
     this.handlePair = this.handlePair.bind(this);
-    this.fetchAddresses = this.fetchAddresses.bind(this);
     this.fetchBtcData = this.fetchBtcData.bind(this);
     this.handleStateUpdate = this.handleStateUpdate.bind(this);
     this.refreshWallets = this.refreshWallets.bind(this);
@@ -396,44 +395,30 @@ class Main extends React.Component {
 
   // Fetch up-to-date blockchain state data for the addresses stored in our
   // SDKSession. Called after we load addresses for the first time
-  fetchBtcData(cb=null) {
-    console.log('main fetchBtcData')
-    this.wait("Syncing chain data");
-    this.state.session.fetchData(this.state.currency, (err) => {
-      this.unwait();
+  fetchBtcData() {
+    this.wait('Fetching addresses');
+    this.state.session.getBtcAddresses((err, numNewAddrs) => {
+      console.log('Got new addrs', numNewAddrs)
       if (err) {
-        // Failed to fetch -- update state and set the alert
-        return this.handleStateUpdate({err, currency: this.state.currency, cb});
-      } else {
-        // Successfully fetched -- update state
-        this.handleStateUpdate();
+        return this.handleStateUpdate({ err, cb: this.fetchBtcData });
       }
-      // If this succeeded and we have a callback, go ahead and use it.
-      if (cb) {
-        return cb(null);
-      }
-    });
-  }
-
-  // Asynchronously load addresses from the client session using
-  // the currently selected currency. Once we have the addresses,
-  // attempt to fetch updated blockchain state data.
-  // NOTE: If we don't need additional addresses, no request will be
-  // made to the Lattice and we will proceed to fetchBtcData immediately.
-  fetchAddresses(cb=null) {
-    if (this.state.waiting === true)
-      return;
-    this.wait("Syncing addresses")
-    this.state.session.loadAddresses(this.state.currency, (err) => {
-      this.unwait();
-      // Catch an error if there is one
-      if (err) {
-        // If we catch an error, do a recursive call (preserving the callback)
-        return this.setError({ msg: err, cb: () => { this.fetchAddresses(cb) } });
-      } else if (cb) {
-        return cb(null);
-      }
-    });
+      this.unwait()
+      this.wait('Syncing chain data')
+      this.state.session.getBtcData((err) => {
+        if (err) {
+          return this.handleStateUpdate({ err, cb: this.fetchBtcData });
+        } else if (numNewAddrs > 0) {
+          // If we got new addresses, we should fetch state data with them.
+          // Call this function recursively. The call to `getBtcAddresses` should
+          // callback immediately because there are no new addresses to fetch
+          // without updated state data.
+          this.fetchBtcData();
+        } else {
+          // We are done
+          this.unwait()
+        }
+      })
+    })
   }
 
   handleLostPairing() {
@@ -461,12 +446,7 @@ class Main extends React.Component {
       this.unwait();
       if (err)
         return this.setError({ msg: err, cb: this.refreshWallets })
-      // If no error was returned, clear out the error and fetch addresses.
-      // Note that if this app auto-switches wallet interface, it will not immediately
-      // switch the walletUID and will catch an error, which we need to clear out here
-      // so that the user doesn't see it once we successfully fetch addresses. 
       this.setError();
-      this.fetchAddresses(this.fetchBtcData);
     })
   }
 

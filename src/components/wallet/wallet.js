@@ -28,9 +28,6 @@ class Wallet extends React.Component {
 
   componentDidMount() {
     this.setState({
-      balance: this.props.session.getBalance(this.props.currency),
-      usdValue: this.props.session.getUSDValue(this.props.currency),
-      txs: this.props.session.getTxs(this.props.currency),
       lastUpdated: this.props.lastUpdated,
     })
     // Tick every 15 seconds to force a re-rendering of the lastUpdated tag
@@ -43,9 +40,6 @@ class Wallet extends React.Component {
   componentDidUpdate() {
     if (this.props.lastUpdated !== this.state.lastUpdated) {
       this.setState({
-        balance: this.props.session.getBalance(this.props.currency),
-        usdValue: this.props.session.getUSDValue(this.props.currency),
-        txs: this.props.session.getTxs(this.props.currency),
         lastUpdated: this.props.lastUpdated,
       })
     }
@@ -89,42 +83,17 @@ class Wallet extends React.Component {
     lastUpdated: 1578858115022
     */
 
-    function getTokenName(item) {
-      if (item.currency === 'ETH' && item.asset !== 'ETH' && item.contractAddress != null)
-        return item.asset;
-      return null;
-    }
-
-    function getTokenImageURI(item) {
-      if (item.asset === 'BTC') {
-        return `/BTC.png`;
-      } else if (item.asset === 'ETH') {
-          return `/ETH.png`
-      } else if (getTokenName(item) !== null) {
-          return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${item.contractAddress}/logo.png`
-      } else {
-        return `/token.png`;
-      }
-    }
-
     function getValue(item) {
-      if (getTokenName(item) === null)
-        return item.value.toFixed(8);
-      return (item.value / 10 ** (Number(item.tokenDecimals) || 0))
+      // Values are in satoshis
+      return (item.value / Math.pow(10, 8));
     }
 
     function getTitle(i) {
-      const tokenName = getTokenName(i);
-      if (tokenName !== null)
-        return `${getValue(i)} ${tokenName}`
-      else if (i.value === 0 && i.asset === 'ETH' && !i.incoming)
-        return 'Contract Interaction'
-      else
-        return `${getValue(i)} ${item.asset}`
+        return `${getValue(i)} BTC`
     }
     const isPending = item.height === -1;
     const title = getTitle(item);
-    const subtitle = item.incoming ? `From: ${this.ensureTrimmedText(item.from)}` : `To: ${this.ensureTrimmedText(item.to)}`;
+    const subtitle = `To: ${this.ensureTrimmedText(item.recipient)}`;
     const label = (
       <div align={this.props.isMobile() ? "left" : "right"}>
         {!isPending ? (
@@ -145,7 +114,7 @@ class Wallet extends React.Component {
     const itemMeta = (
       <List.Item.Meta
         avatar={
-          <Avatar src={getTokenImageURI(item)} />
+          <Avatar src={'/BTC.png'} />
         }
         title={!isPending ? (<p>{`${title}`}</p>) : (<p><i>{`${title}`}</i></p>)}
         description={!isPending ? (<p>{`${subtitle}`}</p>) : (<p><i>{`${subtitle}`}</i></p>)}
@@ -218,7 +187,11 @@ class Wallet extends React.Component {
   }
 
   renderList() {
-    const txs = this.separatePendingTxs(this.deDuplicateTxs());
+    // const txs = this.separatePendingTxs(this.deDuplicateTxs());
+    const txs = {
+      confirmed: this.props.session.btcTxs,
+      pending: [],
+    }
     return (
       <div>
         {txs.pending.length > 0 ? (
