@@ -25,8 +25,6 @@ class Main extends React.Component {
       menuItem: DEFAULT_MENU_ITEM,
       // GridPlusSDK session object
       session: null,
-      // WebWorker that will periodically lookup state on available addrs
-      worker: null, 
       errMsg: null,
       alertMsg: null,
       error: { msg: null, cb: null },

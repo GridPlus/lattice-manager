@@ -1,8 +1,6 @@
 import { Client } from 'gridplus-sdk';
 import { harden, fetchStateData, constants, getBtcPurpose } from '../util/helpers';
 import { default as StorageSession } from '../util/storageSession';
-import worker from '../stateWorker.js';
-import WebWorker from '../WebWorker';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
 const DEVICE_ADDR_SYNC_MS = 2000; // It takes roughly 2000 to sync a new address
@@ -31,8 +29,6 @@ class SDKSession {
     this.deviceID = deviceID;
     // Handler to call when we get state updates
     this.stateUpdateHandler = stateUpdateHandler;
-    // Web worker to sync blockchain data in the background
-    this.worker = null;
 
     // When we sync state on BTC for the first time, also check on
     // the change addresses if we have captured those addresses previously.
@@ -55,8 +51,6 @@ class SDKSession {
     this.saveStorage();
     this.storageSession = null;
     this.deviceId = null;
-    this.worker.postMessage({ type: 'stop' });
-    this.worker = null;
   }
 
   isConnected() {
@@ -147,46 +141,6 @@ class SDKSession {
   getActiveWallet() {
     if (!this.client) return null;
     return this.client.getActiveWallet();
-  }
-
-  stopWorker() {
-    this.worker.postMessage({ type: 'stop' });
-  }
-
-  restartWorker() {
-    this.worker.postMessage({ type: 'restart' });
-  }
-
-  // Setup a web worker to periodically lookup state data
-  setupWorker() {
-    this.worker = new WebWorker(worker);
-    this.worker.addEventListener('message', e => {
-      switch (e.data.type) {
-        case 'dataResp':
-          // Got data; update state here and let the main component know
-          if (e.data.data) {
-            this.fetchDataHandler(e.data.data);
-            this.stateUpdateHandler();
-          }
-          break;
-        case 'error':
-          // Error requesting data, report it to the main component.
-          if (this.stateUpdateHandler)
-            this.stateUpdateHandler({ err: e.data.data, currency: e.data.currency });
-          break;
-        case 'iterationDone':
-          // Done looping through our set of currencies for the given iteration
-          // Refresh wallets to make sure we are synced
-          this.refreshWallets((err) => {
-            this.stateUpdateHandler({err});
-          })
-          break;
-        default:
-          break;
-      }
-    })
-    this.worker.postMessage({ type: 'setup', data: constants.GRIDPLUS_CLOUD_API })
-    this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
   }
 
   fetchDataHandler(data, usingChange=false) {
@@ -326,7 +280,6 @@ class SDKSession {
 
   setPage(newPage=1) {
     this.page = newPage;
-    this.worker.postMessage({ type: 'setPage', data: this.page });
   }
 
   getPage() {
@@ -397,8 +350,6 @@ class SDKSession {
             // Note that we do need to track index here
             this.addresses[currency] = currentAddresses.concat(addresses);
             this.saveStorage();
-            if (this.worker)
-              this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
             return cb(null);
           }
         }, opts.n * DEVICE_ADDR_SYNC_MS);
@@ -464,22 +415,18 @@ class SDKSession {
     // have a current storage session
     if (this.deviceID && !this.storageSession)
       this.storageSession = new StorageSession(this.deviceID);
-    if (this.client && this.worker) {
+    if (this.client) {
       // If we have a client and if it has a non-zero active wallet UID,
       // lookup the addresses corresponding to that wallet UID in storage.
       const activeWallet = this.getActiveWallet();
       if (activeWallet === null) {
-        // No active wallet -- reset addresses and tell the worker to stop looking
-        // for updates until we get an active wallet
+        // No active wallet -- reset addresses
         this.addresses = {};
-        this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
-        this.worker.postMessage({ type: 'stop' });
       } else {
         const uid = activeWallet.uid.toString('hex')
         // Rehydrate the data
         const walletData = this.storageSession.getWalletData(this.deviceID, uid) || {};
         this.rehydrateAddresses(walletData.addresses);
-        this.worker.postMessage({ type: 'setAddresses', data: this.addresses });
       }
     }
   }
@@ -530,7 +477,6 @@ class SDKSession {
       // (This call will be bypassed if the credentials are already saved
       // in localStorage because getStorage is also called in the constructor)
       this.deviceID = deviceID;
-      this.setupWorker();
       this.getStorage();
       return cb(null, client.isPaired);
     });

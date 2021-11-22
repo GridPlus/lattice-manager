@@ -116,51 +116,6 @@ const headers = {
     'Content-Type': 'application/json',
 };
 
-function fetchETHNonce(currency, addresses) {
-    return new Promise((resolve, reject) => {
-        if (currency !== 'ETH' || addresses.length < 1)
-            return resolve(null);
-        const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/get-transaction-count`
-        const data = {
-            method: 'POST',
-            body: JSON.stringify({ address: addresses[0] }),
-            headers,
-        }
-        fetch(url, data)
-        .then((response) => response.json())
-        .then((resp) => {
-            if (resp.error) return reject(resp.error);
-            return resolve(resp.data);
-        })
-        .catch((err) => {
-            return reject('Failed to fetch data. Please refresh to try again.');
-        });
-    })
-}
-
-function fetchERC20Data(currency, addresses, page) {
-    return new Promise((resolve, reject) => {
-        if (currency !== 'ETH')
-            return resolve(null);
-        const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/get-erc20-transactions`
-        const data = {
-            method: 'POST',
-            body: JSON.stringify([{ currency, addresses, page }]),
-            headers,
-        }
-        fetch(url, data)
-        .then((response) => response.json())
-        .then((resp) => {
-            const data = resp.data[0];
-            if (data.error) return reject(data.error);
-            return resolve(data);
-        })
-        .catch((err) => {
-            return reject('Failed to fetch data. Please refresh to try again.');
-        });
-    })
-}
-
 function fetchCurrencyData(currency, addresses, page) {
     return new Promise((resolve, reject) => {
         // Account for change addresses
@@ -215,24 +170,7 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
         utxos: [],
     };
 
-    // Get ERC20 data if applicable
-    // We fetch this first because ERC20 transactions will appear as duplicates
-    // and we need to filter out the ETH-based dups
-    fetchETHNonce(currency, reqAddresses)
-    .then((nonce) => {
-        if (nonce !== null)
-            stateData.ethNonce = nonce;
-        return fetchERC20Data(currency, reqAddresses, page)
-    })        
-    .then((erc20Data) => {
-        if (erc20Data !== null && erc20Data !== undefined) {
-            // Add ERC20 balances
-            stateData.erc20Balances = erc20Data.balanceData;
-            // Add the transactions
-            stateData.transactions = stateData.transactions.concat(erc20Data.transactions);
-        }
-        return fetchCurrencyData(currency, reqAddresses, page)
-    })
+    fetchCurrencyData(currency, reqAddresses, page)
     .then((mainData) => {
         stateData.currency = mainData.currency;
         stateData.balance = mainData.balance;
@@ -364,8 +302,7 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
         recipient,
         value: satValue,
         fee,
-        // Note we send change to the latest change address. Once this becomes used, the web worker
-        // should fetch a new change address and update state
+        // Send change to the latest change address
         changePath: BASE_SIGNER_PATH.concat([1, changeAddrs.length -1]),
     };
     return { currency: 'BTC', data: req }

@@ -168,15 +168,12 @@ class EthContracts extends React.Component {
 
   addDefs(skipErrors=false) {
     this.setState({ loading: true, error: null })
-    // Stop the web worker so it doesn't interfere with this request
-    this.props.session.stopWorker();
     // Longer timeout for loading these since requests may get dropped
     this.props.session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
     const defs = this.state.customDefs ? this.state.customDefs : this.state.defs;
     this.props.session.addAbiDefs(defs, (err) => {
-      // Restart the web worker and reset the timeout
+      // Reset timeout to default
       this.props.session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
-      this.props.session.restartWorker();
       if (err) {
         this.setState({ error: err.toString(), loading: false, success: false })
       } else {
