@@ -610,7 +610,7 @@ class Main extends React.Component {
           rel='noopener noreferrer'
       >
         <img  alt="GridPlus" 
-              src={'/logo-on-black.png'}
+              src={'/gridplus-logo.png'}
               style={{height: '1em'}}/>
       </a>
     )
