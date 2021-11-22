@@ -11,7 +11,7 @@ import { default as SDKSession } from '../sdk/sdkSession';
 import { 
   Connect, Error, Landing, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
 } from './index'
-import { constants, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
+import { constants, getLocalStorageSettings } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
@@ -52,7 +52,6 @@ class Main extends React.Component {
 
     // Bind local state updaters
     this.setAlertMessage = this.setAlertMessage.bind(this);
-    this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
     this.handleMenuChange = this.handleMenuChange.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
     this.handleKeyringOpener = this.handleKeyringOpener.bind(this);
@@ -63,7 +62,7 @@ class Main extends React.Component {
     this.connectSession = this.connectSession.bind(this);
     this.handlePair = this.handlePair.bind(this);
     this.fetchAddresses = this.fetchAddresses.bind(this);
-    this.fetchData = this.fetchData.bind(this);
+    this.fetchBtcData = this.fetchBtcData.bind(this);
     this.handleStateUpdate = this.handleStateUpdate.bind(this);
     this.refreshWallets = this.refreshWallets.bind(this);
     this.handlePageTurn = this.handlePageTurn.bind(this);
@@ -76,9 +75,6 @@ class Main extends React.Component {
   }
 
   componentDidMount() {
-    // Set the ethers provider for ENS support
-    setEthersProvider();
-
     // Listen for window resize
     window.addEventListener('resize', this.updateWidth);
 
@@ -306,22 +302,9 @@ class Main extends React.Component {
   //------------------------------------------
   // HEADER HANDLERS
   //------------------------------------------
-
-  handleCurrencyChange(value) {
-    this.setState({ currency: value, error: { msg: null, cb: null } }, function() {
-      // Load addresses for new currency once it is updated
-      // If we get a callback, this worked (i.e. we either already)
-      // had the necessary addresses or we fetched them properly.
-      if (this.isConnected()) {
-        this.setAlertMessage();
-        this.fetchAddresses(this.fetchData);
-      }
-    })
-  }
-
   handlePageTurn(page) {
     this.state.session.setPage(page);
-    this.fetchData();
+    this.fetchBtcData();
   }
 
   handleMenuChange({key}) {
@@ -405,8 +388,6 @@ class Main extends React.Component {
           // 3. Proceed based on state
           if (isPaired && this.state.openedByKeyring) {
             return this.returnKeyringData();
-          } else if (isPaired) {
-            return this.fetchAddresses(this.fetchData)
           }
         }
       });
@@ -415,7 +396,8 @@ class Main extends React.Component {
 
   // Fetch up-to-date blockchain state data for the addresses stored in our
   // SDKSession. Called after we load addresses for the first time
-  fetchData(cb=null) {
+  fetchBtcData(cb=null) {
+    console.log('main fetchBtcData')
     this.wait("Syncing chain data");
     this.state.session.fetchData(this.state.currency, (err) => {
       this.unwait();
@@ -437,7 +419,7 @@ class Main extends React.Component {
   // the currently selected currency. Once we have the addresses,
   // attempt to fetch updated blockchain state data.
   // NOTE: If we don't need additional addresses, no request will be
-  // made to the Lattice and we will proceed to fetchData immediately.
+  // made to the Lattice and we will proceed to fetchBtcData immediately.
   fetchAddresses(cb=null) {
     if (this.state.waiting === true)
       return;
@@ -484,7 +466,7 @@ class Main extends React.Component {
       // switch the walletUID and will catch an error, which we need to clear out here
       // so that the user doesn't see it once we successfully fetch addresses. 
       this.setError();
-      this.fetchAddresses(this.fetchData);
+      this.fetchAddresses(this.fetchBtcData);
     })
   }
 
@@ -532,10 +514,7 @@ class Main extends React.Component {
         // If there was an error here, the user probably entered the wrong secret
         const pairErr = 'Failed to pair. You either entered the wrong code or have already connected to this app.'
         this.setError({ msg: pairErr, cb: this.connectSession });
-      } else if (!this.state.openedByKeyring) {
-        // Success! Load our addresses from this wallet.
-        this.fetchAddresses(this.fetchData);
-      } else {
+      } else if (this.state.openedByKeyring) {
         this.returnKeyringData();
       }
     })
@@ -640,18 +619,6 @@ class Main extends React.Component {
     if (walletTag) extra.push((
       <Tooltip title="Refresh" key="WalletTagTooltip">{walletTag}</Tooltip>));
 
-    // Add the currency switch
-    // extra.push((
-    //   <Menu onClick={this.handleCurrencyChange}>
-    //     <Menu.Item key="BTC">
-    //       BTC
-    //     </Menu.Item>
-    //     <Menu.Item key="ETH">
-    //       ETH
-    //     </Menu.Item>
-    //   </Menu>
-    // ))
-
     extra.push(
       ( <Button key="logout-button" type="primary" onClick={this.handleLogout} size={size}>
         Logout
@@ -695,7 +662,7 @@ class Main extends React.Component {
                   isMobile={() => this.isMobile()}
                   session={this.state.session}
                   msgHandler={this.setAlertMessage}
-                  refreshData={this.fetchData}
+                  refreshData={this.fetchBtcData}
                   tick={this.state.tick}
                   lastUpdated={this.state.lastUpdated}
                   stillSyncingAddresses={this.state.stillSyncingAddresses}

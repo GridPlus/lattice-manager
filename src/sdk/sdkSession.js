@@ -69,9 +69,7 @@ class SDKSession {
     this.firstUnusedAddresses = {};
   }
 
-  getBalance(currency, erc20Token=null) {
-    if (currency === 'ETH' && erc20Token !== null)
-      return this.balances[erc20Token] || 0;
+  getBalance(currency) {
     return this.balances[currency] || 0;
   }
 
@@ -130,9 +128,6 @@ class SDKSession {
           return this.firstUnusedAddresses[currency];
         else
           return this.addresses[currency][0];
-      case 'ETH':
-        // We only ever use the first ETH address
-        return this.addresses[currency][0];
       default:
         return null;
     }
@@ -147,7 +142,7 @@ class SDKSession {
     // if (!data)
     //   return; // Sometimes we get back nothing... need to look into why
     let { currency } = data; // Will be adjusted if this is a change addresses request
-    const { balance, transactions, firstUnused, lastUnused, utxos, erc20Balances, ethNonce } = data;
+    const { balance, transactions, firstUnused, lastUnused, utxos } = data;
     let switchToChange = false;
     const changeCurrency = `${currency}_CHANGE`;
 
@@ -215,14 +210,6 @@ class SDKSession {
       } else {
         switchToChange = false;
       }
-    } else if (currency === 'ETH') {
-      // Record nonce
-      if (ethNonce !== null)
-        this.ethNonce = ethNonce;
-      // Record the ERC20 balances
-      erc20Balances.forEach((e) => {
-        this.balances[e.contractAddress] = e.balance;
-      })
     }
     //---------
 
@@ -316,14 +303,6 @@ class SDKSession {
         opts.startPath = [ BTC_PURPOSE, constants.BTC_COIN, harden(0), 1, nextIdx ];
         opts.n = nextIdx >= constants.BTC_CHANGE_GAP_LIMIT ? 1 : constants.BTC_CHANGE_GAP_LIMIT;
         break;
-      case 'ETH':
-        // Do not load addresses if we already have the first ETH one.
-        // We will only ever use one ETH address, so callback success here.
-        if (nextIdx > 0) return cb(null);
-        // If we don't have any addresses here, let's get the first one
-        opts.startPath = [ constants.ETH_PURPOSE, harden(60), harden(0), 0, nextIdx ];
-        opts.n = 1;
-        break;
       default:
         return cb('Invalid currency to request addresses');
     }
@@ -359,9 +338,7 @@ class SDKSession {
 
   // Prepare addresses for caching in localStorage
   dryAddresses() {
-    const driedAddrs = {
-      ETH: this.addresses.ETH || [],
-    };
+    const driedAddrs = {};
     const hasBTCAddrs = this.addresses.BTC && this.addresses.BTC.length > 0;
     const hasBTCChangeAddrs = this.addresses.BTC_CHANGE && this.addresses.BTC_CHANGE.length > 0;
     const BTC_PURPOSE = getBtcPurpose();
@@ -380,8 +357,6 @@ class SDKSession {
   rehydrateAddresses(allAddrs={}) {
     const rehydratedAddrs = {};
     const BTC_PURPOSE = getBtcPurpose();
-    if (allAddrs.ETH)
-      rehydratedAddrs.ETH = allAddrs.ETH;
     if (allAddrs.BTC) {
       rehydratedAddrs.BTC = allAddrs.BTC[BTC_PURPOSE];
     }

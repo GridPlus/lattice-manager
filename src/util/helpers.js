@@ -1,12 +1,12 @@
 const bs58check = require('bs58check');
 const bech32 = require('bech32').bech32;
-const { ethers } = require('ethers');
 
 const constants = {
     DEFAULT_APP_NAME: 'Lattice Manager',
     ENV: process.env.REACT_APP_ENV || 'prod',
     BASE_SIGNING_URL: process.env.REACT_APP_BASE_SIGNING_URL || 'https://signing.gridpl.us',
     GRIDPLUS_CLOUD_API: process.env.REACT_APP_GRIDPLUS_CLOUD_API || 'https://pay.gridplus.io:3000',
+    BTC_PROD_DATA_API: 'https://blockchain.info',
     ROOT_STORE: process.env.REACT_APP_ROOT_STORE || 'gridplus',
     HARDENED_OFFSET: 0x80000000,
     ASYNC_SDK_TIMEOUT: 60000,
@@ -17,14 +17,10 @@ const constants = {
     BTC_CHANGE_GAP_LIMIT: 1,
     BTC_CHANGE_ADDR_BLOCK_LEN: 1,
     BTC_DEFAULT_FEE_RATE: process.env.REACT_APP_BTC_DEFAULT_FEE_RATE || 10, // 10 sat/byte
-    ETH_DEFAULT_FEE_RATE: process.env.REACT_APP_ETH_DEFAULT_FEE_RATE || 100, //  100 GWei
-    ETH_TX_BASE_URL: process.env.REACT_APP_ETH_TX_BASE_URL || 'https://etherscan.io/tx',
     BTC_TX_BASE_URL: process.env.REACT_APP_BTC_TX_BASE_URL || 'https://www.blockchain.com/btc/tx',
     PAGE_SIZE: 20, // 20 transactions per requested page, per `gridplus-cloud-services`
     LOST_PAIRING_ERR: "NOT_PAIRED",
     LOST_PAIRING_MSG: "Cannot find Lattice connection. Please re-connect.",
-    ERC20_TOKENS_LIST_PATH: process.env.REACT_APP_ERC20_TOKENS_LIST_PATH || './prodTokens.json',
-    ETH_TESTNET: process.env.REACT_APP_ETH_TESTNET || null,
     BTC_TESTNET: process.env.REACT_APP_BTC_TESTNET || null,
     KEYRING_LOGOUT_MS: process.env.KEYRING_LOGOUT_MS || 2592000000, // default 30 days
     KEYRING_DATA_PATH: 'gridplus_web_wallet_keyring_logins', // item in localStorage
@@ -36,6 +32,7 @@ const constants = {
 }
 
 const devConstants = {
+    BTC_DEV_DATA_API: 'https://blockstream.info/testnet/api',
     BASE_SIGNING_URL: 'https://signing.staging-gridpl.us',
     GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3333',
     // Deprecating because using two different stores was very tricky and we don't
@@ -43,17 +40,10 @@ const devConstants = {
     // ROOT_STORE: 'gridplus-dev', 
     BTC_COIN: 0x80000000 + 1,
     BTC_DEFAULT_FEE_RATE: 10,
-    ETH_TX_BASE_URL: 'https://rinkeby.etherscan.io/tx',
     BTC_TX_BASE_URL: 'https://www.blockchain.com/btc-testnet/tx',
-    ERC20_TOKENS_LIST_PATH: './devTokens.json',
-    ETH_TESTNET: 'Rinkeby',
     BTC_TESTNET: 'Testnet3',
     LATTICE_CERT_SIGNER: '045cfdf77a00b4b6b4a5b8bb26b5497dbc7a4d01cbefd7aaeaf5f6f8f8865976e7941ab0ec1651209c444009fd48d925a17de5040ba47eaf3f5b51720dd40b2f9d',
 }
-
-// OLD: You can run this with dev constants enabled by default: `npm run start-dev`
-constants.ERC20_TOKENS = constants.ENV === 'dev' ? require('./devTokens.json') : require('./prodTokens.json');
-constants.ETH_PURPOSE = constants.HARDENED_OFFSET + 44;
 
 /*
 // By default we provide bech32 addresses derived using BIP84. However,
@@ -73,48 +63,51 @@ if (localSettings.devLattice) {
 exports.constants = constants;
 
 //--------------------------------------------
-// ETHEREUM NAME SERVICE (ENS) HELPERS
-//--------------------------------------------
-let ethersProvider;
-exports.setEthersProvider = function() {
-    try {
-        if (constants.ETH_TESTNET)
-            ethersProvider = new ethers.providers.EtherscanProvider(constants.ETH_TESTNET.toLowerCase());
-        else
-            ethersProvider = new ethers.providers.EtherscanProvider();
-        return null;
-    } catch (err) {
-        return err;
-    }
-}
-
-function isValidENS(name) {
-    try {
-        return name.slice(-4) === '.eth';
-    } catch (err) {
-        return false;
-    }
-}
-exports.isValidENS = isValidENS;
-
-exports.resolveENS = function(name, cb) {
-    if (false === isValidENS(name))
-        return cb(null, null);
-    ethersProvider.resolveName(name)
-    .then((addr) => { return cb(null, addr); })
-    .catch((err) => { return cb(err); })
-}
-//--------------------------------------------
-// END ETHEREUM NAME SERVICE (ENS) HELPERS
-//--------------------------------------------
-
-//--------------------------------------------
 // CHAIN DATA SYNCING HELPERS
 //--------------------------------------------
 const headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
 };
+
+function _fetchGET(url, cb) {
+    fetch(url)
+    .then((response) => response.json())
+    .then((resp) => cb(null, resp))
+    .catch((err) => cb(err))
+}
+
+// For mainnet (production env) we can bulk request data from the blockchain.com API
+function _fetchBtcUtxos(addresses, cb) {
+
+}
+
+// For testnet we cannot use blockchain.com - we have to request stuff from each
+// address individually.
+function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
+    if (addresses.length === 0)
+        return cb(null, utxos);
+    const address = addresses.pop()
+    const url = `${constants.BTC_DEV_DATA_API}/address/${address}/utxo`;
+    console.log('url', url)
+    _fetchGET(url, (err, data) => {
+        console.log('data', data)
+        setTimeout(() => {
+            return _fetchBtcUtxosTestnet(addresses, cb)
+        }, 500)
+    })
+}
+
+function fetchBtcUtxos(addresses) {
+    return new Promise((resolve, reject) => {
+        const f = constants.BTC_DEV_DATA_API ? _fetchBtcUtxosTestnet : _fetchBtcUtxos;
+        f(addresses, (err, utxos) => {
+            if (err)
+                return reject(err)
+            return resolve(utxos)
+        })
+    })
+}
 
 function fetchCurrencyData(currency, addresses, page) {
     return new Promise((resolve, reject) => {
@@ -148,6 +141,7 @@ function fetchCurrencyData(currency, addresses, page) {
 // @param page      {number}   -- page of transactions to request (ignored if currency!=ETH)
 // @param cb        {function} -- callback function of form cb(err, data)
 exports.fetchStateData = function(currency, addresses, page, cb) {
+    console.log('fetch state data')
     // The change currency types are second class citizens. Recast to the main type.
     if (currency.indexOf('_CHANGE') > -1)
         currency = currency.slice(0, currency.indexOf('_CHANGE'))
@@ -169,7 +163,11 @@ exports.fetchStateData = function(currency, addresses, page, cb) {
         ethNonce: null,
         utxos: [],
     };
-
+    console.log(reqAddresses)
+    // fetchBtcUtxos([reqAddresses[0]])
+    // .then(() => {
+    //     return fetchCurrencyData(currency, reqAddresses, page)
+    // })
     fetchCurrencyData(currency, reqAddresses, page)
     .then((mainData) => {
         stateData.currency = mainData.currency;
@@ -324,8 +322,6 @@ exports.buildERC20Data = function(recipient, value, decimals) {
 exports.getCurrencyText = function(currency) {
     if (constants.ENV === 'dev') {
       switch (currency) {
-        case 'ETH':
-          return `ETH (${constants.ETH_TESTNET})`;
         case 'BTC':
           return `BTC (${constants.BTC_TESTNET})`;
         default:

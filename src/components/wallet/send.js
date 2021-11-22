@@ -1,22 +1,18 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Alert, Button, Card, Row, Input, InputNumber, Empty, Statistic, notification, Select } from 'antd'
+import { Alert, Button, Card, Row, Input, InputNumber, Empty, Statistic, notification } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { allChecks } from '../../util/sendChecks';
 import { 
-  constants, buildBtcTxReq, buildERC20Data, getBtcNumTxBytes, getCurrencyText, isValidENS, resolveENS, toHexStr 
+  constants, buildBtcTxReq, getBtcNumTxBytes, getCurrencyText
 } from '../../util/helpers'
 import '../styles.css'
 const BN = require('bignumber.js');
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
 // Conversion from sats to BTC
-const GWEI_FACTOR = Math.pow(10, 9);
 const BTC_FACTOR = Math.pow(10, 8);
-// ETH uses bignums so we cannot safely do native JS math and must use BigInt types
-const ETH_POWER = new BN('10').pow(18);
-const GWEI_POWER = new BN('10').pow(9);
 
 class Send extends React.Component {
   constructor(props) {
@@ -30,13 +26,6 @@ class Send extends React.Component {
       error: null,
       isLoading: false,
       txHash: null,
-      erc20Addr: null, // null = use ETH
-      ethExtraData: {
-        gasPrice: constants.ETH_DEFAULT_FEE_RATE,
-        gasLimit: 25000,
-        data: '',
-        nonce: this.props.session.ethNonce,
-      },
       btcFeeRate: constants.BTC_DEFAULT_FEE_RATE,
       ensResolvedAddress: null,
     }
@@ -46,24 +35,12 @@ class Send extends React.Component {
     this.renderSubmitButton = this.renderSubmitButton.bind(this);
     this.renderValueLabel = this.renderValueLabel.bind(this);
     this.submit = this.submit.bind(this);
-    this.buildEthRequest = this.buildEthRequest.bind(this);
     this.buildBtcRequest = this.buildBtcRequest.bind(this);
     this.updateBtcFeeRate = this.updateBtcFeeRate.bind(this);
   }
 
   componentDidMount() {
-    fetch('https://www.gasnow.org/api/v3/gas/price?utm_source=gpwebwallet')
-    .then((response) => response.json())
-    .then((resp) => {
-      if (resp.code === 200 && resp.data) {
-        if (resp.data.fast) {
-          const data = JSON.parse(JSON.stringify(this.state.ethExtraData))
-          data.gasPrice = (resp.data.fast) / GWEI_FACTOR;
-          this.setState({ ethExtraData: data })
-        }
-      }
-      return fetch('https://bitcoinfees.earn.com/api/v1/fees/recommended')
-    })
+    fetch('https://bitcoinfees.earn.com/api/v1/fees/recommended')
     .then((response) => response.json())
     .then((resp) => {
       if (resp.hourFee)
@@ -94,15 +71,11 @@ class Send extends React.Component {
       ensResolvedAddress: null,
       recipientCheck: check, 
     });
-    // For ETH, the user may have typed in an ENS name, which should be verified
-    // independently.
-    if (false === check && this.props.currency === 'ETH' && isValidENS(val))
-      resolveENS(val, this.handleENSResolution);
   }
 
   checkValue(val) {
     // Verify that it is smaller than the balance
-    const balance = this.props.session.getBalance(this.props.currency, this.state.erc20Addr);
+    const balance = this.props.session.getBalance(this.props.currency);
     if (val === '' || val === null || val === undefined)
       return null;
     return (Number(balance) >= Number(val));
@@ -137,36 +110,6 @@ class Send extends React.Component {
     });
   }
 
-  updateEthExtraData(evt) {
-    const extraDataCopy = JSON.parse(JSON.stringify(this.state.ethExtraData));
-    switch (evt.target.id) {
-      case 'ethGasPrice':
-        if (!isNaN(evt.target.value))
-          extraDataCopy.gasPrice = evt.target.value;
-        break;
-      case 'ethGasLimit':
-        if (!isNaN(evt.target.value) && Number(evt.target.value) < 10000000)
-          extraDataCopy.gasLimit = evt.target.value;
-        break;
-      case 'ethNonce':
-        if (!isNaN(evt.target.value))
-          extraDataCopy.nonce = evt.target.value;
-        break;
-      case 'ethData':
-        let data = evt.target.value;
-        while(data.indexOf('0x') > -1) {
-          const left = data.slice(0, data.indexOf('0x'));
-          const right = data.slice(data.indexOf('0x') + 2);
-          data = left + right;
-        }
-        extraDataCopy.data = data;
-        break;
-      default:
-        break;
-    }
-    this.setState({ ethExtraData: extraDataCopy })
-  }
-
   updateBtcFeeRate(value) {
     this.setState({ btcFeeRate: value })
   }
@@ -174,61 +117,6 @@ class Send extends React.Component {
   //========================================================
   // TRANSACTION-RELATED BUILDERS AND HOOKS
   //========================================================
-
-  getDecimals(addr) {
-    let decimals = null;
-    constants.ERC20_TOKENS.forEach((token) => {
-      if (token.contractAddress.toLowerCase() === addr.toLowerCase())
-        decimals = token.decimals;
-    })
-    return decimals;
-  }
-
-  buildEthRequest() {
-    let _value, _data, _recipient;
-    const recipient = this.state.ensResolvedAddress ?
-                      this.state.ensResolvedAddress :
-                      this.state.recipient;
-    if (this.state.erc20Addr !== null) {
-      const decimals = this.getDecimals(this.state.erc20Addr);
-      // Sanity check -- should never happen
-      if (decimals === null)
-        throw new Error('Could not find token specified');
-      _value = 0;
-      _recipient = this.state.erc20Addr;
-      _data = buildERC20Data(recipient, this.state.value, decimals);
-    } else {
-      const valueBn = new BN(this.state.value);
-      _value = toHexStr(valueBn.multipliedBy(ETH_POWER));
-      _recipient = recipient;
-      _data = this.state.ethExtraData.data;
-    }
-    const txData = {
-      nonce: Number(this.state.ethExtraData.nonce),
-      gasPrice: (parseFloat(this.state.ethExtraData.gasPrice).toFixed(1) * GWEI_FACTOR),
-      gasLimit: Math.ceil(Number(this.state.ethExtraData.gasLimit)),
-      to: _recipient,
-      value: _value,
-      data: _data,
-    };
-
-    const req = {
-      currency: 'ETH',
-      data: {
-        signerPath: [
-          constants.ETH_PURPOSE, 
-          constants.HARDENED_OFFSET+60, 
-          constants.HARDENED_OFFSET, 
-          0, 
-          0
-        ],
-        ...txData,
-        chainId: constants.ENV === 'dev' ? 4 : 1, // Rinkeby does not use EIP155
-      }
-    };
-    return req;
-  }
-
   buildBtcRequest() {
     const req = buildBtcTxReq(this.state.recipient, 
                               this.state.value,
@@ -249,9 +137,6 @@ class Send extends React.Component {
   submit() {
     let req;
     switch (this.props.currency) {
-      case 'ETH':
-        req = this.buildEthRequest();
-        break;
       case 'BTC':
         req = this.buildBtcRequest();
         break;
@@ -299,29 +184,10 @@ class Send extends React.Component {
 
   getUrl() {
     switch (this.props.currency) {
-      case 'ETH':
-        return `${constants.ETH_TX_BASE_URL}/${this.state.txHash}`;
       case 'BTC':
         return `${constants.BTC_TX_BASE_URL}/${this.state.txHash}`;
       default:
         return '';
-    }
-  }
-
-  selectToken(item) {
-    const extraCopy = JSON.parse(JSON.stringify(this.state.ethExtraData));
-    switch (item) {
-      case 'ETH':
-        extraCopy.gasLimit = 23000;
-        this.setState({ erc20Addr: null, ethExtraData: extraCopy });
-        break;
-      case 'add':
-        this.drawAddTokenModal();
-        break;
-      default:
-        extraCopy.gasLimit = 60000;
-        this.setState({ erc20Addr: item, ethExtraData: extraCopy});
-        break;
     }
   }
 
@@ -364,37 +230,7 @@ class Send extends React.Component {
           {input}
         </Row>
       );
-    } else if (this.props.currency === 'ETH') {
-      // For ETH, account for ERC20s in the form of a dropdown
-      const tokensList = constants.ERC20_TOKENS.map((token) => {
-        return (<Select.Option value={token.contractAddress} key={`token_${token.contractAddress}`} style={{margin: "0 20px 0 0"}}>
-          {token.symbol}
-        </Select.Option>);
-      });
-      // Buffer the ETH string
-      const tokenOption = (
-        <Select defaultValue={'ETH'} 
-                dropdownMatchSelectWidth={false}
-                onSelect={this.selectToken.bind(this)} 
-                style={{"textAlign": "center"}} 
-                className="select-after">
-          <Select.Option value={'ETH'} key={'token_ETH'}>ETH</Select.Option>
-          {tokensList}
-        </Select>
-      );
-      
-      return (
-        <Row justify='center'>
-          {this.renderValueLabelTitle()}
-          <Input type="text" 
-                  id={VALUE_ID} 
-                  value={this.state.value} 
-                  onChange={this.updateValue.bind(this)}
-                  addonAfter={tokenOption}
-          />
-        </Row>
-      );
-    }    
+    }
   }
 
   renderRecipientLabel() {
@@ -459,51 +295,7 @@ class Send extends React.Component {
   }
 
   renderExtra() {
-    if (this.props.currency === 'ETH') {
-      return (
-        <div>
-            <Row justify='center'>
-              <p style={{textAlign: 'left'}}><b>Gas Price (GWei)</b></p>
-              <Input type="text" 
-                id={"ethGasPrice"}
-                value={this.state.ethExtraData.gasPrice}
-                onChange={this.updateEthExtraData.bind(this)}/>
-            </Row>
-            <Row justify='center' style={{margin: "20px 0 0 0"}}>
-              <p style={{textAlign: 'left'}}><b>Gas Limit</b></p>
-              <Input type="text" 
-                id={"ethGasLimit"} 
-                value={this.state.ethExtraData.gasLimit}
-                onChange={this.updateEthExtraData.bind(this)}/>
-            </Row>
-            <Row justify='center' style={{margin: "20px 0 0 0"}}>
-              <p style={{textAlign: 'left'}}>
-                <b>Nonce</b>
-                <Button onClick={() => { 
-                  const ed = JSON.parse(JSON.stringify(this.state.ethExtraData)); 
-                  ed.nonce = this.props.session.ethNonce;
-                  this.setState({ ethExtraData: ed })}}
-                  type="link">
-                  Reset
-                </Button>
-              </p>
-              <Input type="text" 
-                id={"ethNonce"} 
-                value={this.state.ethExtraData.nonce}
-                onChange={this.updateEthExtraData.bind(this)}/>
-            </Row>
-            {this.state.erc20Addr === null ? (
-              <Row justify='center' style={{margin: "20px 0 0 0"}}>
-                <p style={{textAlign: 'left'}}><b>Data</b></p>
-                <Input.TextArea rows={2} 
-                                id={"ethData"}
-                                value={`0x${this.state.ethExtraData.data}`}
-                                onChange={this.updateEthExtraData.bind(this)}/>
-              </Row>
-            ) : null}
-        </div>
-      )
-    } else if (this.props.currency === 'BTC') {
+    if (this.props.currency === 'BTC') {
       return (
         <div>
           <Row justify='center'>
@@ -511,7 +303,6 @@ class Send extends React.Component {
           </Row>
           <Row justify='center'>        
             <InputNumber
-              addonBefore='Fee'
               min={1}
               max={100}
               onChange={this.updateBtcFeeRate}
@@ -524,7 +315,7 @@ class Send extends React.Component {
   }
 
   calculateMaxValue() {
-    const balance = this.props.session.getBalance(this.props.currency, this.state.erc20Addr);
+    const balance = this.props.session.getBalance(this.props.currency);
     switch (this.props.currency) {
       case 'BTC':
         // To spend all BTC, get the size of all UTXOs and calculate the fee required
@@ -532,16 +323,6 @@ class Send extends React.Component {
         const txBytes = getBtcNumTxBytes(this.props.session.getUtxos('BTC').length);
         const feeSat = this.state.btcFeeRate * txBytes;
         return Math.max((balance - (feeSat / BTC_FACTOR)).toFixed(8), 0);
-      case 'ETH':
-        if (this.state.erc20Addr !== null)
-          return balance;
-        const gasPriceBn = new BN(this.state.ethExtraData.gasPrice);
-        const gasLimitBn = new BN(this.state.ethExtraData.gasLimit);
-        const feeWei = gasPriceBn.multipliedBy(gasLimitBn).multipliedBy(GWEI_POWER);
-        const balanceBn = new BN(balance);
-        const balanceWei = balanceBn.multipliedBy(ETH_POWER);
-        const maxEth = balanceWei.minus(feeWei).div(ETH_POWER);
-        return Math.max(Number(maxEth.toString(10)), 0);
       default:
         return 0;
     }
@@ -582,27 +363,13 @@ class Send extends React.Component {
   }
 
   renderBalance() {
-    let balance = new BN(this.props.session.getBalance(this.props.currency, this.state.erc20Addr));
-    let token = null;
-    if (this.state.erc20Addr) {
-      let decimals = 18
-      constants.ERC20_TOKENS.forEach((t) => {
-        if (t.contractAddress.toLowerCase() === this.state.erc20Addr.toLowerCase()) {
-          token = t;
-          decimals = t.decimals
-        }
-      })
-      const divisor = new BN(10).pow(decimals);
-      balance = balance.div(divisor);
-      if (decimals < 18)
-        balance = balance.toFixed(decimals);
-    } else if (this.props.currency === 'BTC') {
+    let balance = new BN(this.props.session.getBalance(this.props.currency));
+    if (this.props.currency === 'BTC') {
       balance = balance.toFixed(8);
     }
-    const name = token === null ? this.props.currency : token.symbol;
     return (
       <Row justify='center' style={{margin: "0 0 20px 0"}}>
-        <Statistic title="Balance" value={`${balance} ${name}`} />
+        <Statistic title="Balance" value={`${balance} ${this.props.currency}`} />
       </Row>
     )
   }
