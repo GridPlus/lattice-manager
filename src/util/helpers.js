@@ -32,6 +32,7 @@ const constants = {
 }
 
 const devConstants = {
+    RATE_LIMIT: 2000, // 1s between requests
     BTC_DEV_DATA_API: 'https://blockstream.info/testnet/api',
     BASE_SIGNING_URL: 'https://signing.staging-gridpl.us',
     GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3333',
@@ -65,11 +66,6 @@ exports.constants = constants;
 //--------------------------------------------
 // CHAIN DATA SYNCING HELPERS
 //--------------------------------------------
-const headers = {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-};
-
 function _fetchGET(url, cb) {
     fetch(url)
     .then((response) => response.json())
@@ -77,6 +73,21 @@ function _fetchGET(url, cb) {
     .catch((err) => cb(err))
 }
 
+function _filterUniqueObjects(objs, key) {
+    const filtered = [];
+    objs.forEach((obj) => {
+        let isDup = false;
+        filtered.forEach((fobj) => {
+            if (fobj[key] === obj[key]) {
+                isDup = true;
+            }
+        })
+        if (!isDup) {
+            filtered.push(obj);
+        }
+    })
+    return filtered;
+}
 
 //====== UTXOS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
@@ -87,24 +98,36 @@ function _fetchBtcUtxos(addresses, cb) {
 // For testnet we cannot use blockchain.com - we have to request stuff from each
 // address individually.
 function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
-    console.log(1, addresses)
+    console.log('addresses', addresses)
     const address = addresses.pop()
-    console.log(2, addresses)
     const url = `${constants.BTC_DEV_DATA_API}/address/${address}/utxo`;
-    console.log('url', url)
     _fetchGET(url, (err, data) => {
         if (err)
             return cb(err)
-        if (addresses.length === 0)
-            return cb(null, utxos);
+        data.forEach((u) => {
+            // Add confirmed UTXOs
+            if (u.status.confirmed) {
+                utxos.push({
+                    id: u.txid,
+                    vout: u.vout,
+                    value: u.value,
+                })
+            }
+        })
+        if (addresses.length === 0) {
+            return cb(null, _filterUniqueObjects(utxos, 'id'));
+        }
         setTimeout(() => {
-            return _fetchBtcUtxosTestnet(addresses, cb, utxos)
-        }, 5000)
+            _fetchBtcUtxosTestnet(addresses, cb, utxos)
+        }, constants.RATE_LIMIT)
     })
 }
 
 exports.fetchBtcUtxos = function(addresses, cb) {
-    console.log('FETCHING', addresses.length)
+    if (!addresses)
+        return cb('Cannot fetch UTXOs - bad input');
+    else if (addresses.length < 1)
+        return cb(null, []);
     const addrsCopy = JSON.parse(JSON.stringify(addresses));
     const f = constants.BTC_DEV_DATA_API ? _fetchBtcUtxosTestnet : _fetchBtcUtxos;
     f(addrsCopy, cb);
@@ -119,16 +142,21 @@ function _fetchBtcTxs(addresses, cb) {
 
 // For testnet we cannot use blockchain.com - we have to request stuff from each
 // address individually.
-function _fetchBtcTxsTestnet(addresses, cb, txs=[]) {
+function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
     const address = addresses.pop()
-    const url = `${constants.BTC_DEV_DATA_API}/address/${address}/txs`;
+    let url = `${constants.BTC_DEV_DATA_API}/address/${address}/txs`;
+    if (lastSeenId) {
+        url = `${url}/chain/${lastSeenId}`
+    }
     _fetchGET(url, (err, data) => {
         if (err)
             return cb(err)
         let formattedTxs = [];
+        let confirmedCount = 0;
         data.forEach((t) => {
             const ftx = {
                 timestamp: t.status.block_time * 1000,
+                confirmed: t.status.confirmed,
                 id: t.txid,
                 fee: t.fee,
                 inputs: [],
@@ -147,17 +175,32 @@ function _fetchBtcTxsTestnet(addresses, cb, txs=[]) {
                 })
             })
             formattedTxs.push(ftx)
+            if (ftx.confirmed) {
+                confirmedCount += 1;
+            }
         })
         txs = txs.concat(formattedTxs)
-        if (addresses.length === 0)
-            return cb(null, txs);
+        if (confirmedCount >= 25) {
+            // Blockstream only returns up to 25 confirmed transactions per request
+            // https://github.com/Blockstream/esplora/blob/master/API.md#get-addressaddresstxs
+            // We need to re-request with the last tx
+            addresses.push(address)
+            return _fetchBtcTxsTestnet(addresses, cb, txs, txs[confirmedCount-1].id)
+        }
+        if (addresses.length === 0) {
+            return _fetchBtcUtxosTestnet(addresses, cb, txs)
+        }
         setTimeout(() => {
-            return _fetchBtcTxsTestnet(addresses, cb, txs)
-        }, 5000)
+            _fetchBtcTxsTestnet(addresses, cb, txs)
+        }, constants.RATE_LIMIT)
     })
 }
 
 exports.fetchBtcTxs = function(addresses, cb) {
+    if (!addresses)
+        return cb('Cannot fetch transactions - bad input');
+    else if (addresses.length < 1)
+        return cb(null, []);
     const addrsCopy = JSON.parse(JSON.stringify(addresses));
     const f = constants.BTC_DEV_DATA_API ? _fetchBtcTxsTestnet : _fetchBtcTxs;
     f(addrsCopy, cb);
@@ -272,18 +315,6 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
         changePath: BASE_SIGNER_PATH.concat([1, changeAddrs.length -1]),
     };
     return { currency: 'BTC', data: req }
-}
-
-exports.getCurrencyText = function(currency) {
-    if (constants.ENV === 'dev') {
-      switch (currency) {
-        case 'BTC':
-          return `BTC (${constants.BTC_TESTNET})`;
-        default:
-          return;
-      }
-    }
-    return currency;
 }
 
 exports.validateBtcAddr = function(addr) {

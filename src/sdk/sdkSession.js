@@ -23,9 +23,10 @@ class SDKSession {
     this.baseUrl = opts.customEndpoint ? opts.customEndpoint : constants.BASE_SIGNING_URL;
 
     // BTC wallet data
-    this.addresses = {};  // Contains BTC and BTC_CHANGE addresses
-    this.btcTxs = [];     // Contains all txs for all addresses
-    this.btcUtxos = [];   // Contains all utxos for all addresses
+    this.addresses = {};          // Contains BTC and BTC_CHANGE addresses
+    this.btcTxs = [];             // Contains all txs for all addresses
+    this.btcUtxos = [];           // Contains all utxos for all addresses
+    this.lastFetchedBtcData = 0;  // Timestamp containing the last time we updated data
 
     // Go time
     this.getStorage();
@@ -52,21 +53,16 @@ class SDKSession {
     this.btcUtxos = [];
   }
   
-  getDisplayAddress(currency) {
-    switch (currency) {
-      case 'BTC':
-        // If we have set the next address to use, display that.
-        // Otherwise, fallback on the first address.
-        const lastUsed = this._getLastUsedBtcAddrIdx()
-        if (lastUsed > -1)
-          return lastUsed + 1;
-        else if (this.addresses.BTC && this.addresses.BTC.length > 0)
-          return this.addresses.BTC[0];
-        else
-          return null;
-      default:
-        return null;
-    }
+  getBtcDisplayAddress() {
+    // If we have set the next address to use, display that.
+    // Otherwise, fallback on the first address.
+    const lastUsed = this._getLastUsedBtcAddrIdx()
+    if (lastUsed > -1)
+      return lastUsed + 1;
+    else if (this.addresses.BTC && this.addresses.BTC.length > 0)
+      return this.addresses.BTC[0];
+    else
+      return null;
   }
 
   getActiveWallet() {
@@ -123,6 +119,9 @@ class SDKSession {
     // not very useful to store.
     const walletData = {
       addresses: this.dryAddresses(),
+      btcTxs: this.btcTxs,
+      btcUtxos: this.btcUtxos,
+      lastFetchedBtcData: this.lastFetchedBtcData,
     };
     const activeWallet = this.client ? this.client.getActiveWallet() : null;
     if (this.client && activeWallet !== null) {
@@ -148,6 +147,15 @@ class SDKSession {
         // Rehydrate the data
         const walletData = this.storageSession.getWalletData(this.deviceID, uid) || {};
         this.rehydrateAddresses(walletData.addresses);
+        if (walletData.btcTxs) {
+          this.btcTxs = walletData.btcTxs;
+        }
+        if (walletData.btcUtxos) {
+          this.btcUtxos = walletData.btcUtxos;
+        }
+        if (walletData.lastFetchedBtcData) {
+          this.lastFetchedBtcData = walletData.lastFetchedBtcData;
+        }
       }
     }
   }
@@ -298,6 +306,35 @@ class SDKSession {
   // NEW STUFF - REWRITING ADDRESS/DATA FETCHING FOR BTC WALLET
   //----------------------------------------------------
 
+  // Get a set of either pending or confirmed transactions from the full
+  // set of known BTC txs
+  getBtcTxs(confirmed=true) {
+    const txs = [];
+    this.btcTxs.forEach((t) => {
+      if (confirmed && t.confirmed) {
+        txs.push(t)
+      } else if (!confirmed && !t.confirmed) {
+        txs.push(t)
+      }
+    })
+    return txs;
+  }
+
+  // Get the set of known UTXOs belonging to our known set of BTC addresses
+  getBtcUtxos() {
+    return this.btcUtxos;
+  }
+
+  // Get the BTC balance, which is simply a sum of UTXO values
+  // Returns the balance in satoshis
+  getBtcBalance() {
+    let balance = 0;
+    this.btcUtxos.forEach((u) => {
+      balance += u.value;
+    })
+    return balance;
+  }
+
   // Fetch necessary addresses based on state data. We need to fetch addresses
   // for both BTC and BTC_CHANGE such that we have fetched GAP_LIMIT past the last
   // used address. An address is "used" if it has at least one transaction associated.
@@ -306,7 +343,7 @@ class SDKSession {
   // Returns a callback containing params (error, numFetched), where `numFetched` is
   // the total number of *new* addresses we fetched. If this number is >0, it signifies
   // we should re-fetch transaction data for our new set of addresses.
-  getBtcAddresses(cb, isChange=false, totalFetched=0) {
+  fetchBtcAddresses(cb, isChange=false, totalFetched=0) {
     const lastUsedIdx = this._getLastUsedBtcAddrIdx(isChange);
     const currentAddrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
     const GAP_LIMIT = isChange ? 1 : 20;
@@ -336,17 +373,17 @@ class SDKSession {
         this.saveStorage();
         // If we need to fetch more, recurse
         if (maxToFetch > nToFetch) {
-          this.getBtcAddresses(cb, isChange, totalFetched);
+          this.fetchBtcAddresses(cb, isChange, totalFetched);
         } else if (!isChange) {
           // If we are done fetching main BTC addresses, switch to the change path
-          this.getBtcAddresses(cb, true, totalFetched);
+          this.fetchBtcAddresses(cb, true, totalFetched);
         } else {
-          cb(null);
+          cb(null, totalFetched);
         }
       })
     } else if (!isChange) {
       // If we are done fetching main BTC addresses, switch to the change path
-      this.getBtcAddresses(cb, true, totalFetched);
+      this.fetchBtcAddresses(cb, true, totalFetched);
     } else {
       // Nothing to fetch
       cb(null, totalFetched);
@@ -356,13 +393,10 @@ class SDKSession {
   // Fetch transactions and UTXOs for all known BTC addresses (including change)
   // Calls to appropriate Bitcoin data provider and updates state internally.
   // Returns a callback with params (error)
-  getBtcData(cb, isChange=false) {
-    let addrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
-    if (addrs.length > 2)
-      addrs = addrs.slice(0, 2)
-    console.log('fetching txs')
+  fetchBtcStateData(cb, isChange=false) {
+    const addrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
+    console.log('addrs', addrs)
     fetchBtcTxs(addrs, (err, txs) => {
-      console.log('got txs', err, txs)
       if (err)
         return cb(err);
       else if (!txs)
@@ -370,15 +404,17 @@ class SDKSession {
       this.btcTxs = addUniqueItems(txs, this.btcTxs)
       this._processBtcTxs();
       fetchBtcUtxos(addrs, (err, utxos) => {
-        console.log('got utxos', utxos)
         if (err)
-          return cb(err)
+          return cb(err);
+        else if (!utxos)
+          return cb('Failed to fetch UTXOs');
         this.btcUtxos = addUniqueItems(utxos, this.btcUtxos)
-        console.log('got utxos', utxos)
         if (!isChange) {
           // Once we get data for our BTC addresses, switch to change
-          this.getBtcData(cb, true);
+          this.fetchBtcStateData(cb, true);
         } else {
+          // All done!
+          this.lastFetchedBtcData = Math.floor(Date.now());
           cb(null)
         }
       })

@@ -3,7 +3,7 @@ import 'antd/dist/antd.dark.css'
 import { Button, Card, Row, Input, Empty } from 'antd'
 import { CopyOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
-import { getCurrencyText, validateBtcAddr } from '../../util/helpers'
+import { validateBtcAddr } from '../../util/helpers'
 const QRCode = require('qrcode.react');
 const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
@@ -34,7 +34,7 @@ class Receive extends React.Component {
   }
 
   updateDisplayAddress() {
-    const displayAddr = this.props.session.getDisplayAddress(this.props.currency);
+    const displayAddr = this.props.session.getBtcDisplayAddress();
     if (displayAddr) this.setState({ address:  displayAddr });
   }
 
@@ -76,7 +76,7 @@ class Receive extends React.Component {
   renderCard() {
     if (this.state.address) {
       // Sanity check on BTC address checksum
-      if (this.props.currency === 'BTC' && validateBtcAddr(this.state.address) === false)
+      if (!validateBtcAddr(this.state.address))
         return;
       const cardW = document.getElementById("receive-card").offsetWidth;
       const w = Math.min(300, 0.8 * cardW);
@@ -104,12 +104,9 @@ class Receive extends React.Component {
   }
 
   render() {
-    if (this.props.currency === 'ETH') {
-      return;
-    }
     const content = (
       <center>
-        <Card title={`Receive ${getCurrencyText(this.props.currency)}`} bordered={true} id="receive-card">
+        <Card title={'Receive BTC'} bordered={true} id="receive-card">
           <center>
             {this.renderCard()}
           </center>

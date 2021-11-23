@@ -4,11 +4,8 @@ import { Alert, Button, Card, Row, Input, InputNumber, Empty, Statistic, notific
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { allChecks } from '../../util/sendChecks';
-import { 
-  constants, buildBtcTxReq, getBtcNumTxBytes, getCurrencyText
-} from '../../util/helpers'
+import { constants, buildBtcTxReq, getBtcNumTxBytes } from '../../util/helpers'
 import '../styles.css'
-const BN = require('bignumber.js');
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
 // Conversion from sats to BTC
@@ -65,7 +62,7 @@ class Send extends React.Component {
 
   updateRecipient(evt) {
     const val = evt.target.value;
-    const check = allChecks[this.props.currency].recipient(val);
+    const check = allChecks.BTC.recipient(val);
     this.setState({ 
       recipient: val,
       ensResolvedAddress: null,
@@ -75,7 +72,7 @@ class Send extends React.Component {
 
   checkValue(val) {
     // Verify that it is smaller than the balance
-    const balance = this.props.session.getBalance(this.props.currency);
+    const balance = this.props.session.getBtcBalance() / BTC_FACTOR;
     if (val === '' || val === null || val === undefined)
       return null;
     return (Number(balance) >= Number(val));
@@ -135,15 +132,7 @@ class Send extends React.Component {
   }
 
   submit() {
-    let req;
-    switch (this.props.currency) {
-      case 'BTC':
-        req = this.buildBtcRequest();
-        break;
-      default:
-        console.error('Invalid currency in props.')
-        return;
-    }
+    const req = this.buildBtcRequest();
     if (req) {
       notification.open({
         message: "Waiting for signature...",
@@ -183,12 +172,7 @@ class Send extends React.Component {
   //========================================================
 
   getUrl() {
-    switch (this.props.currency) {
-      case 'BTC':
-        return `${constants.BTC_TX_BASE_URL}/${this.state.txHash}`;
-      default:
-        return '';
-    }
+    return `${constants.BTC_TX_BASE_URL}/${this.state.txHash}`;
   }
 
   //========================================================
@@ -222,15 +206,12 @@ class Send extends React.Component {
               onChange={this.updateValue.bind(this)}
       />
     );
-    if (this.props.currency === 'BTC') {
-      // For BTC, we don't need to worry about other assets
-      return (
-        <Row justify='center'>
-          {this.renderValueLabelTitle()}
-          {input}
-        </Row>
-      );
-    }
+    return (
+      <Row justify='center'>
+        {this.renderValueLabelTitle()}
+        {input}
+      </Row>
+    );
   }
 
   renderRecipientLabel() {
@@ -295,44 +276,38 @@ class Send extends React.Component {
   }
 
   renderExtra() {
-    if (this.props.currency === 'BTC') {
-      return (
-        <div>
-          <Row justify='center'>
-            <b><p>Fee (sat/byte):</p></b>
-          </Row>
-          <Row justify='center'>        
-            <InputNumber
-              min={1}
-              max={100}
-              onChange={this.updateBtcFeeRate}
-              value={this.state.btcFeeRate}
-            />
-          </Row>
-        </div>
-      )
-    }
+    return (
+      <div>
+        <Row justify='center'>
+          <b><p>Fee (sat/byte):</p></b>
+        </Row>
+        <Row justify='center'>        
+          <InputNumber
+            min={1}
+            max={100}
+            onChange={this.updateBtcFeeRate}
+            value={this.state.btcFeeRate}
+          />
+        </Row>
+      </div>
+    )
   }
 
   calculateMaxValue() {
-    const balance = this.props.session.getBalance(this.props.currency);
-    switch (this.props.currency) {
-      case 'BTC':
-        // To spend all BTC, get the size of all UTXOs and calculate the fee required
-        // to spend them all
-        const txBytes = getBtcNumTxBytes(this.props.session.getUtxos('BTC').length);
-        const feeSat = this.state.btcFeeRate * txBytes;
-        return Math.max((balance - (feeSat / BTC_FACTOR)).toFixed(8), 0);
-      default:
-        return 0;
-    }
+    const balance = this.props.session.getBtcBalance();
+    const utxos = this.props.session.getBtcUtxos();
+    // To spend all BTC, get the size of all UTXOs and calculate the fee required
+    // to spend them all
+    const txBytes = getBtcNumTxBytes(utxos.length);
+    const feeSat = this.state.btcFeeRate * txBytes;
+    return Math.max((balance - (feeSat / BTC_FACTOR)).toFixed(8), 0);
   }
 
   renderSubmitButton() {
     // If all checks have passed, display the button
     const isValidReq = (
       (true === this.state.valueCheck) &&
-      (allChecks[this.props.currency].full(this.state) || this.state.ensResolvedAddress !== null)
+      (allChecks.BTC.full(this.state) || this.state.ensResolvedAddress !== null)
     );
 
     if (this.state.isLoading) {
@@ -363,21 +338,18 @@ class Send extends React.Component {
   }
 
   renderBalance() {
-    let balance = new BN(this.props.session.getBalance(this.props.currency));
-    if (this.props.currency === 'BTC') {
-      balance = balance.toFixed(8);
-    }
+    let balance = this.props.session.getBtcBalance() / BTC_FACTOR;
     return (
       <Row justify='center' style={{margin: "0 0 20px 0"}}>
-        <Statistic title="Balance" value={`${balance} ${this.props.currency}`} />
+        <Statistic title="Balance" value={`${balance} BTC`} />
       </Row>
     )
   }
 
   renderCard() {
-    const hasAddressesSlot = this.props.session.addresses[this.props.currency];
+    const hasAddressesSlot = this.props.session.addresses.BTC;
     const hasAddresses =  hasAddressesSlot ? 
-                          this.props.session.addresses[this.props.currency].length > 0 : 
+                          this.props.session.addresses.BTC.length > 0 : 
                           false;
     if (hasAddresses) {
       return (
@@ -406,13 +378,10 @@ class Send extends React.Component {
   }
 
   render() {
-    if (this.props.currency === 'ETH') {
-      return;
-    }
     const content = (
       <center>
         {this.renderBanner()}
-        <Card title={`Send ${getCurrencyText(this.props.currency)}`} bordered={true}>
+        <Card title={'Send BTC'} bordered={true}>
           {this.renderCard()}
         </Card>
       </center>      

@@ -7,7 +7,7 @@ import {
   DownCircleOutlined, UpCircleOutlined, LoadingOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import { PageContent } from '../index'
-import { constants, getCurrencyText } from '../../util/helpers'
+import { constants } from '../../util/helpers'
 const GREEN = "#00FF00";
 const RED = "#FF0000";
 
@@ -18,31 +18,11 @@ class Wallet extends React.Component {
     super(props);
     this.state = {
       loading: true,
-      balance: 0,
-      usdValue: 0,
-      txs: [],
-      lastUpdated: null,
-      tick: 0,
     }
   }
 
   componentDidMount() {
-    this.setState({
-      lastUpdated: this.props.lastUpdated,
-    })
-    // Tick every 15 seconds to force a re-rendering of the lastUpdated tag
-    setInterval(() => {
-      this.setState({ tick: this.state.tick + 1 })
-    }, 2000)
     window.addEventListener('resize', this.updateWidth);
-  }
-
-  componentDidUpdate() {
-    if (this.props.lastUpdated !== this.state.lastUpdated) {
-      this.setState({
-        lastUpdated: this.props.lastUpdated,
-      })
-    }
   }
 
   componentWillUnmount() {
@@ -138,7 +118,15 @@ class Wallet extends React.Component {
   }
 
   renderLastUpdatedTag() {
-    const elapsedSec = Math.floor((new Date() - this.state.lastUpdated) / 1000);
+    if (!this.props.session)
+      return;
+    const lastUpdated = this.props.session.lastFetchedBtcData;
+    if (!lastUpdated) {
+      return (
+        <Tag color={'red'}>Never</Tag>
+      )
+    }
+    const elapsedSec = Math.floor((new Date() - lastUpdated) / 1000);
     let elapsed, timeType, color;
     if (elapsedSec < 60) {
       // Just display that it was updated "seconds" ago if we're under a minute
@@ -162,35 +150,10 @@ class Wallet extends React.Component {
     )
   }
 
-  deDuplicateTxs() {
-    const hashes = [];
-    const newTxs = [];
-    this.state.txs.forEach((tx) => {
-      if (hashes.indexOf(tx.hash) === -1) {
-        hashes.push(tx.hash);
-        newTxs.push(tx);
-      }
-    })
-    return newTxs;
-  }
-
-  separatePendingTxs(txs) {
-    const pending = [];
-    const confirmed = [];
-    txs.forEach((tx) => {
-      if (tx.height === -1) pending.push(tx)
-      else                  confirmed.push(tx);
-    });
-    return {
-      pending, confirmed
-    }
-  }
-
   renderList() {
-    // const txs = this.separatePendingTxs(this.deDuplicateTxs());
     const txs = {
-      confirmed: this.props.session.btcTxs,
-      pending: [],
+      confirmed: this.props.session.getBtcTxs(),
+      pending: this.props.session.getBtcTxs(false),
     }
     return (
       <div>
@@ -220,44 +183,22 @@ class Wallet extends React.Component {
     )
   }
 
-  convertBalance() {
-    if (this.props.currency === 'BTC')
-      return this.state.balance.toFixed(8)
-    else
-      return this.state.balance.toFixed(10)
-  }
-
   renderHeader() {
-    if (this.props.isMobile()) {
-      return (
-        <div>
-          <Row justify='center' style={{margin: "20px 0 0 0"}}>
-              <Statistic title="Balance" value={`${this.convertBalance()} ${this.props.currency}`} />
-          </Row>
-          <Row justify='center'>
-            <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
-          </Row>
-        </div>
-      )
-    } else {
-      return (
-        <div>
-          <Row justify='center' style={{margin: "20px 0 0 0"}}>
-            <Statistic title="Balance" value={`${this.convertBalance()} ${this.props.currency}`} />
-          </Row>
-          <Row justify='center' style={{margin: "10px 0 0 0"}}>
-            <Statistic title="USD Value" value={this.state.usdValue} precision={2} />
-          </Row>
-        </div>
-      )
-    }
+    return (
+      <div>
+        <Row justify='center' style={{margin: "20px 0 0 0"}}>
+            <Statistic title="Balance" value={`${this.props.session.getBtcBalance()} BTC`} />
+        </Row>
+        <Row justify='center'>
+          <Statistic title="USD Value" value={0} precision={2} />
+        </Row>
+      </div>
+    )
   }
 
   renderPages() {
-    // We only paginate results for ETH
-    if (this.props.currency !== 'ETH')
-      return;
     const page = this.props.session.getPage();
+    const txs = this.props.session.getBtcTxs();
     return (
       <center style={{margin: "20px 0 0 0"}}>
         {page > 1 ? (
@@ -265,7 +206,7 @@ class Wallet extends React.Component {
             <CaretLeftOutlined/>
           </Button>
         ) : null}
-        {this.state.txs.length >= constants.PAGE_SIZE ? (
+        {txs.length >= constants.PAGE_SIZE ? (
           <Button onClick={() => { this.props.pageTurnCb(page+1)}}>
             <CaretRightOutlined/>
           </Button>
@@ -275,11 +216,9 @@ class Wallet extends React.Component {
   }
 
   renderContent() {
-    if (this.props.currency === 'ETH')
-      return;
     return (
       <div>
-        <Card title={`${getCurrencyText(this.props.currency)} Wallet`} bordered={true}>
+        <Card title={`BTC Wallet`} bordered={true}>
           <Row justify='center'>
             Last Update&nbsp;{this.renderLastUpdatedTag()}
             {this.props.stillSyncingAddresses === true ? (
@@ -288,8 +227,8 @@ class Wallet extends React.Component {
                 <Spin indicator={<LoadingOutlined/>} size={"small"}/>
               </div>
             ): (
-              <Button size="small" type="link" onClick={() => {this.props.refreshData(null)}}>
-                <ReloadOutlined/>
+              <Button size="small" type="primary" ghost onClick={() => {this.props.refreshData(null)}}>
+                Refresh <ReloadOutlined/>
               </Button>
             )}
           </Row>
@@ -316,12 +255,9 @@ class Wallet extends React.Component {
       <PageContent content={content} isMobile={this.props.isMobile}/>
     )
   }
-
-
 }
 
 export default Wallet
-
 
 // Get a human readable, string representation of the difference
 // between two dates
