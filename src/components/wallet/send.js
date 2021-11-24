@@ -8,8 +8,6 @@ import { constants, buildBtcTxReq, getBtcNumTxBytes } from '../../util/helpers'
 import '../styles.css'
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
-// Conversion from sats to BTC
-const BTC_FACTOR = Math.pow(10, 8);
 
 class Send extends React.Component {
   constructor(props) {
@@ -72,7 +70,7 @@ class Send extends React.Component {
 
   checkValue(val) {
     // Verify that it is smaller than the balance
-    const balance = this.props.session.getBtcBalance() / BTC_FACTOR;
+    const balance = this.props.session.getBtcBalance() / constants.SATS_TO_BTC;
     if (val === '' || val === null || val === undefined)
       return null;
     return (Number(balance) >= Number(val));
@@ -300,7 +298,7 @@ class Send extends React.Component {
     // to spend them all
     const txBytes = getBtcNumTxBytes(utxos.length);
     const feeSat = this.state.btcFeeRate * txBytes;
-    return Math.max((balance - (feeSat / BTC_FACTOR)).toFixed(8), 0);
+    return Math.max((balance - (feeSat / constants.SATS_TO_BTC)).toFixed(8), 0);
   }
 
   renderSubmitButton() {
@@ -338,7 +336,7 @@ class Send extends React.Component {
   }
 
   renderBalance() {
-    let balance = this.props.session.getBtcBalance() / BTC_FACTOR;
+    let balance = this.props.session.getBtcBalance() / constants.SATS_TO_BTC;
     return (
       <Row justify='center' style={{margin: "0 0 20px 0"}}>
         <Statistic title="Balance" value={`${balance} BTC`} />

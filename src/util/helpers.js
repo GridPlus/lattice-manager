@@ -12,9 +12,10 @@ const constants = {
     ASYNC_SDK_TIMEOUT: 60000,
     SHORT_TIMEOUT: 30000,
     BTC_COIN: parseInt(process.env.REACT_APP_BTC_COIN) || 0x80000000,
+    SATS_TO_BTC: Math.pow(10, 8),
     BTC_MAIN_GAP_LIMIT: 20,
-    BTC_ADDR_BLOCK_LEN: 10,
     BTC_CHANGE_GAP_LIMIT: 1,
+    BTC_ADDR_BLOCK_LEN: 10,
     BTC_CHANGE_ADDR_BLOCK_LEN: 1,
     BTC_DEFAULT_FEE_RATE: process.env.REACT_APP_BTC_DEFAULT_FEE_RATE || 10, // 10 sat/byte
     BTC_TX_BASE_URL: process.env.REACT_APP_BTC_TX_BASE_URL || 'https://www.blockchain.com/btc/tx',
@@ -73,22 +74,6 @@ function _fetchGET(url, cb) {
     .catch((err) => cb(err))
 }
 
-function _filterUniqueObjects(objs, key) {
-    const filtered = [];
-    objs.forEach((obj) => {
-        let isDup = false;
-        filtered.forEach((fobj) => {
-            if (fobj[key] === obj[key]) {
-                isDup = true;
-            }
-        })
-        if (!isDup) {
-            filtered.push(obj);
-        }
-    })
-    return filtered;
-}
-
 //====== UTXOS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
 function _fetchBtcUtxos(addresses, cb) {
@@ -98,7 +83,6 @@ function _fetchBtcUtxos(addresses, cb) {
 // For testnet we cannot use blockchain.com - we have to request stuff from each
 // address individually.
 function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
-    console.log('addresses', addresses)
     const address = addresses.pop()
     const url = `${constants.BTC_DEV_DATA_API}/address/${address}/utxo`;
     _fetchGET(url, (err, data) => {
@@ -115,7 +99,7 @@ function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
             }
         })
         if (addresses.length === 0) {
-            return cb(null, _filterUniqueObjects(utxos, 'id'));
+            return cb(null, utxos);
         }
         setTimeout(() => {
             _fetchBtcUtxosTestnet(addresses, cb, utxos)
@@ -188,7 +172,7 @@ function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
             return _fetchBtcTxsTestnet(addresses, cb, txs, txs[confirmedCount-1].id)
         }
         if (addresses.length === 0) {
-            return _fetchBtcUtxosTestnet(addresses, cb, txs)
+            return cb(null, txs);
         }
         setTimeout(() => {
             _fetchBtcTxsTestnet(addresses, cb, txs)
@@ -206,6 +190,18 @@ exports.fetchBtcTxs = function(addresses, cb) {
     f(addrsCopy, cb);
 }
 //====== END TXS ==================
+
+exports.fetchBtcPrice = function(cb) {
+    const url = 'https://api.blockchain.com/v3/exchange/tickers/BTC-USD'
+    _fetchGET(url, (err, data) => {
+        if (err)
+            return cb(err)
+        else if (!data || !data.last_trade_price)
+            return cb('Invalid price data returned');
+        return cb(null, data.last_trade_price)
+    })
+}
+
 //--------------------------------------------
 // END CHAIN DATA SYNCING HELPERS
 //--------------------------------------------
@@ -338,21 +334,29 @@ exports.toHexStr = function(bn) {
     return `0x${base}`; 
 }
 
-// Consolidate two sets of objects, adding all unique `newItems`
-// to a list of `existingItems`.
-exports.addUniqueItems = function(newItems, existingItems=[]) {
-    const items = JSON.parse(JSON.stringify(existingItems));
-    const existingItemsJson = []
-    existingItems.forEach((ei) => {
-      existingItemsJson.push(JSON.stringify(ei))
+// Filter out any duplicate objects based on `keys`
+function filterUniqueObjects(objs, keys) {
+    const filtered = [];
+    objs.forEach((obj) => {
+        let isDup = false;
+        filtered.forEach((fobj) => {
+            let matchedKeys = 0
+            keys.forEach((key) => {
+                if (fobj[key] === obj[key]) {
+                    matchedKeys += 1;
+                }
+            })
+            if (matchedKeys >= keys.length) {
+                isDup = true;
+            }
+        })
+        if (!isDup) {
+            filtered.push(obj);
+        }
     })
-    newItems.forEach((ni) =>{ 
-      if (existingItemsJson.indexOf(JSON.stringify(ni)) === -1) {
-        items.push(ni)
-      }
-    })
-    return items;
+    return filtered;
 }
+exports.filterUniqueObjects = filterUniqueObjects;
 //--------------------------------------------
 // END OTHER HELPERS
 //--------------------------------------------

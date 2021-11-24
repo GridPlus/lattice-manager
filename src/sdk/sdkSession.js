@@ -1,5 +1,8 @@
 import { Client } from 'gridplus-sdk';
-import { harden, constants, getBtcPurpose, fetchBtcTxs, fetchBtcUtxos, addUniqueItems } from '../util/helpers';
+import { 
+  harden, constants, getBtcPurpose, fetchBtcPrice, 
+  fetchBtcTxs, fetchBtcUtxos, filterUniqueObjects
+} from '../util/helpers';
 import { default as StorageSession } from '../util/storageSession';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
@@ -27,7 +30,8 @@ class SDKSession {
     this.btcTxs = [];             // Contains all txs for all addresses
     this.btcUtxos = [];           // Contains all utxos for all addresses
     this.lastFetchedBtcData = 0;  // Timestamp containing the last time we updated data
-
+    this.btcPrice = 0;            // Price in dollars of full unit BTC
+    
     // Go time
     this.getStorage();
   }
@@ -122,6 +126,7 @@ class SDKSession {
       btcTxs: this.btcTxs,
       btcUtxos: this.btcUtxos,
       lastFetchedBtcData: this.lastFetchedBtcData,
+      btcPrice: this.btcPrice,
     };
     const activeWallet = this.client ? this.client.getActiveWallet() : null;
     if (this.client && activeWallet !== null) {
@@ -346,7 +351,7 @@ class SDKSession {
   fetchBtcAddresses(cb, isChange=false, totalFetched=0) {
     const lastUsedIdx = this._getLastUsedBtcAddrIdx(isChange);
     const currentAddrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
-    const GAP_LIMIT = isChange ? 1 : 20;
+    const GAP_LIMIT = isChange ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
     const targetIdx = lastUsedIdx + 1 + GAP_LIMIT;
     const maxToFetch = targetIdx - currentAddrs.length;
     const nToFetch = Math.min(constants.BTC_ADDR_BLOCK_LEN, maxToFetch)
@@ -370,7 +375,6 @@ class SDKSession {
         } else {
           this.addresses.BTC = currentAddrs.concat(addresses);
         }
-        this.saveStorage();
         // If we need to fetch more, recurse
         if (maxToFetch > nToFetch) {
           this.fetchBtcAddresses(cb, isChange, totalFetched);
@@ -378,6 +382,7 @@ class SDKSession {
           // If we are done fetching main BTC addresses, switch to the change path
           this.fetchBtcAddresses(cb, true, totalFetched);
         } else {
+          this.saveStorage();
           cb(null, totalFetched);
         }
       })
@@ -386,6 +391,7 @@ class SDKSession {
       this.fetchBtcAddresses(cb, true, totalFetched);
     } else {
       // Nothing to fetch
+      this.saveStorage();
       cb(null, totalFetched);
     }
   }
@@ -393,30 +399,40 @@ class SDKSession {
   // Fetch transactions and UTXOs for all known BTC addresses (including change)
   // Calls to appropriate Bitcoin data provider and updates state internally.
   // Returns a callback with params (error)
-  fetchBtcStateData(cb, isChange=false) {
+  fetchBtcStateData(cb, isChange=false, txs=[], utxos=[]) {
     const addrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
-    console.log('addrs', addrs)
-    fetchBtcTxs(addrs, (err, txs) => {
-      if (err)
-        return cb(err);
-      else if (!txs)
-        return cb('Failed to fetch transactions');
-      this.btcTxs = addUniqueItems(txs, this.btcTxs)
-      this._processBtcTxs();
-      fetchBtcUtxos(addrs, (err, utxos) => {
+    fetchBtcPrice((err, btcPrice) => {
+      if (err) {
+        // Don't fail out if we can't get the price - just display 0
+        console.error('Failed to fetch price:', err);
+        btcPrice = 0;
+      }
+      fetchBtcTxs(addrs, (err, _txs) => {
         if (err)
           return cb(err);
-        else if (!utxos)
-          return cb('Failed to fetch UTXOs');
-        this.btcUtxos = addUniqueItems(utxos, this.btcUtxos)
-        if (!isChange) {
-          // Once we get data for our BTC addresses, switch to change
-          this.fetchBtcStateData(cb, true);
-        } else {
-          // All done!
-          this.lastFetchedBtcData = Math.floor(Date.now());
-          cb(null)
-        }
+        else if (!_txs)
+          return cb('Failed to fetch transactions');
+        txs = txs.concat(_txs);
+        fetchBtcUtxos(addrs, (err, _utxos) => {
+          if (err)
+            return cb(err);
+          else if (!_utxos)
+            return cb('Failed to fetch UTXOs');
+          utxos = utxos.concat(_utxos);
+          if (!isChange) {
+            // Once we get data for our BTC addresses, switch to change
+            this.fetchBtcStateData(cb, true, txs, utxos);
+          } else {
+            // All done! Filter/process data and save
+            this.btcPrice = btcPrice;
+            this.lastFetchedBtcData = Math.floor(Date.now());
+            this.btcTxs = filterUniqueObjects(txs, ['id']);
+            this._processBtcTxs();
+            this.btcUtxos = filterUniqueObjects(utxos, ['id', 'vout']);
+            this.saveStorage();
+            cb(null)
+          }
+        })
       })
     })
   }
@@ -496,7 +512,6 @@ class SDKSession {
       }
       processedTxs.push(tx);
     })
-    console.log('processed', processedTxs)
     const sortedTxs = processedTxs.sort((a, b) => { return a.timestamp - b.timestamp })
     this.btcTxs = sortedTxs;
   }

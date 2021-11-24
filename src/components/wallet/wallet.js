@@ -22,6 +22,8 @@ class Wallet extends React.Component {
   }
 
   componentDidMount() {
+    if (this.props.session)
+      this.props.session.getStorage()
     window.addEventListener('resize', this.updateWidth);
   }
 
@@ -137,12 +139,17 @@ class Wallet extends React.Component {
       // A couple minutes is fine, but more than 10 and there's probably a connectivity
       // problem -- display orange warning tag
       elapsed = Math.floor(elapsedSec / 60);
-      timeType = 'min';
-      color = elapsed > 10 ? 'orange' : 'green';
+      timeType = elapsed === 1 ? 'min' : 'mins';
+      color = 'green'
+    } else if (elapsedSec < 172800) {
+      // Less than a 2 days we display hours 
+      elapsed = Math.floor(elapsedSec / 3600);
+      timeType = elapsed === 1 ? 'hour' : 'hours';
+      color = 'orange';
     } else { 
-      // Red means there's def a connectivity issue. We probably won't ever get here
-      elapsed = '>1';
-      timeType = 'hour';
+      // Otherwise display days
+      elapsed = Math.floor(elapsedSec / 86400);
+      timeType = 'days';
       color = 'red';
     }
     return (
@@ -184,13 +191,15 @@ class Wallet extends React.Component {
   }
 
   renderHeader() {
+    const btcBalance = this.props.session.getBtcBalance() / constants.SATS_TO_BTC;
+    const btcPrice = this.props.session.btcPrice;
     return (
       <div>
         <Row justify='center' style={{margin: "20px 0 0 0"}}>
-            <Statistic title="Balance" value={`${this.props.session.getBtcBalance()} BTC`} />
+            <Statistic title="Balance" value={`${btcBalance} BTC`} />
         </Row>
         <Row justify='center'>
-          <Statistic title="USD Value" value={0} precision={2} />
+          <Statistic title="USD Value" value={btcBalance * btcPrice} precision={2} />
         </Row>
       </div>
     )

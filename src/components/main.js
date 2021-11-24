@@ -284,7 +284,6 @@ class Main extends React.Component {
   }
 
   setError(data={err:null, cb:null}) {
-    console.log('setting error', data)
     // Handle case where user deletes pairing on the Lattice
     if (data.err === constants.LOST_PAIRING_ERR)
       return this.handleLostPairing();
@@ -352,7 +351,6 @@ class Main extends React.Component {
   fetchBtcData() {
     this.wait('Fetching addresses');
     this.state.session.fetchBtcAddresses((err, numNewAddrs) => {
-      console.log('Got new addrs', numNewAddrs)
       if (err) {
         this.unwait()
         return this.setError({ 
