@@ -357,9 +357,11 @@ class Main extends React.Component {
   // may then request one address at a time and then state data for that one
   // address until the gap limit is reached.
   fetchBtcData(exitIfNoNewAddrs=false) {
+    this.setError();
     this.wait('Fetching addresses');
     this.state.session.fetchBtcAddresses((err, newAddrCounts) => {
       if (err) {
+        console.error('Error fetching BTC addresses', err)
         this.unwait()
         return this.setError({ 
           err: 'Failed to fetch BTC addresses. Please try again.', 

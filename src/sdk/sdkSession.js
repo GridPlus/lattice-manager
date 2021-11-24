@@ -179,7 +179,7 @@ class SDKSession {
         const walletData = data[constants.BTC_WALLET_STORAGE_KEY];
         // Price is saved outside of the purpose sub-object
         if (walletData.btcPrice) {
-          this.btcPrice = data.btcPrice;
+          this.btcPrice = walletData.btcPrice;
         }
         // Unpack wallet data associated with the current btc purpose
         const purposeSpecificData = walletData[BTC_PURPOSE];
@@ -453,12 +453,16 @@ class SDKSession {
     // and we only want to fetch data for new addresses we've collected
     // rather than data for all known addresses.
     let addrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
-    if (isChange && opts && opts.change > 0) {
-      addrs = this.addresses.BTC_CHANGE.slice(-opts.change);
-      opts.change = 0;
-    } else if (!isChange && opts && opts.regular > 0) {
+    if (opts && opts.regular > 0) {
       addrs = this.addresses.BTC.slice(-opts.regular);
       opts.regular = 0;
+    } else if (opts && opts.change > 0) {
+      // If we have new change addrs but not new regular addrs,
+      // we can force a switch to change here so we don't re-scan
+      // the same regular addresses we have already scanned.
+      isChange = true;
+      addrs = this.addresses.BTC_CHANGE.slice(-opts.change);
+      opts.change = 0;
     }
     fetchBtcPrice((err, btcPrice) => {
       if (err) {
@@ -491,7 +495,7 @@ class SDKSession {
             const newUtxos = this.btcUtxos.concat(utxos);
             this.btcUtxos = filterUniqueObjects(newUtxos, ['id', 'vout']);
             this.saveBtcWalletData();
-            cb(null)
+            cb(null);
           }
         })
       })

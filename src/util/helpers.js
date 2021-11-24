@@ -34,7 +34,7 @@ const constants = {
 }
 
 const devConstants = {
-    RATE_LIMIT: 2000, // 1s between requests
+    RATE_LIMIT: 1000, // 1s between requests
     BTC_DEV_DATA_API: 'https://blockstream.info/testnet/api',
     BASE_SIGNING_URL: 'https://signing.staging-gridpl.us',
     GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3333',
@@ -73,8 +73,52 @@ function _fetchGET(url, cb) {
 
 //====== UTXOS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
-function _fetchBtcUtxos(addresses, cb) {
-
+function _fetchBtcUtxos(addresses, cb, utxos=[], offset=0) {
+    if (addresses.length === 0) {
+        // No more addresses left to check. We are done.
+        return cb(null, utxos);
+    }
+    const ADDRS_PER_CALL = 20;
+    const MAX_UTOXS_RET = 50;
+    const addrsToCheck = addresses.slice(0, ADDRS_PER_CALL);
+    let url = `${constants.BTC_PROD_DATA_API}/unspent?active=`;
+    for (let i = 0; i < addrsToCheck.length; i++) {
+        if (i === 0) {
+            url = `${url}${addrsToCheck[i]}`
+        } else {
+            url = `${url}|${addrsToCheck[i]}`
+        }
+    }
+    url = `${url}&limit=${MAX_UTOXS_RET}&confirmations=1`;
+    if (offset > 0) {
+        // If this is a follow up, fetch txs after an offset
+        url = `${url}&offset=${offset}`
+    }
+    _fetchGET(url, (err, data) => {
+        if (err)
+            return cb(err);
+        // Add confirmed UTXOs
+        data.unspent_outputs.forEach((u) => {
+            if (u.confirmations > 0) {
+                utxos.push({
+                    id: u.tx_hash_big_endian,
+                    vout: u.tx_output_n,
+                    value: u.value,
+                })
+            }
+        })
+        // Determine if we need to recurse on this set of addresses
+        if (data.unspent_outputs.length >= MAX_UTOXS_RET) {
+            return setTimeout(() => {
+                _fetchBtcUtxos(addresses, cb, utxos, offset+MAX_UTOXS_RET);
+            }, constants.RATE_LIMIT);
+        }
+        // Otherwise we are done with these addresses. Clip them and recurse.
+        addresses = addresses.slice(ADDRS_PER_CALL);
+        setTimeout(() => {
+            _fetchBtcUtxos(addresses, cb, utxos, 0);
+        }, constants.RATE_LIMIT);
+    })
 }
 
 // For testnet we cannot use blockchain.com - we have to request stuff from each
@@ -111,14 +155,76 @@ exports.fetchBtcUtxos = function(addresses, cb) {
         return cb(null, []);
     const addrsCopy = JSON.parse(JSON.stringify(addresses));
     const f = constants.BTC_DEV_DATA_API ? _fetchBtcUtxosTestnet : _fetchBtcUtxos;
-    f(addrsCopy, cb);
+    setTimeout(() => {
+        f(addrsCopy, cb);
+    }, constants.RATE_LIMIT)
 }
 //====== END UTXOS ==================
 
 //====== TXS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
-function _fetchBtcTxs(addresses, cb) {
-
+function _fetchBtcTxs(addresses, cb, txs=[], offset=0) {
+    if (addresses.length === 0) {
+        // No more addresses left to check. We are done.
+        return cb(null, txs);
+    }
+    const ADDRS_PER_CALL = 20;
+    const MAX_TXS_RET = 50;
+    const addrsToCheck = addresses.slice(0, ADDRS_PER_CALL);
+    let url = `${constants.BTC_PROD_DATA_API}/multiaddr?active=`;
+    for (let i = 0; i < addrsToCheck.length; i++) {
+        if (i === 0) {
+            url = `${url}${addrsToCheck[i]}`
+        } else {
+            url = `${url}|${addrsToCheck[i]}`
+        }
+    }
+    url = `${url}&n=${MAX_TXS_RET}`;
+    if (offset > 0) {
+        // If this is a follow up, fetch txs after an offset
+        url = `${url}&offset=${offset}`
+    }
+    _fetchGET(url, (err, data) => {
+        if (err)
+            return cb(err);
+        // Add the new txs
+        const formattedTxs = [];
+        data.txs.forEach((t) => {
+            const ftx = {
+                timestamp: t.time * 1000,
+                confirmed: !!t.block_index,
+                id: t.hash,
+                fee: t.fee,
+                inputs: [],
+                outputs: [],
+            };
+            t.inputs.forEach((input) => {
+                ftx.inputs.push({
+                    addr: input.prev_out.addr,
+                    value: input.prev_out.value,
+                })
+            })
+            t.out.forEach((output) => {
+                ftx.outputs.push({
+                    addr: output.addr,
+                    value: output.value,
+                })
+            })
+            formattedTxs.push(ftx);
+        })
+        txs = txs.concat(formattedTxs)
+        // Determine if we need to recurse on this set of addresses
+        if (formattedTxs.length >= MAX_TXS_RET) {
+            return setTimeout(() => {
+                _fetchBtcTxs(addresses, cb, txs, offset+MAX_TXS_RET);
+            }, constants.RATE_LIMIT);
+        }
+        // Otherwise we are done with these addresses. Clip them and recurse.
+        addresses = addresses.slice(ADDRS_PER_CALL);
+        setTimeout(() => {
+            _fetchBtcTxs(addresses, cb, txs, 0);
+        }, constants.RATE_LIMIT);
+    })
 }
 
 // For testnet we cannot use blockchain.com - we have to request stuff from each
@@ -132,7 +238,7 @@ function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
     _fetchGET(url, (err, data) => {
         if (err)
             return cb(err)
-        let formattedTxs = [];
+        const formattedTxs = [];
         let confirmedCount = 0;
         data.forEach((t) => {
             const ftx = {
@@ -184,7 +290,9 @@ exports.fetchBtcTxs = function(addresses, cb) {
         return cb(null, []);
     const addrsCopy = JSON.parse(JSON.stringify(addresses));
     const f = constants.BTC_DEV_DATA_API ? _fetchBtcTxsTestnet : _fetchBtcTxs;
-    f(addrsCopy, cb);
+    setTimeout(() => {
+        f(addrsCopy, cb);
+    }, constants.RATE_LIMIT)
 }
 //====== END TXS ==================
 

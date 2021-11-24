@@ -12,16 +12,10 @@ const GREEN = "#00FF00";
 const RED = "#FF0000";
 
 class Wallet extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-    }
-  }
-
   componentDidMount() {
-    if (this.props.session)
+    if (this.props.session) {
       this.props.session.getBtcWalletData()
+    }
     window.addEventListener('resize', this.updateWidth);
   }
 
@@ -222,7 +216,28 @@ class Wallet extends React.Component {
     )
   }
 
+  renderStartCard() {
+    return (
+      <Card title={`BTC Wallet`} bordered={true}>
+        <center>
+          <p>You have not loaded any addresses yet.</p>
+          <Button size="large" 
+                  type="primary" 
+                  ghost 
+                  onClick={this.props.refreshData}
+          >
+            Start
+          </Button>
+        </center>
+      </Card>
+    )
+  }
+
   renderContent() {
+    const lastUpdated = this.props.session.lastFetchedBtcData;
+    if (!lastUpdated) {
+      return this.renderStartCard();
+    }
     return (
       <div>
         <Card title={`BTC Wallet`} bordered={true}>
@@ -234,7 +249,11 @@ class Wallet extends React.Component {
                 <Spin indicator={<LoadingOutlined/>} size={"small"}/>
               </div>
             ): (
-              <Button size="small" type="primary" ghost onClick={() => {this.props.refreshData(null)}}>
+              <Button size="small" 
+                      type="primary" 
+                      ghost 
+                      onClick={this.props.refreshData}
+              >
                 Refresh <ReloadOutlined/>
               </Button>
             )}
