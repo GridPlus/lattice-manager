@@ -33,12 +33,12 @@ class SDKSession {
     this.btcPrice = 0;            // Price in dollars of full unit BTC
     
     // Go time
-    this.getStorage();
+    this.getBtcWalletData();
   }
 
   disconnect() {
     this.client = null;
-    this.saveStorage();
+    this.saveBtcWalletData();
     this.storageSession = null;
     this.deviceId = null;
   }
@@ -88,6 +88,10 @@ class SDKSession {
     const hasBTCAddrs = this.addresses.BTC && this.addresses.BTC.length > 0;
     const hasBTCChangeAddrs = this.addresses.BTC_CHANGE && this.addresses.BTC_CHANGE.length > 0;
     const BTC_PURPOSE = getBtcPurpose();
+    if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
+      // We cannot continue if the wallet is hidden
+      return driedAddrs;
+    }
     if (hasBTCAddrs) {
       driedAddrs.BTC = {};
       driedAddrs.BTC[BTC_PURPOSE] = this.addresses.BTC || [];
@@ -103,6 +107,10 @@ class SDKSession {
   rehydrateAddresses(allAddrs={}) {
     const rehydratedAddrs = {};
     const BTC_PURPOSE = getBtcPurpose();
+    if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
+      // We cannot continue if the wallet is hidden
+      return rehydratedAddrs;
+    }
     if (allAddrs.BTC) {
       rehydratedAddrs.BTC = allAddrs.BTC[BTC_PURPOSE];
     }
@@ -112,7 +120,7 @@ class SDKSession {
     this.addresses = rehydratedAddrs;
   }
 
-  saveStorage() {
+  saveBtcWalletData() {
     // This function should never be called without a deviceID 
     // or StorageSession
     if (!this.deviceID || !this.storageSession) return;
@@ -121,12 +129,21 @@ class SDKSession {
     // NOTE: We are only storing addresses at this point, as
     // the blockchain state needs to be up-to-date and is therefore
     // not very useful to store.
+    const BTC_PURPOSE = getBtcPurpose();
+    if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
+      console.error('Cannot save BTC wallet data when wallet is hidden');
+      return;
+    }
     const walletData = {
-      addresses: this.dryAddresses(),
-      btcTxs: this.btcTxs,
-      btcUtxos: this.btcUtxos,
-      lastFetchedBtcData: this.lastFetchedBtcData,
-      btcPrice: this.btcPrice,
+      [constants.BTC_WALLET_STORAGE_KEY]: {
+        [BTC_PURPOSE]: {
+          addresses: this.dryAddresses(),
+          btcTxs: this.btcTxs,
+          btcUtxos: this.btcUtxos,
+          lastFetchedBtcData: this.lastFetchedBtcData,
+        },
+        btcPrice: this.btcPrice,
+      }
     };
     const activeWallet = this.client ? this.client.getActiveWallet() : null;
     if (this.client && activeWallet !== null) {
@@ -135,12 +152,18 @@ class SDKSession {
     }
   }
 
-  getStorage() {
+  getBtcWalletData() {
     // Create a storage session only if we have a deviceID and don't
     // have a current storage session
     if (this.deviceID && !this.storageSession)
       this.storageSession = new StorageSession(this.deviceID);
     if (this.client) {
+      // Make sure the btc wallet is enabled
+      const BTC_PURPOSE = getBtcPurpose();
+      if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
+        console.error('Cannot get wallet data when wallet is hidden.');
+        return;
+      }
       // If we have a client and if it has a non-zero active wallet UID,
       // lookup the addresses corresponding to that wallet UID in storage.
       const activeWallet = this.getActiveWallet();
@@ -150,16 +173,29 @@ class SDKSession {
       } else {
         const uid = activeWallet.uid.toString('hex')
         // Rehydrate the data
-        const walletData = this.storageSession.getWalletData(this.deviceID, uid) || {};
-        this.rehydrateAddresses(walletData.addresses);
-        if (walletData.btcTxs) {
-          this.btcTxs = walletData.btcTxs;
+        const data = this.storageSession.getWalletData(this.deviceID, uid);
+        if (!data || !data[constants.BTC_WALLET_STORAGE_KEY])
+          return;
+        const walletData = data[constants.BTC_WALLET_STORAGE_KEY];
+        // Price is saved outside of the purpose sub-object
+        if (walletData.btcPrice) {
+          this.btcPrice = data.btcPrice;
         }
-        if (walletData.btcUtxos) {
-          this.btcUtxos = walletData.btcUtxos;
+        // Unpack wallet data associated with the current btc purpose
+        const purposeSpecificData = walletData[BTC_PURPOSE];
+        if (!purposeSpecificData)
+          return;
+        if (purposeSpecificData.addresses) {
+          this.rehydrateAddresses(purposeSpecificData.addresses);
         }
-        if (walletData.lastFetchedBtcData) {
-          this.lastFetchedBtcData = walletData.lastFetchedBtcData;
+        if (purposeSpecificData.btcTxs) {
+          this.btcTxs = purposeSpecificData.btcTxs;
+        }
+        if (purposeSpecificData.btcUtxos) {
+          this.btcUtxos = purposeSpecificData.btcUtxos;
+        }
+        if (purposeSpecificData.lastFetchedBtcData) {
+          this.lastFetchedBtcData = purposeSpecificData.lastFetchedBtcData;
         }
       }
     }
@@ -209,9 +245,9 @@ class SDKSession {
       this.client = client;
       // Setup a new storage session if these are new credentials.
       // (This call will be bypassed if the credentials are already saved
-      // in localStorage because getStorage is also called in the constructor)
+      // in localStorage because getBtcWalletData is also called in the constructor)
       this.deviceID = deviceID;
-      this.getStorage();
+      this.getBtcWalletData();
       return cb(null, client.isPaired);
     });
   }
@@ -237,7 +273,7 @@ class SDKSession {
           this.resetStateData();
         // Update storage. This will remap to a new localStorage key if the wallet UID
         // changed. If we didn't get an active wallet, it will just clear out the addresses
-        this.getStorage();
+        this.getBtcWalletData();
         return cb(null);
       })
     } else {
@@ -348,10 +384,16 @@ class SDKSession {
   // Returns a callback containing params (error, numFetched), where `numFetched` is
   // the total number of *new* addresses we fetched. If this number is >0, it signifies
   // we should re-fetch transaction data for our new set of addresses.
-  fetchBtcAddresses(cb, isChange=false, totalFetched=0) {
+  fetchBtcAddresses(cb, isChange=false, totalFetched={regular: 0, change: 0}) {
+    const BTC_PURPOSE = getBtcPurpose();
+    if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
+      // We cannot continue if the wallet is hidden
+      return cb('Cannot request BTC addresses while wallet is hidden.');
+    }
     const lastUsedIdx = this._getLastUsedBtcAddrIdx(isChange);
     const currentAddrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
-    const GAP_LIMIT = isChange ? constants.BTC_CHANGE_GAP_LIMIT : constants.BTC_MAIN_GAP_LIMIT;
+    const GAP_LIMIT = isChange ?  constants.BTC_CHANGE_GAP_LIMIT : 
+                                  constants.BTC_MAIN_GAP_LIMIT;
     const targetIdx = lastUsedIdx + 1 + GAP_LIMIT;
     const maxToFetch = targetIdx - currentAddrs.length;
     const nToFetch = Math.min(constants.BTC_ADDR_BLOCK_LEN, maxToFetch)
@@ -359,7 +401,9 @@ class SDKSession {
       // If we have closed our gap limit we need to get more addresses
       const changeIdx = isChange ? 1 : 0;
       const opts = {
-        startPath: [ getBtcPurpose(), constants.BTC_COIN, harden(0), changeIdx, currentAddrs.length ],
+        startPath: [ 
+          BTC_PURPOSE, constants.BTC_COIN, harden(0), changeIdx, currentAddrs.length 
+        ],
         n: nToFetch,
         skipCache: true,
       }
@@ -367,7 +411,11 @@ class SDKSession {
         if (err)
           return cb(err);
         // Track the number of new addresses we fetched
-        totalFetched += nToFetch;
+        if (isChange) {
+          totalFetched.change += nToFetch;
+        } else {
+          totalFetched.regular += nToFetch;
+        }
         // Save the addresses to memory and also update them in localStorage
         // Note that we do need to track index here
         if (isChange) {
@@ -382,7 +430,7 @@ class SDKSession {
           // If we are done fetching main BTC addresses, switch to the change path
           this.fetchBtcAddresses(cb, true, totalFetched);
         } else {
-          this.saveStorage();
+          this.saveBtcWalletData();
           cb(null, totalFetched);
         }
       })
@@ -391,7 +439,7 @@ class SDKSession {
       this.fetchBtcAddresses(cb, true, totalFetched);
     } else {
       // Nothing to fetch
-      this.saveStorage();
+      this.saveBtcWalletData();
       cb(null, totalFetched);
     }
   }
@@ -399,8 +447,19 @@ class SDKSession {
   // Fetch transactions and UTXOs for all known BTC addresses (including change)
   // Calls to appropriate Bitcoin data provider and updates state internally.
   // Returns a callback with params (error)
-  fetchBtcStateData(cb, isChange=false, txs=[], utxos=[]) {
-    const addrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
+  fetchBtcStateData(opts, cb, isChange=false, txs=[], utxos=[]) {
+    // Determine which addresses for which to fetch state.
+    // If we get non-zero `opts` values it means this is a follow up call
+    // and we only want to fetch data for new addresses we've collected
+    // rather than data for all known addresses.
+    let addrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
+    if (isChange && opts && opts.change > 0) {
+      addrs = this.addresses.BTC_CHANGE.slice(-opts.change);
+      opts.change = 0;
+    } else if (!isChange && opts && opts.regular > 0) {
+      addrs = this.addresses.BTC.slice(-opts.regular);
+      opts.regular = 0;
+    }
     fetchBtcPrice((err, btcPrice) => {
       if (err) {
         // Don't fail out if we can't get the price - just display 0
@@ -421,15 +480,17 @@ class SDKSession {
           utxos = utxos.concat(_utxos);
           if (!isChange) {
             // Once we get data for our BTC addresses, switch to change
-            this.fetchBtcStateData(cb, true, txs, utxos);
+            this.fetchBtcStateData(opts, cb, true, txs, utxos);
           } else {
             // All done! Filter/process data and save
             this.btcPrice = btcPrice;
             this.lastFetchedBtcData = Math.floor(Date.now());
-            this.btcTxs = filterUniqueObjects(txs, ['id']);
+            const newTxs = this.btcTxs.concat(txs);
+            this.btcTxs = filterUniqueObjects(newTxs, ['id']);
             this._processBtcTxs();
-            this.btcUtxos = filterUniqueObjects(utxos, ['id', 'vout']);
-            this.saveStorage();
+            const newUtxos = this.btcUtxos.concat(utxos);
+            this.btcUtxos = filterUniqueObjects(newUtxos, ['id', 'vout']);
+            this.saveBtcWalletData();
             cb(null)
           }
         })
@@ -468,12 +529,12 @@ class SDKSession {
     for (let i = 0; i < txs.length; i++) {
       let maxUsed = lastUsed;
       txs[i].inputs.forEach((input) => {
-        if (addrs.indexOf(input.spender) > maxUsed)
-          maxUsed = addrs.indexOf(input.spender);
+        if (addrs.indexOf(input.addr) > maxUsed)
+          maxUsed = addrs.indexOf(input.addr);
       })
       txs[i].outputs.forEach((output) => {
-        if (addrs.indexOf(output.spender) > maxUsed)
-          maxUsed = addrs.indexOf(output.spender);
+        if (addrs.indexOf(output.addr) > maxUsed)
+          maxUsed = addrs.indexOf(output.addr);
       })
       if (maxUsed > lastUsed)
         lastUsed = maxUsed;

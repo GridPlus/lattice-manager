@@ -9,9 +9,10 @@ import {
 } from '@ant-design/icons';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { 
-  Connect, Error, Landing, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
+  Connect, Error, Landing, Loading, Pair, Permissions, Send, 
+  Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
 } from './index'
-import { constants, getLocalStorageSettings } from '../util/helpers'
+import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
@@ -348,9 +349,16 @@ class Main extends React.Component {
 
   // Fetch up-to-date blockchain state data for the addresses stored in our
   // SDKSession. Called after we load addresses for the first time
-  fetchBtcData() {
+  // Passing `exitIfNoNewAddrs=true` means we will attempt to fetch new
+  // addresses based on known state data and if we do not yield any new ones
+  // we should exit. This is done to avoid naively requesting state data
+  // for all known addresses each time we add a new one based on a gap limit.
+  // For example, an initial sync will get 20 addrs and fetch state data. It 
+  // may then request one address at a time and then state data for that one
+  // address until the gap limit is reached.
+  fetchBtcData(exitIfNoNewAddrs=false) {
     this.wait('Fetching addresses');
-    this.state.session.fetchBtcAddresses((err, numNewAddrs) => {
+    this.state.session.fetchBtcAddresses((err, newAddrCounts) => {
       if (err) {
         this.unwait()
         return this.setError({ 
@@ -359,8 +367,16 @@ class Main extends React.Component {
         });
       }
       this.unwait()
+      const shouldExit =  exitIfNoNewAddrs && 
+                          newAddrCounts.regular === 0 && 
+                          newAddrCounts.change === 0;
+      if (shouldExit) {
+        // Done syncing
+        return;
+      }
       this.wait('Syncing chain data')
-      this.state.session.fetchBtcStateData((err) => {
+      const opts = exitIfNoNewAddrs ? newAddrCounts : null;
+      this.state.session.fetchBtcStateData(opts, (err) => {
         if (err) {
           console.error('Error fetching BTC state data', err)
           this.unwait()
@@ -368,16 +384,9 @@ class Main extends React.Component {
             err: 'Failed to fetch BTC state data. Please try again.', 
             cb: this.fetchBtcData 
           });
-        } else if (numNewAddrs > 0) {
-          // If we got new addresses, we should fetch state data with them.
-          // Call this function recursively. The call to `fetchBtcAddresses` should
-          // callback immediately because there are no new addresses to fetch
-          // without updated state data.
-          this.fetchBtcData();
-        } else {
-          // We are done
-          this.unwait()
         }
+        // Recurse such that we exit if there are no new addresses
+        this.fetchBtcData(true);
       })
     })
   }
@@ -471,6 +480,7 @@ class Main extends React.Component {
   renderMenu() {
     const collapsed = this.isMobile();
     const mode = collapsed ? 'horizontal' : 'inline';
+    const hideWallet = constants.BTC_PURPOSE_NONE === getBtcPurpose();
     return (
       <Sider collapsed={collapsed}>
         <Menu theme="dark" mode={mode} onSelect={this.handleMenuChange}>
@@ -494,20 +504,22 @@ class Main extends React.Component {
             <SettingOutlined/>
             <span>Settings</span>
           </Menu.Item>
-          <Menu.SubMenu title="Wallet" key="submenu-wallet">
-            <Menu.Item key="menu-wallet">
-              <WalletOutlined/>
-              <span>Wallet</span>
-            </Menu.Item>
-            <Menu.Item key="menu-send">
-              <ArrowUpOutlined/>
-              <span>Send</span>
-            </Menu.Item>
-            <Menu.Item key="menu-receive">
-              <ArrowDownOutlined/>
-              <span>Receive</span>
-            </Menu.Item>
-          </Menu.SubMenu>
+          {!hideWallet ? (
+            <Menu.SubMenu title="BTC Wallet" key="submenu-wallet">
+              <Menu.Item key="menu-wallet">
+                <WalletOutlined/>
+                <span>History</span>
+              </Menu.Item>
+              <Menu.Item key="menu-send">
+                <ArrowUpOutlined/>
+                <span>Send</span>
+              </Menu.Item>
+              <Menu.Item key="menu-receive">
+                <ArrowDownOutlined/>
+                <span>Receive</span>
+              </Menu.Item>
+            </Menu.SubMenu>
+          ) : null}
         </Menu>
       </Sider>
     )

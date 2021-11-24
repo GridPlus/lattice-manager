@@ -11,9 +11,7 @@ import { constants } from '../../util/helpers'
 const GREEN = "#00FF00";
 const RED = "#FF0000";
 
-
 class Wallet extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
@@ -23,7 +21,7 @@ class Wallet extends React.Component {
 
   componentDidMount() {
     if (this.props.session)
-      this.props.session.getStorage()
+      this.props.session.getBtcWalletData()
     window.addEventListener('resize', this.updateWidth);
   }
 

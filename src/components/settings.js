@@ -9,12 +9,14 @@ import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpe
 // TMP: BITCOIN CONSTANTS
 // We will be deprecating the wallet functionality so I'm going to put
 // these here for now
+const BTC_PURPOSE_NONE = constants.BTC_PURPOSE_NONE;
+const BTC_PURPOSE_NONE_STR = 'Hide BTC Wallet';
 const BTC_PURPOSE_LEGACY = constants.HARDENED_OFFSET + 44;
-const BTC_PURPOSE_LEGACY_STR = 'Legacy (prefix=1)';
+const BTC_PURPOSE_LEGACY_STR = 'Legacy (1)';
 const BTC_PURPOSE_WRAPPED_SEGWIT = constants.HARDENED_OFFSET + 49;
-const BTC_PURPOSE_WRAPPED_SEGWIT_STR = 'Wrapped Segwit (prefix=3)';
+const BTC_PURPOSE_WRAPPED_SEGWIT_STR = 'Wrapped Segwit (3)';
 const BTC_PURPOSE_SEGWIT = constants.HARDENED_OFFSET + 84;
-const BTC_PURPOSE_SEGWIT_STR = 'Segwit (prefix=bc1)';
+const BTC_PURPOSE_SEGWIT_STR = 'Segwit (bc1)';
 
 
 class Settings extends React.Component {
@@ -25,12 +27,11 @@ class Settings extends React.Component {
       settings: {
         customEndpoint: '',
         keyringLogins: {},
-        btcPurpose: constants.DEFAULT_BTC_PURPOSE,
+        btcPurpose: BTC_PURPOSE_NONE,
       },
       local: {},
     }
     this.getBtcPurposeName = this.getBtcPurposeName.bind(this)
-    this.getSettings();
   }
 
   componentDidMount() {
@@ -71,7 +72,7 @@ class Settings extends React.Component {
   updateUseDevLattice(evt) {
     const settings = JSON.parse(JSON.stringify(this.state.settings));
     settings.devLattice = evt.target.checked
-    this.setState({ settings })
+    this.setState({ settings }, this.submit)
   }
 
   removeKeyring(login) {
@@ -116,14 +117,16 @@ class Settings extends React.Component {
   handleChangeBitcoinVersionSetting(evt) {
     const settings = JSON.parse(JSON.stringify(this.state.settings));
     settings.btcPurpose = parseInt(evt.key);
-    this.setState({ settings })
+    this.setState({ settings }, this.submit)
   }
 
   getBtcPurposeName() {
     const purpose = this.state.settings.btcPurpose ?
                     this.state.settings.btcPurpose :
                     getBtcPurpose();
-    if (purpose === BTC_PURPOSE_LEGACY) {
+    if (purpose === BTC_PURPOSE_NONE) {
+      return BTC_PURPOSE_NONE_STR;
+    } else if (purpose === BTC_PURPOSE_LEGACY) {
       return BTC_PURPOSE_LEGACY_STR
     } else if (purpose === BTC_PURPOSE_WRAPPED_SEGWIT) {
       return BTC_PURPOSE_WRAPPED_SEGWIT_STR
@@ -139,6 +142,9 @@ class Settings extends React.Component {
     // TODO: Uncomment this when firmware is updated
     const menu = (
       <Menu onClick={this.handleChangeBitcoinVersionSetting.bind(this)}>
+        <Menu.Item key={BTC_PURPOSE_NONE}>
+          Hide BTC Wallet
+        </Menu.Item>
         {/* <Menu.Item key={BTC_PURPOSE_SEGWIT}>
           {BTC_PURPOSE_SEGWIT_STR}
         </Menu.Item> */}
@@ -153,7 +159,7 @@ class Settings extends React.Component {
     )
     return (
       <Card>
-        <h4>Bitcoin Address Type</h4>
+        <h4>Bitcoin Wallet Type</h4>
         <Dropdown overlay={menu}>
           <Button>{this.getBtcPurposeName()}</Button>
         </Dropdown>

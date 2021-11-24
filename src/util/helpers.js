@@ -30,6 +30,7 @@ const constants = {
     CONTRACTS_HELP_LINK: 'https://docs.gridplus.io/gridplus-web-wallet/use-ethereum-smart-contract-abi-function-definitions',
     TAGS_HELP_LINK: 'https://docs.gridplus.io/gridplus-web-wallet/address-tags',
     PERMISSIONS_HELP_LINK: 'https://docs.gridplus.io/gridplus-web-wallet/how-to-set-and-use-spending-limits',
+    BTC_WALLET_STORAGE_KEY: 'btc_wallet',
 }
 
 const devConstants = {
@@ -47,12 +48,8 @@ const devConstants = {
     LATTICE_CERT_SIGNER: '045cfdf77a00b4b6b4a5b8bb26b5497dbc7a4d01cbefd7aaeaf5f6f8f8865976e7941ab0ec1651209c444009fd48d925a17de5040ba47eaf3f5b51720dd40b2f9d',
 }
 
-/*
-// By default we provide bech32 addresses derived using BIP84. However,
-// the user can change this in settings
-constants.DEFAULT_BTC_PURPOSE = constants.HARDENED_OFFSET + 84;
-*/
-constants.DEFAULT_BTC_PURPOSE = constants.HARDENED_OFFSET + 49;
+// By default we hide the BTC wallet, mapping to purpose = -1
+constants.BTC_PURPOSE_NONE = -1;
 
 // NEW: If you have checked the "Using Dev Lattice" box in settings, the constants
 // are swapped out here
@@ -231,7 +228,7 @@ function getBtcPurpose() {
     const localSettings = getLocalStorageSettings();
     return  localSettings.btcPurpose ? 
             localSettings.btcPurpose : 
-            constants.DEFAULT_BTC_PURPOSE;
+            constants.BTC_PURPOSE_NONE;
 }
 exports.getBtcPurpose = getBtcPurpose;
 
