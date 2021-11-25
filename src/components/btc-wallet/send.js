@@ -115,7 +115,7 @@ class Send extends React.Component {
   buildBtcRequest() {
     const req = buildBtcTxReq(this.state.recipient, 
                               this.state.value,
-                              this.props.session.getUtxos('BTC'), 
+                              this.props.session.btcUtxos, 
                               this.props.session.addresses['BTC'],  
                               this.props.session.addresses['BTC_CHANGE'],
                               this.state.btcFeeRate);

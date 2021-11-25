@@ -1,6 +1,6 @@
 const bs58check = require('bs58check');
 const bech32 = require('bech32').bech32;
-
+const HARDENED_OFFSET = 0x80000000;
 const constants = {
     DEFAULT_APP_NAME: 'Lattice Manager',
     ENV: process.env.REACT_APP_ENV || 'prod',
@@ -8,10 +8,10 @@ const constants = {
     GRIDPLUS_CLOUD_API: process.env.REACT_APP_GRIDPLUS_CLOUD_API || 'https://pay.gridplus.io:3000',
     BTC_PROD_DATA_API: 'https://blockchain.info',
     ROOT_STORE: process.env.REACT_APP_ROOT_STORE || 'gridplus',
-    HARDENED_OFFSET: 0x80000000,
+    HARDENED_OFFSET,
     ASYNC_SDK_TIMEOUT: 60000,
     SHORT_TIMEOUT: 30000,
-    BTC_COIN: parseInt(process.env.REACT_APP_BTC_COIN) || 0x80000000,
+    BTC_COIN: parseInt(process.env.REACT_APP_BTC_COIN) || HARDENED_OFFSET,
     SATS_TO_BTC: Math.pow(10, 8),
     BTC_MAIN_GAP_LIMIT: 20,
     BTC_CHANGE_GAP_LIMIT: 1,
@@ -31,6 +31,16 @@ const constants = {
     TAGS_HELP_LINK: 'https://docs.gridplus.io/gridplus-web-wallet/address-tags',
     PERMISSIONS_HELP_LINK: 'https://docs.gridplus.io/gridplus-web-wallet/how-to-set-and-use-spending-limits',
     BTC_WALLET_STORAGE_KEY: 'btc_wallet',
+    BTC_PURPOSE_NONE: -1,
+    BTC_PURPOSE_NONE_STR: 'Hide BTC Wallet',
+    BTC_PURPOSE_LEGACY: HARDENED_OFFSET + 44,
+    BTC_PURPOSE_LEGACY_STR: 'Legacy (1)',
+    BTC_PURPOSE_WRAPPED_SEGWIT: HARDENED_OFFSET + 49,
+    BTC_PURPOSE_WRAPPED_SEGWIT_STR: 'Wrapped Segwit (3)',
+    BTC_PURPOSE_SEGWIT: HARDENED_OFFSET + 84,
+    BTC_PURPOSE_SEGWIT_STR: 'Segwit (bc1)',
+    BTC_SEGWIT_NATIVE_V0_PREFIX: 'bc',
+    BTC_WRAPPED_SEGWIT_VERSION: 0x05,
 }
 
 const devConstants = {
@@ -41,15 +51,15 @@ const devConstants = {
     // Deprecating because using two different stores was very tricky and we don't
     // need the second one anyway
     // ROOT_STORE: 'gridplus-dev', 
-    BTC_COIN: 0x80000000 + 1,
+    BTC_COIN: HARDENED_OFFSET + 1,
     BTC_DEFAULT_FEE_RATE: 10,
     BTC_TX_BASE_URL: 'https://www.blockchain.com/btc-testnet/tx',
     BTC_TESTNET: 'Testnet3',
     LATTICE_CERT_SIGNER: '045cfdf77a00b4b6b4a5b8bb26b5497dbc7a4d01cbefd7aaeaf5f6f8f8865976e7941ab0ec1651209c444009fd48d925a17de5040ba47eaf3f5b51720dd40b2f9d',
-}
+    BTC_SEGWIT_NATIVE_V0_PREFIX: 'tb',
+    BTC_WRAPPED_SEGWIT_VERSION: 0xC4,
 
-// By default we hide the BTC wallet, mapping to purpose = -1
-constants.BTC_PURPOSE_NONE = -1;
+}
 
 // NEW: If you have checked the "Using Dev Lattice" box in settings, the constants
 // are swapped out here
@@ -104,6 +114,7 @@ function _fetchBtcUtxos(addresses, cb, utxos=[], offset=0) {
                     id: u.tx_hash_big_endian,
                     vout: u.tx_output_n,
                     value: u.value,
+                    address: _blockchainDotComScriptToAddr(u.script),
                 })
             }
         })
@@ -136,6 +147,7 @@ function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
                     id: u.txid,
                     vout: u.vout,
                     value: u.value,
+                    address,
                 })
             }
         })
@@ -329,7 +341,35 @@ exports.getLocalStorageSettings = getLocalStorageSettings;
 // OTHER HELPERS
 //--------------------------------------------
 exports.harden = function(x) {
-  return x + constants.HARDENED_OFFSET;
+  return x + HARDENED_OFFSET;
+}
+
+// Convert a script from blockchain.com's API into an address
+// For some reason, they only return the script in the UTXO object.
+// We need to convert the script to a an address.
+// Since we know the purpose, we know the format of the address,
+// so we can slice out the pubkeyhash from the script and convert.
+function _blockchainDotComScriptToAddr(_scriptStr) {
+    const purpose = getBtcPurpose();
+    if (purpose === constants.BTC_PURPOSE_SEGWIT) {
+        const bech32Prefix = constants.BTC_SEGWIT_NATIVE_V0_PREFIX;
+        const bech32Version = 0; // Only v0 currently supported
+        // Script: |OP_0|0x20|pubkeyhash|
+        const pubkeyhash = Buffer.from(_scriptStr, 'hex').slice(-20)
+        const words = bech32.toWords(pubkeyhash);
+        words.unshift(bech32Version);
+        return bech32.encode(bech32Prefix, words);
+    } else if (purpose === constants.BTC_PURPOSE_WRAPPED_SEGWIT) {
+        const version = constants.BTC_WRAPPED_SEGWIT_VERSION;
+        // Script: |OP_HASH160|0x20|pubkeyhash|OP_EQUAL|
+        const pubkeyhash = Buffer.from(_scriptStr, 'hex').slice(2, 22);
+        return bs58check.encode(Buffer.concat([Buffer.from([version]), pubkeyhash]));
+    } else if (purpose === constants.BTC_PURPOSE_LEGACY) {
+        // Script: |OP_DUP|OP_HASH160|0x20|pubkeyhash|OP_EQUALVERIFY|OP_CHECKSIG|
+        const version = constants.BTC_WRAPPED_SEGWIT_VERSION;
+        const pubkeyhash = Buffer.from(_scriptStr, 'hex').slice(3, 23);
+        return bs58check.encode(Buffer.concat([Buffer.from([version]), pubkeyhash]));
+    }
 }
 
 function getBtcPurpose() {
@@ -356,8 +396,8 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     const hashes = [];
     const filteredUtxos = [];
     utxos.forEach((utxo) => {
-      if (hashes.indexOf(utxo.txHash) === -1) {
-        hashes.push(utxo.txHash);
+      if (hashes.indexOf(utxo.id) === -1) {
+        hashes.push(utxo.id);
         filteredUtxos.push(utxo);
       }
     })
@@ -389,16 +429,16 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
         const utxo = sortedUtxos[i];
         if (addrs.indexOf(utxo.address) > -1) {
             prevOuts.push({
-                txHash: utxo.txHash,
+                txHash: utxo.id,
                 value: utxo.value,
-                index: utxo.index,
+                index: utxo.vout,
                 signerPath: BASE_SIGNER_PATH.concat([0, addrs.indexOf(utxo.address)]),
             })
         } else if (changeAddrs.indexOf(utxo.address) > -1) {
             const prevOut = {
-                txHash: utxo.txHash,
+                txHash: utxo.id,
                 value: utxo.value,
-                index: utxo.index,
+                index: utxo.vout,
                 signerPath: BASE_SIGNER_PATH.concat([1, changeAddrs.indexOf(utxo.address)]),
             };
             prevOuts.push(prevOut);

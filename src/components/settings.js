@@ -6,19 +6,6 @@ import { PageContent } from './index'
 import './styles.css'
 import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers';
 
-// TMP: BITCOIN CONSTANTS
-// We will be deprecating the wallet functionality so I'm going to put
-// these here for now
-const BTC_PURPOSE_NONE = constants.BTC_PURPOSE_NONE;
-const BTC_PURPOSE_NONE_STR = 'Hide BTC Wallet';
-const BTC_PURPOSE_LEGACY = constants.HARDENED_OFFSET + 44;
-const BTC_PURPOSE_LEGACY_STR = 'Legacy (1)';
-const BTC_PURPOSE_WRAPPED_SEGWIT = constants.HARDENED_OFFSET + 49;
-const BTC_PURPOSE_WRAPPED_SEGWIT_STR = 'Wrapped Segwit (3)';
-const BTC_PURPOSE_SEGWIT = constants.HARDENED_OFFSET + 84;
-const BTC_PURPOSE_SEGWIT_STR = 'Segwit (bc1)';
-
-
 class Settings extends React.Component {
   constructor(props) {
     super(props);
@@ -27,7 +14,7 @@ class Settings extends React.Component {
       settings: {
         customEndpoint: '',
         keyringLogins: {},
-        btcPurpose: BTC_PURPOSE_NONE,
+        btcPurpose: getBtcPurpose(),
       },
       local: {},
     }
@@ -124,14 +111,14 @@ class Settings extends React.Component {
     const purpose = this.state.settings.btcPurpose ?
                     this.state.settings.btcPurpose :
                     getBtcPurpose();
-    if (purpose === BTC_PURPOSE_NONE) {
-      return BTC_PURPOSE_NONE_STR;
-    } else if (purpose === BTC_PURPOSE_LEGACY) {
-      return BTC_PURPOSE_LEGACY_STR
-    } else if (purpose === BTC_PURPOSE_WRAPPED_SEGWIT) {
-      return BTC_PURPOSE_WRAPPED_SEGWIT_STR
-    } else if (purpose === BTC_PURPOSE_SEGWIT) {
-      return BTC_PURPOSE_SEGWIT_STR;
+    if (purpose === constants.BTC_PURPOSE_NONE) {
+      return constants.BTC_PURPOSE_NONE_STR;
+    } else if (purpose === constants.BTC_PURPOSE_LEGACY) {
+      return constants.BTC_PURPOSE_LEGACY_STR
+    } else if (purpose === constants.BTC_PURPOSE_WRAPPED_SEGWIT) {
+      return constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR
+    } else if (purpose === constants.BTC_PURPOSE_SEGWIT) {
+      return constants.BTC_PURPOSE_SEGWIT_STR;
     } else {
       return 'Error finding BTC version'
     }
@@ -142,18 +129,18 @@ class Settings extends React.Component {
     // TODO: Uncomment this when firmware is updated
     const menu = (
       <Menu onClick={this.handleChangeBitcoinVersionSetting.bind(this)}>
-        <Menu.Item key={BTC_PURPOSE_NONE}>
+        <Menu.Item key={constants.BTC_PURPOSE_NONE}>
           Hide BTC Wallet
         </Menu.Item>
-        {/* <Menu.Item key={BTC_PURPOSE_SEGWIT}>
-          {BTC_PURPOSE_SEGWIT_STR}
+        {/* <Menu.Item key={constants.BTC_PURPOSE_SEGWIT}>
+          {constants.BTC_PURPOSE_SEGWIT_STR}
         </Menu.Item> */}
-        <Menu.Item key={BTC_PURPOSE_WRAPPED_SEGWIT}>
-          {BTC_PURPOSE_WRAPPED_SEGWIT_STR}
+        <Menu.Item key={constants.BTC_PURPOSE_WRAPPED_SEGWIT}>
+          {constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR}
         </Menu.Item>
         {/* Don't uncomment this until segwit support is released
-        <Menu.Item key={BTC_PURPOSE_LEGACY}>
-          {BTC_PURPOSE_LEGACY_STR}
+        <Menu.Item key={constants.BTC_PURPOSE_LEGACY}>
+          {constants.BTC_PURPOSE_LEGACY_STR}
         </Menu.Item> */}
       </Menu>
     )
