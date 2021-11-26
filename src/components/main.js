@@ -28,8 +28,6 @@ class Main extends React.Component {
       alertMsg: null,
       error: { msg: null, cb: null },
       pendingMsg: null,
-      // State variable to track if we are fetching new addresses in the background
-      stillSyncingAddresses: false, 
       // Waiting on asynchronous data, usually from the Lattice
       waiting: false, 
       // Login info stored in localstorage. Can be cleared out at any time by the `logout` func
@@ -284,9 +282,9 @@ class Main extends React.Component {
       this.setError({ err })
   }
 
-  setError(data={err:null, cb:null}) {
+  setError(data={msg:null, cb:null}) {
     // Handle case where user deletes pairing on the Lattice
-    if (data.err === constants.LOST_PAIRING_ERR)
+    if (data.msg === constants.LOST_PAIRING_ERR)
       return this.handleLostPairing();
     this.setState({ error: data, loading: false })
   }
@@ -306,7 +304,7 @@ class Main extends React.Component {
       // Sanity check -- this should never get hit
     if (!deviceID || !password) {
       return this.setError({ 
-        err: 'You must provide a deviceID and password. Please refresh and log in again. '
+        msg: 'You must provide a deviceID and password. Please refresh and log in again. '
       });
     } else {
       this.setError();
@@ -326,7 +324,7 @@ class Main extends React.Component {
           // If we failed to connect, clear out the SDK session. This component will
           // prompt the user for new login data and will try to create one.
           this.setError({ 
-            err, 
+            msg: err, 
             cb: () => { this.connectSession(data); } 
           });
         } else {
@@ -357,6 +355,7 @@ class Main extends React.Component {
   // may then request one address at a time and then state data for that one
   // address until the gap limit is reached.
   fetchBtcData(exitIfNoNewAddrs=false) {
+    this.unwait();
     this.setError();
     this.wait('Fetching addresses');
     this.state.session.fetchBtcAddresses((err, newAddrCounts) => {
@@ -364,7 +363,7 @@ class Main extends React.Component {
         console.error('Error fetching BTC addresses', err)
         this.unwait()
         return this.setError({ 
-          err: 'Failed to fetch BTC addresses. Please try again.', 
+          msg: 'Failed to fetch BTC addresses. Please try again.', 
           cb: this.fetchBtcData
         });
       }
@@ -383,7 +382,7 @@ class Main extends React.Component {
           console.error('Error fetching BTC state data', err)
           this.unwait()
           return this.setError({ 
-            err: 'Failed to fetch BTC state data. Please try again.', 
+            msg: 'Failed to fetch BTC state data. Please try again.', 
             cb: this.fetchBtcData 
           });
         }
@@ -417,7 +416,7 @@ class Main extends React.Component {
       this.syncActiveWalletState(true);
       this.unwait();
       if (err)
-        return this.setError({ err, cb: this.refreshWallets })
+        return this.setError({ msg: err, cb: this.refreshWallets })
       this.setError();
     })
   }
@@ -465,7 +464,7 @@ class Main extends React.Component {
       if (err) {
         // If there was an error here, the user probably entered the wrong secret
         const pairErr = 'Failed to pair. You either entered the wrong code or have already connected to this app.'
-        this.setError({ err: pairErr, cb: this.connectSession });
+        this.setError({ msg: pairErr, cb: this.connectSession });
       } else if (this.state.openedByKeyring) {
         this.returnKeyringData();
       }
@@ -614,7 +613,6 @@ class Main extends React.Component {
                   msgHandler={this.setAlertMessage}
                   refreshData={this.fetchBtcData}
                   lastUpdated={this.state.lastUpdated}
-                  stillSyncingAddresses={this.state.stillSyncingAddresses}
                   pageTurnCb={this.handlePageTurn}
           />
         );

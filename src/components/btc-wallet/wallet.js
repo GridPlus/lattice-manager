@@ -224,7 +224,7 @@ class Wallet extends React.Component {
           <Button size="large" 
                   type="primary" 
                   ghost 
-                  onClick={this.props.refreshData}
+                  onClick={() => {this.props.refreshData()}}
           >
             Start
           </Button>
@@ -243,20 +243,13 @@ class Wallet extends React.Component {
         <Card title={`BTC Wallet`} bordered={true}>
           <Row justify='center'>
             Last Update&nbsp;{this.renderLastUpdatedTag()}
-            {this.props.stillSyncingAddresses === true ? (
-              <div>
-                <Tag color="red">Still Fetching Addresses</Tag> 
-                <Spin indicator={<LoadingOutlined/>} size={"small"}/>
-              </div>
-            ): (
-              <Button size="small" 
-                      type="primary" 
-                      ghost 
-                      onClick={this.props.refreshData}
-              >
-                Refresh <ReloadOutlined/>
-              </Button>
-            )}
+            <Button size="small" 
+                    type="primary" 
+                    ghost 
+                    onClick={() => {this.props.refreshData()}}
+            >
+              Refresh <ReloadOutlined/>
+            </Button>
           </Row>
           <Row justify='center' style={{margin: "20px 0 0 0"}}>
             {this.renderHeader()}

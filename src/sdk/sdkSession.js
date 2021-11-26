@@ -61,8 +61,8 @@ class SDKSession {
     // If we have set the next address to use, display that.
     // Otherwise, fallback on the first address.
     const lastUsed = this._getLastUsedBtcAddrIdx()
-    if (lastUsed > -1)
-      return lastUsed + 1;
+    if (lastUsed > -1 && this.addresses.BTC[lastUsed + 1])
+      return this.addresses.BTC[lastUsed + 1];
     else if (this.addresses.BTC && this.addresses.BTC.length > 0)
       return this.addresses.BTC[0];
     else

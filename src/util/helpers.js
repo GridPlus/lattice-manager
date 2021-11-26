@@ -41,10 +41,10 @@ const constants = {
     BTC_PURPOSE_SEGWIT_STR: 'Segwit (bc1)',
     BTC_SEGWIT_NATIVE_V0_PREFIX: 'bc',
     BTC_WRAPPED_SEGWIT_VERSION: 0x05,
+    RATE_LIMIT: 1000, // 1s between requests
 }
 
 const devConstants = {
-    RATE_LIMIT: 1000, // 1s between requests
     BTC_DEV_DATA_API: 'https://blockstream.info/testnet/api',
     BASE_SIGNING_URL: 'https://signing.staging-gridpl.us',
     GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3333',
@@ -167,9 +167,7 @@ exports.fetchBtcUtxos = function(addresses, cb) {
         return cb(null, []);
     const addrsCopy = JSON.parse(JSON.stringify(addresses));
     const f = constants.BTC_DEV_DATA_API ? _fetchBtcUtxosTestnet : _fetchBtcUtxos;
-    setTimeout(() => {
-        f(addrsCopy, cb);
-    }, constants.RATE_LIMIT)
+    f(addrsCopy, cb);
 }
 //====== END UTXOS ==================
 
@@ -302,9 +300,7 @@ exports.fetchBtcTxs = function(addresses, cb) {
         return cb(null, []);
     const addrsCopy = JSON.parse(JSON.stringify(addresses));
     const f = constants.BTC_DEV_DATA_API ? _fetchBtcTxsTestnet : _fetchBtcTxs;
-    setTimeout(() => {
-        f(addrsCopy, cb);
-    }, constants.RATE_LIMIT)
+    f(addrsCopy, cb);
 }
 //====== END TXS ==================
 
