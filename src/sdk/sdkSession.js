@@ -1,7 +1,8 @@
 import { Client } from 'gridplus-sdk';
 import { 
   harden, constants, getBtcPurpose, fetchBtcPrice, 
-  fetchBtcTxs, fetchBtcUtxos, filterUniqueObjects
+  fetchBtcTxs, fetchBtcUtxos, filterUniqueObjects,
+  broadcastBtcTx,
 } from '../util/helpers';
 import { default as StorageSession } from '../util/storageSession';
 const Buffer = require('buffer/').Buffer;
@@ -295,40 +296,17 @@ class SDKSession {
 
   sign(req, cb) {
     // Get the tx payload to broadcast
+    console.log('signing', req)
     this.client.sign(req, (err, res) => {
+      console.log('signed', err, res)
       if (err) {
         return cb(err);
       }
-
-      // Broadcast
-      const url = `${constants.GRIDPLUS_CLOUD_API}/v2/accounts/broadcast`;
-      // Req should have the serialized payload WITH signature in the `tx` param
-      const body = { currency: req.currency, hex: res.tx };
-      const data = {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        }
-      }
-      // console.log('broadcasting', body)
-      fetch(url, data)
-      .then((response) => {
-        return response.json()
+      broadcastBtcTx(res.tx, (err, res) => {
+        if (err)
+          return cb(`Error broadcasting transaction: ${err.message}`)
+        return cb(null)
       })
-      .then((resp) => {
-          if (resp.error || resp.type === "RPCError") {
-            console.error('Broadcasting error in response: ', resp.error);
-            return cb("Error broadcasting transaction. Please wait a bit and try again.");
-          }
-          // Return the transaction hash
-          return cb(null, resp.data);
-      })
-      .catch((err) => {
-          console.error('Broadcast error:', err);
-          return cb("Error broadcasting transaction. Please wait a bit and try again.");
-      });
     })
   }
 
@@ -492,8 +470,11 @@ class SDKSession {
             const newTxs = this.btcTxs.concat(txs);
             this.btcTxs = filterUniqueObjects(newTxs, ['id']);
             this._processBtcTxs();
-            const newUtxos = this.btcUtxos.concat(utxos);
-            this.btcUtxos = filterUniqueObjects(newUtxos, ['id', 'vout']);
+            // We want to *replace* UTXOs rather than append and filter.
+            // These should already be filtered but it doesn't hurt to
+            // do a sanity check filter here.
+            this.btcUtxos =   filterUniqueObjects(utxos, ['id', 'vout'])
+                              .sort((a, b) => { return b.value - a.value });
             this.saveBtcWalletData();
             cb(null);
           }
@@ -564,9 +545,10 @@ class SDKSession {
         tx.inputs.forEach((input) => {
           tx.value += input.value;
         })
+        tx.value -= tx.fee;
         tx.outputs.forEach((output) => {
-          if (allAddrs.indexOf(output.addr) === -1)
-            tx.value += output.value;
+          if (allAddrs.indexOf(output.addr) > -1)
+            tx.value -= output.value;
         })
       } else {
         // Inbound
@@ -574,10 +556,32 @@ class SDKSession {
           if (allAddrs.indexOf(output.addr) > -1)
             tx.value += output.value;
         })
+        // Handle edge case where this is an internal tx
+        let sentFromAddrs = 0;
+        let totalValue = 0;
+        tx.inputs.forEach((input) => {
+          totalValue += input.value;
+          if (allAddrs.indexOf(input.addr) > -1)
+            sentFromAddrs += input.value;
+        })
+        // If any of the inputs were from one of our addresses,
+        // subtract those inputs from the total display amount
+        if (sentFromAddrs > 0) {
+          tx.value -= sentFromAddrs;
+        }
+        // If ALL inputs were from our addresses, set value to 0.
+        // This is just for display purposes and this is an edge case
+        // so it's not super important, but I'm not sure what the
+        // standard way to handle this is. I think it makes most
+        // sense to show this as an internal tx with a 0 value
+        if (totalValue === sentFromAddrs) {
+          tx.value = 0;
+        }
       }
       processedTxs.push(tx);
     })
-    const sortedTxs = processedTxs.sort((a, b) => { return a.timestamp - b.timestamp })
+    const sortedTxs = processedTxs
+                      .sort((a, b) => { return b.timestamp - a.timestamp })
     this.btcTxs = sortedTxs;
   }
 }

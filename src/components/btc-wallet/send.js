@@ -38,8 +38,12 @@ class Send extends React.Component {
     fetch('https://bitcoinfees.earn.com/api/v1/fees/recommended')
     .then((response) => response.json())
     .then((resp) => {
-      if (resp.hourFee)
+      if (resp.hourFee) {
         this.setState({ btcFeeRate: resp.hourFee })
+      }
+      if (this.props.session) {
+        this.props.session.getBtcWalletData()
+      }
     })
     .catch((err) => {
       console.error(`Error from fetching fee rates: ${err.toString()}`)
@@ -145,7 +149,7 @@ class Send extends React.Component {
         if (err) {
           // Display an error banner
           this.setState({ 
-            error: err.message, 
+            error: err, 
             isLoading: false, 
             txHash: null 
           })
@@ -298,7 +302,7 @@ class Send extends React.Component {
     // to spend them all
     const txBytes = getBtcNumTxBytes(utxos.length);
     const feeSat = this.state.btcFeeRate * txBytes;
-    return Math.max((balance - (feeSat / constants.SATS_TO_BTC)).toFixed(8), 0);
+    return Math.max(((balance - feeSat) / constants.SATS_TO_BTC).toFixed(8), 0);
   }
 
   renderSubmitButton() {

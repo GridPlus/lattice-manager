@@ -125,27 +125,30 @@ class EthContracts extends React.Component {
       this.setState({ error: 'Invalid Ethereum contract address', ...defaultState });
     } else {
       this.setState({ loading: true })
-      fetch(`${constants.GRIDPLUS_CLOUD_API}/contractData/${input}`)
-      .then((response) => response.json())
-      .then((resp) => {
-        // Map confusing error strings to better descriptions
-        if (resp.err === 'Contract source code not verified') {
-          resp.err = 'Contract source code not published to Etherscan or not verified. Cannot determine data.'
-        }
-        if (resp.err) {
-          this.setState({ error: resp.err.toString(), ...defaultState })
-        } else {
-          try {
-            const defs = this.TMP_REMOVE_ZERO_LEN_PARAMS(this.props.session.client.parseAbi('etherscan', resp.result, true));
-            this.setState({ defs, contract: input, error: null, success: false, loading: false })
-          } catch (err) {
-            this.setState({ error: err.toString(), ...defaultState })
+      setTimeout(() => {
+        fetch(`${constants.GET_ABI_URL}${input}`)
+        .then((response) => response.json())
+        .then((resp) => {
+          // Map confusing error strings to better descriptions
+          if (resp.err === 'Contract source code not verified') {
+            resp.err = 'Contract source code not published to Etherscan or not verified. Cannot determine data.'
           }
-        }
-      })
-      .catch((err) => {
-        this.setState({ error: err.toString(), ...defaultState })
-      });
+          if (resp.err) {
+            this.setState({ error: resp.err.toString(), ...defaultState })
+          } else {
+            try {
+              const result = JSON.parse(resp.result);
+              const defs = this.TMP_REMOVE_ZERO_LEN_PARAMS(this.props.session.client.parseAbi('etherscan', result, true));
+              this.setState({ defs, contract: input, error: null, success: false, loading: false })
+            } catch (err) {
+              this.setState({ error: err.toString(), ...defaultState })
+            }
+          }
+        })
+        .catch((err) => {
+          this.setState({ error: err.toString(), ...defaultState })
+        });
+      }, 5000); // 1 request per 5 seconds with no API key provided
     }
   }
 
@@ -422,7 +425,7 @@ class EthContracts extends React.Component {
         <p>
           Here you can add ABI definitions manually. Please stick with
           Etherscan formatting (i.e. the contents of "Contract ABI" in the Contract tab -&nbsp;
-          <a  class="lattice-a"
+          <a  className="lattice-a"
               href="https://etherscan.io/address/0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b#code" 
               target="_blank"
               rel="noopener noreferrer"

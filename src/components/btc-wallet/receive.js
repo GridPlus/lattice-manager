@@ -22,6 +22,9 @@ class Receive extends React.Component {
 
   componentDidMount() {
     this.updateDisplayAddress();
+    if (this.props.session) {
+      this.props.session.getBtcWalletData()
+    }
     window.addEventListener('resize', this.updateWidth);
   }
 

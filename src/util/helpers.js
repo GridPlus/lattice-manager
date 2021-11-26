@@ -5,8 +5,8 @@ const constants = {
     DEFAULT_APP_NAME: 'Lattice Manager',
     ENV: process.env.REACT_APP_ENV || 'prod',
     BASE_SIGNING_URL: process.env.REACT_APP_BASE_SIGNING_URL || 'https://signing.gridpl.us',
-    GRIDPLUS_CLOUD_API: process.env.REACT_APP_GRIDPLUS_CLOUD_API || 'https://pay.gridplus.io:3000',
     BTC_PROD_DATA_API: 'https://blockchain.info',
+    BTC_BROADCAST_ENDPOINT: 'https://blockstream.info/api/tx',
     ROOT_STORE: process.env.REACT_APP_ROOT_STORE || 'gridplus',
     HARDENED_OFFSET,
     ASYNC_SDK_TIMEOUT: 60000,
@@ -42,12 +42,13 @@ const constants = {
     BTC_SEGWIT_NATIVE_V0_PREFIX: 'bc',
     BTC_WRAPPED_SEGWIT_VERSION: 0x05,
     RATE_LIMIT: 1000, // 1s between requests
+    GET_ABI_URL: 'https://api.etherscan.io/api?module=contract&action=getabi&address=',
 }
 
 const devConstants = {
     BTC_DEV_DATA_API: 'https://blockstream.info/testnet/api',
+    BTC_BROADCAST_ENDPOINT : 'https://blockstream.info/testnet/api/tx',
     BASE_SIGNING_URL: 'https://signing.staging-gridpl.us',
-    GRIDPLUS_CLOUD_API: 'https://pay.gridplus.io:3333',
     // Deprecating because using two different stores was very tricky and we don't
     // need the second one anyway
     // ROOT_STORE: 'gridplus-dev', 
@@ -58,7 +59,6 @@ const devConstants = {
     LATTICE_CERT_SIGNER: '045cfdf77a00b4b6b4a5b8bb26b5497dbc7a4d01cbefd7aaeaf5f6f8f8865976e7941ab0ec1651209c444009fd48d925a17de5040ba47eaf3f5b51720dd40b2f9d',
     BTC_SEGWIT_NATIVE_V0_PREFIX: 'tb',
     BTC_WRAPPED_SEGWIT_VERSION: 0xC4,
-
 }
 
 // NEW: If you have checked the "Using Dev Lattice" box in settings, the constants
@@ -74,8 +74,8 @@ exports.constants = constants;
 //--------------------------------------------
 // CHAIN DATA SYNCING HELPERS
 //--------------------------------------------
-function _fetchGET(url, cb) {
-    fetch(url)
+function fetchJSON(url, opts, cb) {
+    fetch(url, opts)
     .then((response) => response.json())
     .then((resp) => cb(null, resp))
     .catch((err) => cb(err))
@@ -104,7 +104,7 @@ function _fetchBtcUtxos(addresses, cb, utxos=[], offset=0) {
         // If this is a follow up, fetch txs after an offset
         url = `${url}&offset=${offset}`
     }
-    _fetchGET(url, (err, data) => {
+    fetchJSON(url, null, (err, data) => {
         if (err)
             return cb(err);
         // Add confirmed UTXOs
@@ -137,7 +137,7 @@ function _fetchBtcUtxos(addresses, cb, utxos=[], offset=0) {
 function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
     const address = addresses.pop()
     const url = `${constants.BTC_DEV_DATA_API}/address/${address}/utxo`;
-    _fetchGET(url, (err, data) => {
+    fetchJSON(url, null, (err, data) => {
         if (err)
             return cb(err)
         data.forEach((u) => {
@@ -194,7 +194,7 @@ function _fetchBtcTxs(addresses, cb, txs=[], offset=0) {
         // If this is a follow up, fetch txs after an offset
         url = `${url}&offset=${offset}`
     }
-    _fetchGET(url, (err, data) => {
+    fetchJSON(url, null, (err, data) => {
         if (err)
             return cb(err);
         // Add the new txs
@@ -220,6 +220,9 @@ function _fetchBtcTxs(addresses, cb, txs=[], offset=0) {
                     value: output.value,
                 })
             })
+            if (!ftx.confirmed) {
+                ftx.timestamp = -1;
+            }
             formattedTxs.push(ftx);
         })
         txs = txs.concat(formattedTxs)
@@ -245,7 +248,7 @@ function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
     if (lastSeenId) {
         url = `${url}/chain/${lastSeenId}`
     }
-    _fetchGET(url, (err, data) => {
+    fetchJSON(url, null, (err, data) => {
         if (err)
             return cb(err)
         const formattedTxs = [];
@@ -271,10 +274,14 @@ function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
                     value: output.value
                 })
             })
+            if (!ftx.confirmed) {
+                ftx.timestamp = -1;
+            }
             formattedTxs.push(ftx)
             if (ftx.confirmed) {
                 confirmedCount += 1;
             }
+
         })
         txs = txs.concat(formattedTxs)
         if (confirmedCount >= 25) {
@@ -306,7 +313,7 @@ exports.fetchBtcTxs = function(addresses, cb) {
 
 exports.fetchBtcPrice = function(cb) {
     const url = 'https://api.blockchain.com/v3/exchange/tickers/BTC-USD'
-    _fetchGET(url, (err, data) => {
+    fetchJSON(url, null, (err, data) => {
         if (err)
             return cb(err)
         else if (!data || !data.last_trade_price)
@@ -315,6 +322,20 @@ exports.fetchBtcPrice = function(cb) {
     })
 }
 
+exports.broadcastBtcTx = function(rawTx, cb) {
+    const opts = {
+        method: 'POST',
+        body: rawTx
+    };
+    console.log('broadcasting', constants.BTC_BROADCAST_ENDPOINT, opts)
+    fetch(constants.BTC_BROADCAST_ENDPOINT, opts)
+    .then((response) => {
+        console.log('RESPONSE', response);
+        return response.json();
+    })
+    .then((resp) => cb(null, resp))
+    .catch((err) => cb(err))
+}
 //--------------------------------------------
 // END CHAIN DATA SYNCING HELPERS
 //--------------------------------------------
@@ -382,22 +403,13 @@ function getBtcNumTxBytes(numInputs) {
 exports.getBtcNumTxBytes = getBtcNumTxBytes;
 
 exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs, feeRate=constants.BTC_DEFAULT_FEE_RATE) {
+    console.log('utxos', utxos)
     if (!addrs || !changeAddrs || addrs.length < 1 || changeAddrs.length < 1) {
         return { error: 'No addresses (or change addresses). Please wait to sync.' };
     }
     // Convert value to satoshis
     const satValue = Math.round(Number(btcValue) * Math.pow(10, 8));
-    // Sort utxos by value
-    // First deduplicate utxos
-    const hashes = [];
-    const filteredUtxos = [];
-    utxos.forEach((utxo) => {
-      if (hashes.indexOf(utxo.id) === -1) {
-        hashes.push(utxo.id);
-        filteredUtxos.push(utxo);
-      }
-    })
-    const sortedUtxos = filteredUtxos.sort((a, b) => { return a.value-b.value });
+    const sortedUtxos = utxos.sort((a, b) => { return a.value-b.value });
     let sum = 0;
     let numInputs = 0;
     sortedUtxos.forEach((utxo) => {
@@ -478,7 +490,10 @@ exports.toHexStr = function(bn) {
 // Filter out any duplicate objects based on `keys`
 function filterUniqueObjects(objs, keys) {
     const filtered = [];
-    objs.forEach((obj) => {
+    // Copy the objects in reversed order so that newer instances
+    // are applied first
+    const objsCopy = JSON.parse(JSON.stringify(objs)).reverse()
+    objsCopy.forEach((obj) => {
         let isDup = false;
         filtered.forEach((fobj) => {
             let matchedKeys = 0
@@ -495,7 +510,8 @@ function filterUniqueObjects(objs, keys) {
             filtered.push(obj);
         }
     })
-    return filtered;
+    // Return in the original order
+    return filtered.reverse();
 }
 exports.filterUniqueObjects = filterUniqueObjects;
 //--------------------------------------------
