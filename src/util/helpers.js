@@ -329,10 +329,7 @@ exports.broadcastBtcTx = function(rawTx, cb) {
     };
     console.log('broadcasting', constants.BTC_BROADCAST_ENDPOINT, opts)
     fetch(constants.BTC_BROADCAST_ENDPOINT, opts)
-    .then((response) => {
-        console.log('RESPONSE', response);
-        return response.json();
-    })
+    .then((response) => response.text())
     .then((resp) => cb(null, resp))
     .catch((err) => cb(err))
 }
@@ -403,16 +400,14 @@ function getBtcNumTxBytes(numInputs) {
 exports.getBtcNumTxBytes = getBtcNumTxBytes;
 
 exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs, feeRate=constants.BTC_DEFAULT_FEE_RATE) {
-    console.log('utxos', utxos)
     if (!addrs || !changeAddrs || addrs.length < 1 || changeAddrs.length < 1) {
         return { error: 'No addresses (or change addresses). Please wait to sync.' };
     }
     // Convert value to satoshis
     const satValue = Math.round(Number(btcValue) * Math.pow(10, 8));
-    const sortedUtxos = utxos.sort((a, b) => { return a.value-b.value });
     let sum = 0;
     let numInputs = 0;
-    sortedUtxos.forEach((utxo) => {
+    utxos.forEach((utxo) => {
         if (sum <= satValue) {
             numInputs += 1;
             sum += utxo.value;
@@ -434,25 +429,22 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
     const BASE_SIGNER_PATH = [getBtcPurpose(), constants.BTC_COIN, constants.HARDENED_OFFSET];
     const prevOuts = [];
     for (let i = 0; i < numInputs; i++) {
-        const utxo = sortedUtxos[i];
+        const utxo = utxos[i];
+        let signerPath = null;
         if (addrs.indexOf(utxo.address) > -1) {
-            prevOuts.push({
-                txHash: utxo.id,
-                value: utxo.value,
-                index: utxo.vout,
-                signerPath: BASE_SIGNER_PATH.concat([0, addrs.indexOf(utxo.address)]),
-            })
+            signerPath = BASE_SIGNER_PATH.concat([0, addrs.indexOf(utxo.address)]);
         } else if (changeAddrs.indexOf(utxo.address) > -1) {
-            const prevOut = {
-                txHash: utxo.id,
-                value: utxo.value,
-                index: utxo.vout,
-                signerPath: BASE_SIGNER_PATH.concat([1, changeAddrs.indexOf(utxo.address)]),
-            };
-            prevOuts.push(prevOut);
+            signerPath = BASE_SIGNER_PATH.concat([1, changeAddrs.indexOf(utxo.address)]);
         } else {
             return { error: 'Failed to find holder of UTXO. Syncing issue likely.' };
         }
+        const prevOut = {
+            txHash: utxo.id,
+            value: utxo.value,
+            index: utxo.vout,
+            signerPath,
+        }
+        prevOuts.push(prevOut);
     }
     // Return the request (i.e. the whole object)
     const req = {

@@ -302,10 +302,10 @@ class SDKSession {
       if (err) {
         return cb(err);
       }
-      broadcastBtcTx(res.tx, (err, res) => {
+      broadcastBtcTx(res.tx, (err, txid) => {
         if (err)
           return cb(`Error broadcasting transaction: ${err.message}`)
-        return cb(null)
+        return cb(null, txid)
       })
     })
   }

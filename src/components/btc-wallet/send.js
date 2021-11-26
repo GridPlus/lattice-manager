@@ -160,7 +160,7 @@ class Send extends React.Component {
             recipientCheck: null,
             value: null,
             valueCheck: null,
-            txHash: txHash, 
+            txHash, 
             error: null, 
             isLoading: false 
           })
