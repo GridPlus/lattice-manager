@@ -401,6 +401,8 @@ class SDKSession {
         } else {
           this.addresses.BTC = currentAddrs.concat(addresses);
         }
+        console.log('Fetched BTC', this.addresses.BTC)
+        console.log('Fetched BTC_CHANGE', this.addresses.BTC_CHANGE)
         // If we need to fetch more, recurse
         if (maxToFetch > nToFetch) {
           this.fetchBtcAddresses(cb, isChange, totalFetched);
@@ -473,7 +475,8 @@ class SDKSession {
             // We want to *replace* UTXOs rather than append and filter.
             // These should already be filtered but it doesn't hurt to
             // do a sanity check filter here.
-            this.btcUtxos =   filterUniqueObjects(utxos, ['id', 'vout'])
+            const newUtxos = this.btcUtxos.concat(utxos);
+            this.btcUtxos =   filterUniqueObjects(newUtxos, ['id', 'vout'])
                               .sort((a, b) => { return b.value - a.value });
             this.saveBtcWalletData();
             cb(null);
@@ -536,7 +539,8 @@ class SDKSession {
   _processBtcTxs() {
     const allAddrs = this.addresses.BTC.concat(this.addresses.BTC_CHANGE);
     const processedTxs = [];
-    this.btcTxs.forEach((tx) => {
+    const txs = JSON.parse(JSON.stringify(this.btcTxs));
+    txs.forEach((tx) => {
       tx.recipient = tx.outputs[0].addr;
       tx.incoming = allAddrs.indexOf(tx.recipient) > -1;
       tx.value = 0;

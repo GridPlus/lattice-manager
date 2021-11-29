@@ -1,7 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
 import './styles.css'
-import { Alert, Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
+import { Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
 import { 
   HomeOutlined, AuditOutlined, DollarOutlined, TagsOutlined, 
   WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
@@ -25,7 +25,6 @@ class Main extends React.Component {
       menuItem: DEFAULT_MENU_ITEM,
       // GridPlusSDK session object
       session: null,
-      alertMsg: null,
       error: { msg: null, cb: null },
       pendingMsg: null,
       // Waiting on asynchronous data, usually from the Lattice
@@ -361,11 +360,12 @@ class Main extends React.Component {
     this.state.session.fetchBtcAddresses((err, newAddrCounts) => {
       if (err) {
         console.error('Error fetching BTC addresses', err)
-        this.unwait()
-        return this.setError({ 
+        this.unwait();
+        this.setError({ 
           msg: 'Failed to fetch BTC addresses. Please try again.', 
           cb: this.fetchBtcData
         });
+        return;
       }
       this.unwait()
       const shouldExit =  exitIfNoNewAddrs && 
@@ -380,11 +380,12 @@ class Main extends React.Component {
       this.state.session.fetchBtcStateData(opts, (err) => {
         if (err) {
           console.error('Error fetching BTC state data', err)
-          this.unwait()
-          return this.setError({ 
+          this.unwait();
+          this.setError({ 
             msg: 'Failed to fetch BTC state data. Please try again.', 
             cb: this.fetchBtcData 
           });
+          return;
         }
         // Recurse such that we exit if there are no new addresses
         this.fetchBtcData(true);
@@ -610,7 +611,6 @@ class Main extends React.Component {
         return (
           <Wallet isMobile={() => this.isMobile()}
                   session={this.state.session}
-                  msgHandler={this.setAlertMessage}
                   refreshData={this.fetchBtcData}
                   lastUpdated={this.state.lastUpdated}
                   pageTurnCb={this.handlePageTurn}

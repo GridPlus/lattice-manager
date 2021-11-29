@@ -173,15 +173,27 @@ exports.fetchBtcUtxos = function(addresses, cb) {
 
 //====== TXS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
-function _fetchBtcTxs(addresses, cb, txs=[], offset=0) {
+function _fetchBtcTxs(addresses, cb, txs=[], offset=0, isFirstCall=true) {
     if (addresses.length === 0) {
         // No more addresses left to check. We are done.
         return cb(null, txs);
     }
+
+    let url = `${constants.BTC_PROD_DATA_API}/multiaddr?active=`;
+    const isSingleAddr = isFirstCall && addresses.length === 1;
+    if (isSingleAddr) {
+        // Edge case when getting transactions from the blockchain.com API with
+        // only one address -- it appears when you call multiaddr with only one
+        // address you get only the output(s) associated with that one address,
+        // but if you call with multiple addresses that is no longer a problem.
+        // See: https://www.blockchain.com/btc/tx/ffc83686c911bcf7aa31a3d3ca014bae3b1044b2ec280c877758aa6b384cde0b
+        // 1. https://blockchain.info/rawaddr/3BrvBeRy8qMijfZHzo8VJ77gdL1W9EvgHj
+        // 2. https://blockchain.info/multiaddr?active=3C8BhX4CGeyH3nXrYqRL89jvpakTPW1z8k|3BrvBeRy8qMijfZHzo8VJ77gdL1W9EvgHj
+        url = `${constants.BTC_PROD_DATA_API}/rawaddr/`
+    }
     const ADDRS_PER_CALL = 20;
     const MAX_TXS_RET = 50;
     const addrsToCheck = addresses.slice(0, ADDRS_PER_CALL);
-    let url = `${constants.BTC_PROD_DATA_API}/multiaddr?active=`;
     for (let i = 0; i < addrsToCheck.length; i++) {
         if (i === 0) {
             url = `${url}${addrsToCheck[i]}`
@@ -189,7 +201,11 @@ function _fetchBtcTxs(addresses, cb, txs=[], offset=0) {
             url = `${url}|${addrsToCheck[i]}`
         }
     }
-    url = `${url}&n=${MAX_TXS_RET}`;
+    if (isSingleAddr) {
+        url = `${url}?limit=${MAX_TXS_RET}`;
+    } else {
+        url = `${url}&n=${MAX_TXS_RET}`;
+    }
     if (offset > 0) {
         // If this is a follow up, fetch txs after an offset
         url = `${url}&offset=${offset}`
@@ -229,13 +245,13 @@ function _fetchBtcTxs(addresses, cb, txs=[], offset=0) {
         // Determine if we need to recurse on this set of addresses
         if (formattedTxs.length >= MAX_TXS_RET) {
             return setTimeout(() => {
-                _fetchBtcTxs(addresses, cb, txs, offset+MAX_TXS_RET);
+                _fetchBtcTxs(addresses, cb, txs, offset+MAX_TXS_RET, false);
             }, constants.RATE_LIMIT);
         }
         // Otherwise we are done with these addresses. Clip them and recurse.
         addresses = addresses.slice(ADDRS_PER_CALL);
         setTimeout(() => {
-            _fetchBtcTxs(addresses, cb, txs, 0);
+            _fetchBtcTxs(addresses, cb, txs, 0, false);
         }, constants.RATE_LIMIT);
     })
 }
