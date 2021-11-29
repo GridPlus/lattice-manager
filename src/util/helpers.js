@@ -379,7 +379,7 @@ exports.harden = function(x) {
 // value in the inputs provided to cover value + fee
 function _calcBtcTxNumInputs(utxos, value, feeRate, inputIdx=0, currentValue=0) {
     currentValue += utxos[inputIdx].value;
-    const fee = feeRate * getBtcNumTxBytes(inputIdx);
+    const fee = feeRate * getBtcNumTxBytes(inputIdx + 1);
     if (currentValue >= (value + fee)) {
         return inputIdx + 1;
     } else if (inputIdx >= utxos.length) {
