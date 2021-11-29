@@ -296,9 +296,7 @@ class SDKSession {
 
   sign(req, cb) {
     // Get the tx payload to broadcast
-    console.log('signing', req)
     this.client.sign(req, (err, res) => {
-      console.log('signed', err, res)
       if (err) {
         return cb(err);
       }
@@ -424,6 +422,14 @@ class SDKSession {
     }
   }
 
+  // We want to clear UTXOs when we re-sync because they could have been spent.
+  // Due to the nature of `fetchBtcStateData`, we need to append new UTXOs to
+  // the existing set as we sync data, so it is best to call this function once
+  // from the component that is starting the resync.
+  clearUtxos() {
+    this.btcUtxos = [];
+  }
+
   // Fetch transactions and UTXOs for all known BTC addresses (including change)
   // Calls to appropriate Bitcoin data provider and updates state internally.
   // Returns a callback with params (error)
@@ -472,10 +478,9 @@ class SDKSession {
             const newTxs = this.btcTxs.concat(txs);
             this.btcTxs = filterUniqueObjects(newTxs, ['id']);
             this._processBtcTxs();
-            // We want to *replace* UTXOs rather than append and filter.
-            // These should already be filtered but it doesn't hurt to
-            // do a sanity check filter here.
             const newUtxos = this.btcUtxos.concat(utxos);
+            // UTXOs should already be filtered but it doesn't hurt to
+            // do a sanity check filter here.
             this.btcUtxos =   filterUniqueObjects(newUtxos, ['id', 'vout'])
                               .sort((a, b) => { return b.value - a.value });
             this.saveBtcWalletData();
@@ -515,17 +520,19 @@ class SDKSession {
     const txs = this.btcTxs || [];
     let lastUsed = -1;
     for (let i = 0; i < txs.length; i++) {
-      let maxUsed = lastUsed;
-      txs[i].inputs.forEach((input) => {
-        if (addrs.indexOf(input.addr) > maxUsed)
-          maxUsed = addrs.indexOf(input.addr);
-      })
-      txs[i].outputs.forEach((output) => {
-        if (addrs.indexOf(output.addr) > maxUsed)
-          maxUsed = addrs.indexOf(output.addr);
-      })
-      if (maxUsed > lastUsed)
-        lastUsed = maxUsed;
+      if (txs[i].confirmed) {
+        let maxUsed = lastUsed;
+        txs[i].inputs.forEach((input) => {
+          if (addrs.indexOf(input.addr) > maxUsed)
+            maxUsed = addrs.indexOf(input.addr);
+        })
+        txs[i].outputs.forEach((output) => {
+          if (addrs.indexOf(output.addr) > maxUsed)
+            maxUsed = addrs.indexOf(output.addr);
+        })
+        if (maxUsed > lastUsed)
+          lastUsed = maxUsed;
+      }
     }
     return lastUsed;
   }

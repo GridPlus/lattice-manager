@@ -343,7 +343,6 @@ exports.broadcastBtcTx = function(rawTx, cb) {
         method: 'POST',
         body: rawTx
     };
-    console.log('broadcasting', constants.BTC_BROADCAST_ENDPOINT, opts)
     fetch(constants.BTC_BROADCAST_ENDPOINT, opts)
     .then((response) => response.text())
     .then((resp) => cb(null, resp))
@@ -372,6 +371,22 @@ exports.getLocalStorageSettings = getLocalStorageSettings;
 //--------------------------------------------
 exports.harden = function(x) {
   return x + HARDENED_OFFSET;
+}
+
+// Determine how many inputs (utxos) need to be included in a transaction
+// given the desired value and fee rate
+// Returns the number of inputs to include or -1 if there isn't enough
+// value in the inputs provided to cover value + fee
+function _calcBtcTxNumInputs(utxos, value, feeRate, inputIdx=0, currentValue=0) {
+    currentValue += utxos[inputIdx].value;
+    const fee = feeRate * getBtcNumTxBytes(inputIdx);
+    if (currentValue >= (value + fee)) {
+        return inputIdx + 1;
+    } else if (inputIdx >= utxos.length) {
+        return -1; // indicates error
+    }
+    inputIdx += 1;
+    return _calcBtcTxNumInputs(utxos, value, feeRate, inputIdx, currentValue);
 }
 
 // Convert a script from blockchain.com's API into an address
@@ -420,26 +435,14 @@ exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs,
         return { error: 'No addresses (or change addresses). Please wait to sync.' };
     }
     // Convert value to satoshis
-    const satValue = Math.round(Number(btcValue) * Math.pow(10, 8));
-    let sum = 0;
-    let numInputs = 0;
-    utxos.forEach((utxo) => {
-        if (sum <= satValue) {
-            numInputs += 1;
-            sum += utxo.value;
-        }
-    })
-    // Calculate the fee
-    let bytesUsed = getBtcNumTxBytes(numInputs);
-    // If the fee tips us over our total value sum, add another utxo
-    if ((bytesUsed * feeRate) + satValue > sum) {
-        // There's a chance that we just eclipsed the number of inputs we could support.
-        // Handle the edge case.
-        if (utxos.length <= numInputs)
-            return { error: 'Not enough balance to handle network fee. Please send a smaller value.'}
-        numInputs += 1;
-        bytesUsed += 180;
+    const satValue = Math.round(Number(btcValue) * constants.SATS_TO_BTC);
+    const numInputs = _calcBtcTxNumInputs(utxos, satValue, feeRate);
+    if (numInputs < 0) {
+        return { error: 'Balance too low.' }
+    } else if (numInputs > utxos.length) {
+        return { error: 'Failed to build transaction.' }
     }
+    const bytesUsed = getBtcNumTxBytes(numInputs);
     const fee = Math.floor(bytesUsed * feeRate);
     // Build the request inputs
     const BASE_SIGNER_PATH = [getBtcPurpose(), constants.BTC_COIN, constants.HARDENED_OFFSET];

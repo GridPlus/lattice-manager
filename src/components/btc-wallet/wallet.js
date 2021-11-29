@@ -82,7 +82,14 @@ class Wallet extends React.Component {
                           {`${subtitle}`}
                         </p>
                       ) : (
-                        <p><i>{`${subtitle}`}</i></p>
+                        <p>
+                          {item.incoming ? (
+                            <ArrowDownOutlined/>
+                          ) : (
+                            <ArrowUpOutlined/>
+                          )}
+                          <i>{`${subtitle}`}</i>
+                        </p>
                       )}
       />
     )

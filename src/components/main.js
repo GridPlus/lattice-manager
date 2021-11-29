@@ -346,14 +346,14 @@ class Main extends React.Component {
 
   // Fetch up-to-date blockchain state data for the addresses stored in our
   // SDKSession. Called after we load addresses for the first time
-  // Passing `exitIfNoNewAddrs=true` means we will attempt to fetch new
+  // Passing `isRecursion=true` means we will attempt to fetch new
   // addresses based on known state data and if we do not yield any new ones
   // we should exit. This is done to avoid naively requesting state data
   // for all known addresses each time we add a new one based on a gap limit.
   // For example, an initial sync will get 20 addrs and fetch state data. It 
   // may then request one address at a time and then state data for that one
   // address until the gap limit is reached.
-  fetchBtcData(exitIfNoNewAddrs=false) {
+  fetchBtcData(isRecursion=false) {
     this.unwait();
     this.setError();
     this.wait('Fetching addresses');
@@ -368,15 +368,21 @@ class Main extends React.Component {
         return;
       }
       this.unwait()
-      const shouldExit =  exitIfNoNewAddrs && 
+      const shouldExit =  isRecursion && 
                           newAddrCounts.regular === 0 && 
                           newAddrCounts.change === 0;
       if (shouldExit) {
         // Done syncing
         return;
       }
+      // If this is the first time we are calling this function,
+      // start by clearing UTXOs to avoid stale balances
+      if (!isRecursion) {
+        this.state.session.clearUtxos();
+      }
+      // Sync data now
       this.wait('Syncing chain data')
-      const opts = exitIfNoNewAddrs ? newAddrCounts : null;
+      const opts = isRecursion ? newAddrCounts : null;
       this.state.session.fetchBtcStateData(opts, (err) => {
         if (err) {
           console.error('Error fetching BTC state data', err)
