@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Checkbox, Col, Collapse, Dropdown, Input, Menu, Row, Table } from 'antd'
+import { Button, Card, Checkbox, Col, Collapse, Input, Radio, Row, Space, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import './styles.css'
@@ -103,7 +103,7 @@ class Settings extends React.Component {
 
   handleChangeBitcoinVersionSetting(evt) {
     const settings = JSON.parse(JSON.stringify(this.state.settings));
-    settings.btcPurpose = parseInt(evt.key);
+    settings.btcPurpose = parseInt(evt.target.value);
     this.setState({ settings }, this.submit)
   }
 
@@ -127,29 +127,28 @@ class Settings extends React.Component {
   renderBitcoinVersionSetting() {
     // NOTE: Firmware does not yet support segwit addresses
     // TODO: Uncomment this when firmware is updated
-    const menu = (
-      <Menu onClick={this.handleChangeBitcoinVersionSetting.bind(this)}>
-        <Menu.Item key={constants.BTC_PURPOSE_NONE}>
-          Hide BTC Wallet
-        </Menu.Item>
-        {/* <Menu.Item key={constants.BTC_PURPOSE_SEGWIT}>
-          {constants.BTC_PURPOSE_SEGWIT_STR}
-        </Menu.Item> */}
-        <Menu.Item key={constants.BTC_PURPOSE_WRAPPED_SEGWIT}>
-          {constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR}
-        </Menu.Item>
-        {/* Don't uncomment this until segwit support is released
-        <Menu.Item key={constants.BTC_PURPOSE_LEGACY}>
-          {constants.BTC_PURPOSE_LEGACY_STR}
-        </Menu.Item> */}
-      </Menu>
-    )
+    const purpose = getBtcPurpose() || constants.BTC_PURPOSE_NONE;
     return (
       <Card>
         <h4>Bitcoin Wallet Type</h4>
-        <Dropdown overlay={menu}>
-          <Button>{this.getBtcPurposeName()}</Button>
-        </Dropdown>
+        <Radio.Group  onChange={this.handleChangeBitcoinVersionSetting.bind(this)}
+                      defaultValue={purpose}>
+          <Space direction="vertical">
+            <Radio value={constants.BTC_PURPOSE_NONE}>
+              Hide BTC Wallet
+            </Radio>
+            {/* <Radio value={constants.BTC_PURPOSE_SEGWIT}>
+              {constants.BTC_PURPOSE_SEGWIT_STR}
+            </Radio> */}
+            <Radio value={constants.BTC_PURPOSE_WRAPPED_SEGWIT}>
+              {constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR}
+            </Radio>
+            {/* Don't uncomment this until segwit support is released
+            <Radio value={constants.BTC_PURPOSE_LEGACY}>
+              {constants.BTC_PURPOSE_LEGACY_STR}
+            </Radio> */}
+          </Space>
+        </Radio.Group>
       </Card>
     )
   }
