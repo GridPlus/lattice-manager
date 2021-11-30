@@ -35,11 +35,11 @@ class Send extends React.Component {
   }
 
   componentDidMount() {
-    fetch('https://bitcoinfees.earn.com/api/v1/fees/recommended')
+    fetch('https://blockstream.info/api/fee-estimates')
     .then((response) => response.json())
     .then((resp) => {
-      if (resp.hourFee) {
-        this.setState({ btcFeeRate: resp.hourFee })
+      if (resp['1']) { // Expected confirmation in 1 block
+        this.setState({ btcFeeRate: Math.ceil(Number(resp['1'])) })
       }
       if (this.props.session) {
         this.props.session.getBtcWalletData()
@@ -122,7 +122,8 @@ class Send extends React.Component {
                               this.props.session.btcUtxos, 
                               this.props.session.addresses['BTC'],  
                               this.props.session.addresses['BTC_CHANGE'],
-                              this.state.btcFeeRate);
+                              this.state.btcFeeRate,
+                              this.state.value === this.calculateMaxValue());
     if (req.error) {
       this.setState({ error: req.error });
       return null;
@@ -189,7 +190,7 @@ class Send extends React.Component {
                 onClick={() => { 
                   this.updateValue({ 
                     target: { 
-                      value: this.calculateMaxValue() 
+                      value: this.calculateMaxValue(),
                     } 
                   }) 
                 }}>
@@ -299,9 +300,8 @@ class Send extends React.Component {
     const balance = this.props.session.getBtcBalance();
     const utxos = this.props.session.getBtcUtxos();
     // To spend all BTC, get the size of all UTXOs and calculate the fee required
-    // to spend them all
     const txBytes = getBtcNumTxBytes(utxos.length);
-    const feeSat = this.state.btcFeeRate * txBytes;
+    const feeSat = Math.floor(this.state.btcFeeRate * txBytes);
     return Math.max(((balance - feeSat) / constants.SATS_TO_BTC).toFixed(8), 0);
   }
 

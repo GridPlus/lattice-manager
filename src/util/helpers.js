@@ -378,14 +378,17 @@ exports.harden = function(x) {
 // Returns the number of inputs to include or -1 if there isn't enough
 // value in the inputs provided to cover value + fee
 function _calcBtcTxNumInputs(utxos, value, feeRate, inputIdx=0, currentValue=0) {
-    currentValue += utxos[inputIdx].value;
-    const fee = feeRate * getBtcNumTxBytes(inputIdx + 1);
-    if (currentValue >= (value + fee)) {
-        return inputIdx + 1;
-    } else if (inputIdx >= utxos.length) {
+    if (inputIdx >= utxos.length) {
         return -1; // indicates error
     }
-    inputIdx += 1;
+    currentValue += utxos[inputIdx].value;
+    const numInputs = inputIdx + 1;
+    const numBytes = getBtcNumTxBytes(numInputs);
+    const fee = Math.floor(feeRate * numBytes);
+    if (currentValue >= (value + fee)) {
+        return numInputs;
+    }
+    inputIdx = numInputs;
     return _calcBtcTxNumInputs(utxos, value, feeRate, inputIdx, currentValue);
 }
 
@@ -425,18 +428,45 @@ function getBtcPurpose() {
 }
 exports.getBtcPurpose = getBtcPurpose;
 
+// Calculate how many bytes will be in a transaction given purpose and input count
+// Calculations come from: https://github.com/jlopp/bitcoin-transaction-size-calculator/blob/master/index.html
+// Not a perfect calculation but pretty close
 function getBtcNumTxBytes(numInputs) {
-    return (numInputs+1)*180 + 2*34 + 10;
+    let inputSize, outputSize, inputWitnessSize
+    const purpose = getBtcPurpose();
+    if (purpose === constants.BTC_PURPOSE_LEGACY) {
+        inputSize = 148;
+        outputSize = 32;
+        inputWitnessSize = 0;
+    } else if (purpose === constants.BTC_PURPOSE_SEGWIT) {
+        inputSize = 91;
+        outputSize = 32;
+        inputWitnessSize = 107; // size(signature) + signature + size(pubkey) + pubkey
+    } else {
+        inputSize = 67.75;
+        outputSize = 31;
+        inputWitnessSize = 107; // size(signature) + signature + size(pubkey) + pubkey
+    }
+    const vFactor = purpose === constants.BTC_PURPOSE_LEGACY ? 0 : 0.75;
+    // Hardcode 2 outputs to avoid complexity in app state
+    const txVBytes =  10 + vFactor + inputSize * numInputs + outputSize * 2;
+  return (3 * vFactor) + txVBytes + inputWitnessSize * numInputs;
 }
 exports.getBtcNumTxBytes = getBtcNumTxBytes;
 
-exports.buildBtcTxReq = function(recipient, btcValue, utxos, addrs, changeAddrs, feeRate=constants.BTC_DEFAULT_FEE_RATE) {
+exports.buildBtcTxReq = function(   recipient, 
+                                    btcValue, 
+                                    utxos, 
+                                    addrs, 
+                                    changeAddrs, 
+                                    feeRate=constants.BTC_DEFAULT_FEE_RATE,
+                                    isFullSpend=false) {
     if (!addrs || !changeAddrs || addrs.length < 1 || changeAddrs.length < 1) {
         return { error: 'No addresses (or change addresses). Please wait to sync.' };
     }
     // Convert value to satoshis
     const satValue = Math.round(Number(btcValue) * constants.SATS_TO_BTC);
-    const numInputs = _calcBtcTxNumInputs(utxos, satValue, feeRate);
+    const numInputs = isFullSpend ? utxos.length : _calcBtcTxNumInputs(utxos, satValue, feeRate);
     if (numInputs < 0) {
         return { error: 'Balance too low.' }
     } else if (numInputs > utxos.length) {
