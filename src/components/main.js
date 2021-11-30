@@ -1,7 +1,7 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
 import './styles.css'
-import { Alert, Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
+import { Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
 import { 
   HomeOutlined, AuditOutlined, DollarOutlined, TagsOutlined, 
   WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
@@ -9,9 +9,10 @@ import {
 } from '@ant-design/icons';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { 
-  Connect, Error, Landing, Loading, Pair, Permissions, Send, Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
+  Connect, Error, Landing, Loading, Pair, Permissions, Send, 
+  Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
 } from './index'
-import { constants, setEthersProvider, getLocalStorageSettings } from '../util/helpers'
+import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers'
 const { Content, Footer, Sider } = Layout;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
@@ -21,22 +22,13 @@ class Main extends React.Component {
     super(props)
     this.state = {
       name: constants.DEFAULT_APP_NAME,
-      currency: 'BTC',
       menuItem: DEFAULT_MENU_ITEM,
       // GridPlusSDK session object
       session: null,
-      // WebWorker that will periodically lookup state on available addrs
-      worker: null, 
-      errMsg: null,
-      alertMsg: null,
       error: { msg: null, cb: null },
       pendingMsg: null,
-      // State variable to track if we are fetching new addresses in the background
-      stillSyncingAddresses: false, 
       // Waiting on asynchronous data, usually from the Lattice
       waiting: false, 
-      // Tick state in order to force a re-rendering of the `Wallet` component
-      stateTick: 0,
       // Login info stored in localstorage. Can be cleared out at any time by the `logout` func
       deviceID: null,
       password: null,
@@ -53,8 +45,6 @@ class Main extends React.Component {
     };
 
     // Bind local state updaters
-    this.setAlertMessage = this.setAlertMessage.bind(this);
-    this.handleCurrencyChange = this.handleCurrencyChange.bind(this);
     this.handleMenuChange = this.handleMenuChange.bind(this);
     this.handleLogout = this.handleLogout.bind(this);
     this.handleKeyringOpener = this.handleKeyringOpener.bind(this);
@@ -64,9 +54,8 @@ class Main extends React.Component {
     this.cancelConnect = this.cancelConnect.bind(this);
     this.connectSession = this.connectSession.bind(this);
     this.handlePair = this.handlePair.bind(this);
-    this.fetchAddresses = this.fetchAddresses.bind(this);
-    this.fetchData = this.fetchData.bind(this);
-    this.handleStateUpdate = this.handleStateUpdate.bind(this);
+    this.fetchBtcData = this.fetchBtcData.bind(this);
+    this.setError = this.setError.bind(this);
     this.refreshWallets = this.refreshWallets.bind(this);
     this.handlePageTurn = this.handlePageTurn.bind(this);
 
@@ -78,9 +67,6 @@ class Main extends React.Component {
   }
 
   componentDidMount() {
-    // Set the ethers provider for ENS support
-    setEthersProvider();
-
     // Listen for window resize
     window.addEventListener('resize', this.updateWidth);
 
@@ -148,7 +134,7 @@ class Main extends React.Component {
     if (!this.state.session) {
       // Create a new session if we don't have one.
       const settings = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}').settings || {};
-      updates.session = new SDKSession(deviceID, this.handleStateUpdate, this.state.name, settings);
+      updates.session = new SDKSession(deviceID, this.setError, this.state.name, settings);
     }
     this.setState(updates, cb);
   }
@@ -262,43 +248,12 @@ class Main extends React.Component {
   //------------------------------------------
   // LOCAL STATE UPDATES
   //------------------------------------------
-
-  // Simple mechanism to force a state update
-  // Only use this when you want to force the Wallet component
-  // to update/re-render!
-  tick() {
-    this.setState({ stateTick: this.state.stateTick + 1 })
-  }
-
-  // Update alert message. If no args are provided, this will clear
-  // all alert messages
-  setAlertMessage(msg={}) {
-    if (msg) {
-      const { errMsg, pendingMsg } = msg;
-      this.setState({
-        errMsg: errMsg ? String(errMsg) : null,
-        pendingMsg: pendingMsg ? String(pendingMsg) : null,
-      })
-    }
-  }
-
   wait(msg=null, onCancel=null) {
     this.setState({ pendingMsg: msg, waiting: true, onCancel });
   }
 
   unwait() {
     this.setState({ pendingMsg: null, waiting: false, onCancel: null });
-  }
-
-  setError(data) {
-    if (data) {
-      if (data.msg instanceof Error)         data.msg = String(data.msg);
-      else if (typeof data.msg !== 'string') data.msg = JSON.stringify(data.msg);
-      this.setState({ error: data });
-    } else {
-      this.setState({ error: { msg: null, cb: null }});
-    }
-    this.unwait();
   }
 
   //------------------------------------------
@@ -308,22 +263,8 @@ class Main extends React.Component {
   //------------------------------------------
   // HEADER HANDLERS
   //------------------------------------------
-
-  handleCurrencyChange(value) {
-    this.setState({ currency: value, error: { msg: null, cb: null } }, function() {
-      // Load addresses for new currency once it is updated
-      // If we get a callback, this worked (i.e. we either already)
-      // had the necessary addresses or we fetched them properly.
-      if (this.isConnected()) {
-        this.setAlertMessage();
-        this.fetchAddresses(this.fetchData);
-      }
-    })
-  }
-
   handlePageTurn(page) {
     this.state.session.setPage(page);
-    this.fetchData();
   }
 
   handleMenuChange({key}) {
@@ -333,28 +274,18 @@ class Main extends React.Component {
   handleLogout(err=null) {
     this.unwait();
     this.state.session.disconnect();
-    this.setState({ session: null, currency: 'ETH' });
+    this.setState({ session: null });
     window.localStorage.removeItem('gridplus_web_wallet_id');
     window.localStorage.removeItem('gridplus_web_wallet_password');
     if (err && err === constants.LOST_PAIRING_MSG)
-      this.setError({msg: err})
+      this.setError({ err })
   }
 
-  handleStateUpdate(data={err:null, currency:null, cb:null}) {
+  setError(data={msg:null, cb:null}) {
     // Handle case where user deletes pairing on the Lattice
-    if (data.err === constants.LOST_PAIRING_ERR)
+    if (data.msg === constants.LOST_PAIRING_ERR)
       return this.handleLostPairing();
-
-    if (data.err && data.currency === this.state.currency) {
-      // We shouldn't assume we have updated state if we got an error message.
-      // Most likely, the request failed.
-      this.setAlertMessage({ errMsg: data.err })
-    } else {
-      const st = { lastUpdated: new Date() };
-      if (data.stillSyncingAddresses !== undefined) 
-        st.stillSyncingAddresses = data.stillSyncingAddresses;
-      this.setState(st);
-    }
+    this.setState({ error: data, loading: false })
   }
   
   //------------------------------------------
@@ -371,9 +302,11 @@ class Main extends React.Component {
     const { deviceID, password } = data;
       // Sanity check -- this should never get hit
     if (!deviceID || !password) {
-      return this.setError({ msg: "You must provide a deviceID and password. Please refresh and log in again. "});
+      return this.setError({ 
+        msg: 'You must provide a deviceID and password. Please refresh and log in again. '
+      });
     } else {
-      this.setError(null);
+      this.setError();
     }
     // Connect to the device
     this.connect(deviceID, password, () => {
@@ -400,15 +333,11 @@ class Main extends React.Component {
             window.localStorage.setItem('gridplus_web_wallet_id', deviceID);
             window.localStorage.setItem('gridplus_web_wallet_password', password);
           }
-          // 2. Clear errors, alerts, and tick
+          // 2. Clear errors and alerts
           this.setError();
-          this.setAlertMessage();
-          this.tick();
           // 3. Proceed based on state
           if (isPaired && this.state.openedByKeyring) {
             return this.returnKeyringData();
-          } else if (isPaired) {
-            return this.fetchAddresses(this.fetchData)
           }
         }
       });
@@ -417,43 +346,57 @@ class Main extends React.Component {
 
   // Fetch up-to-date blockchain state data for the addresses stored in our
   // SDKSession. Called after we load addresses for the first time
-  fetchData(cb=null) {
-    this.wait("Syncing chain data");
-    this.state.session.fetchData(this.state.currency, (err) => {
-      this.unwait();
+  // Passing `isRecursion=true` means we will attempt to fetch new
+  // addresses based on known state data and if we do not yield any new ones
+  // we should exit. This is done to avoid naively requesting state data
+  // for all known addresses each time we add a new one based on a gap limit.
+  // For example, an initial sync will get 20 addrs and fetch state data. It 
+  // may then request one address at a time and then state data for that one
+  // address until the gap limit is reached.
+  fetchBtcData(isRecursion=false) {
+    this.unwait();
+    this.setError();
+    this.wait('Fetching addresses');
+    this.state.session.fetchBtcAddresses((err, newAddrCounts) => {
       if (err) {
-        // Failed to fetch -- update state and set the alert
-        return this.handleStateUpdate({err, currency: this.state.currency, cb});
-      } else {
-        // Successfully fetched -- update state
-        this.handleStateUpdate();
+        console.error('Error fetching BTC addresses', err)
+        this.unwait();
+        this.setError({ 
+          msg: 'Failed to fetch BTC addresses. Please try again.', 
+          cb: this.fetchBtcData
+        });
+        return;
       }
-      // If this succeeded and we have a callback, go ahead and use it.
-      if (cb) {
-        return cb(null);
+      this.unwait()
+      const shouldExit =  isRecursion && 
+                          newAddrCounts.regular === 0 && 
+                          newAddrCounts.change === 0;
+      if (shouldExit) {
+        // Done syncing
+        return;
       }
-    });
-  }
-
-  // Asynchronously load addresses from the client session using
-  // the currently selected currency. Once we have the addresses,
-  // attempt to fetch updated blockchain state data.
-  // NOTE: If we don't need additional addresses, no request will be
-  // made to the Lattice and we will proceed to fetchData immediately.
-  fetchAddresses(cb=null) {
-    if (this.state.waiting === true)
-      return;
-    this.wait("Syncing addresses")
-    this.state.session.loadAddresses(this.state.currency, (err) => {
-      this.unwait();
-      // Catch an error if there is one
-      if (err) {
-        // If we catch an error, do a recursive call (preserving the callback)
-        return this.setError({ msg: err, cb: () => { this.fetchAddresses(cb) } });
-      } else if (cb) {
-        return cb(null);
+      // If this is the first time we are calling this function,
+      // start by clearing UTXOs to avoid stale balances
+      if (!isRecursion) {
+        this.state.session.clearUtxos();
       }
-    });
+      // Sync data now
+      this.wait('Syncing chain data')
+      const opts = isRecursion ? newAddrCounts : null;
+      this.state.session.fetchBtcStateData(opts, (err) => {
+        if (err) {
+          console.error('Error fetching BTC state data', err)
+          this.unwait();
+          this.setError({ 
+            msg: 'Failed to fetch BTC state data. Please try again.', 
+            cb: this.fetchBtcData 
+          });
+          return;
+        }
+        // Recurse such that we exit if there are no new addresses
+        this.fetchBtcData(true);
+      })
+    })
   }
 
   handleLostPairing() {
@@ -481,12 +424,7 @@ class Main extends React.Component {
       this.unwait();
       if (err)
         return this.setError({ msg: err, cb: this.refreshWallets })
-      // If no error was returned, clear out the error and fetch addresses.
-      // Note that if this app auto-switches wallet interface, it will not immediately
-      // switch the walletUID and will catch an error, which we need to clear out here
-      // so that the user doesn't see it once we successfully fetch addresses. 
       this.setError();
-      this.fetchAddresses(this.fetchData);
     })
   }
 
@@ -534,10 +472,7 @@ class Main extends React.Component {
         // If there was an error here, the user probably entered the wrong secret
         const pairErr = 'Failed to pair. You either entered the wrong code or have already connected to this app.'
         this.setError({ msg: pairErr, cb: this.connectSession });
-      } else if (!this.state.openedByKeyring) {
-        // Success! Load our addresses from this wallet.
-        this.fetchAddresses(this.fetchData);
-      } else {
+      } else if (this.state.openedByKeyring) {
         this.returnKeyringData();
       }
     })
@@ -553,6 +488,7 @@ class Main extends React.Component {
   renderMenu() {
     const collapsed = this.isMobile();
     const mode = collapsed ? 'horizontal' : 'inline';
+    const hideWallet = constants.BTC_PURPOSE_NONE === getBtcPurpose();
     return (
       <Sider collapsed={collapsed}>
         <Menu theme="dark" mode={mode} onSelect={this.handleMenuChange}>
@@ -576,20 +512,22 @@ class Main extends React.Component {
             <SettingOutlined/>
             <span>Settings</span>
           </Menu.Item>
-          <Menu.SubMenu title="Wallet" key="submenu-wallet">
-            <Menu.Item key="menu-wallet">
-              <WalletOutlined/>
-              <span>Wallet</span>
-            </Menu.Item>
-            <Menu.Item key="menu-send">
-              <ArrowUpOutlined/>
-              <span>Send</span>
-            </Menu.Item>
-            <Menu.Item key="menu-receive">
-              <ArrowDownOutlined/>
-              <span>Receive</span>
-            </Menu.Item>
-          </Menu.SubMenu>
+          {!hideWallet ? (
+            <Menu.SubMenu title="BTC Wallet" key="submenu-wallet">
+              <Menu.Item key="menu-wallet">
+                <WalletOutlined/>
+                <span>History</span>
+              </Menu.Item>
+              <Menu.Item key="menu-send">
+                <ArrowUpOutlined/>
+                <span>Send</span>
+              </Menu.Item>
+              <Menu.Item key="menu-receive">
+                <ArrowDownOutlined/>
+                <span>Receive</span>
+              </Menu.Item>
+            </Menu.SubMenu>
+          ) : null}
         </Menu>
       </Sider>
     )
@@ -642,18 +580,6 @@ class Main extends React.Component {
     if (walletTag) extra.push((
       <Tooltip title="Refresh" key="WalletTagTooltip">{walletTag}</Tooltip>));
 
-    // Add the currency switch
-    // extra.push((
-    //   <Menu onClick={this.handleCurrencyChange}>
-    //     <Menu.Item key="BTC">
-    //       BTC
-    //     </Menu.Item>
-    //     <Menu.Item key="ETH">
-    //       ETH
-    //     </Menu.Item>
-    //   </Menu>
-    // ))
-
     extra.push(
       ( <Button key="logout-button" type="primary" onClick={this.handleLogout} size={size}>
         Logout
@@ -668,15 +594,11 @@ class Main extends React.Component {
     )
   }
 
-  renderAlert() {
-    if (this.state.errMsg) {
+  renderErrorHeader() {
+    if (this.state.error.err) {
       return (
-        <Alert message={"Error"} 
-               description={this.state.errMsg} 
-               type={"error"} 
-               showIcon 
-               closable 
-               onClose={() => { this.setAlertMessage()}}
+        <Error  msg={this.state.error.err} 
+                retryCb={this.state.error.cb}
         />
       )
     } else {
@@ -693,30 +615,22 @@ class Main extends React.Component {
     switch (this.state.menuItem) {
       case 'menu-wallet':
         return (
-          <Wallet currency={this.state.currency} 
-                  isMobile={() => this.isMobile()}
+          <Wallet isMobile={() => this.isMobile()}
                   session={this.state.session}
-                  msgHandler={this.setAlertMessage}
-                  refreshData={this.fetchData}
-                  tick={this.state.tick}
+                  refreshData={this.fetchBtcData}
                   lastUpdated={this.state.lastUpdated}
-                  stillSyncingAddresses={this.state.stillSyncingAddresses}
                   pageTurnCb={this.handlePageTurn}
           />
         );
       case 'menu-receive':
         return (
-          <Receive currency={this.state.currency}
-                   session={this.state.session}
-                   tick={this.state.tick}
+          <Receive session={this.state.session}
                    isMobile={() => this.isMobile()}
           />
         );
       case 'menu-send':
         return (
-          <Send currency={this.state.currency}
-                session={this.state.session}
-                tick={this.state.tick}
+          <Send session={this.state.session}
                 isMobile={() => this.isMobile()}
           />
         )
@@ -757,7 +671,6 @@ class Main extends React.Component {
   }
 
   renderContent() {
-    const hasError = this.state.error.msg && this.state.error.cb;
     const hasActiveWallet = this.state.session ? this.state.session.getActiveWallet() !== null : false;
     if (this.state.waiting) {
       return (
@@ -773,14 +686,6 @@ class Main extends React.Component {
                   name={this.state.name}
                   isMobile={() => this.isMobile()}
                   errMsg={this.state.error.msg}/>
-      );
-    } else if (hasError) {
-      return (
-        <Error  cb={this.state.error.cb}
-                isMobile={() => this.isMobile()}
-                msg={this.state.error.msg}
-                retryCb={this.retry}
-        />
       );
     } else if (!this.state.session.isPaired()) {
       // Automatically try to pair if we have a session but no pairing  
@@ -832,7 +737,7 @@ class Main extends React.Component {
           {this.renderSidebar()}
           <Layout id="main-content-inner">
             <Content style={{ margin: '0 0 0 0' }}>
-              {this.renderAlert()}
+              {this.renderErrorHeader()}
               <div style={{ margin: '30px 0 0 0'}}>
                 {this.renderPage()}        
               </div>

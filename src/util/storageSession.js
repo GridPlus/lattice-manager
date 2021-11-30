@@ -34,6 +34,9 @@ class StorageSession {
         else
           oldData[key][newKey] = newData[key][newKey];
       });
+    } else {
+      // If this is a non-ojbect, copy it directly
+      oldData[key] = newData[key];
     }
   }
 

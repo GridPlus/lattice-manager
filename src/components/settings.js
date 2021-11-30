@@ -1,21 +1,10 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Checkbox, Col, Collapse, Dropdown, Input, Menu, Row, Table } from 'antd'
+import { Button, Card, Checkbox, Col, Collapse, Input, Radio, Row, Space, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import './styles.css'
 import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers';
-
-// TMP: BITCOIN CONSTANTS
-// We will be deprecating the wallet functionality so I'm going to put
-// these here for now
-const BTC_PURPOSE_LEGACY = constants.HARDENED_OFFSET + 44;
-const BTC_PURPOSE_LEGACY_STR = 'Legacy (prefix=1)';
-const BTC_PURPOSE_WRAPPED_SEGWIT = constants.HARDENED_OFFSET + 49;
-const BTC_PURPOSE_WRAPPED_SEGWIT_STR = 'Wrapped Segwit (prefix=3)';
-const BTC_PURPOSE_SEGWIT = constants.HARDENED_OFFSET + 84;
-const BTC_PURPOSE_SEGWIT_STR = 'Segwit (prefix=bc1)';
-
 
 class Settings extends React.Component {
   constructor(props) {
@@ -25,12 +14,11 @@ class Settings extends React.Component {
       settings: {
         customEndpoint: '',
         keyringLogins: {},
-        btcPurpose: constants.DEFAULT_BTC_PURPOSE,
+        btcPurpose: getBtcPurpose(),
       },
       local: {},
     }
     this.getBtcPurposeName = this.getBtcPurposeName.bind(this)
-    this.getSettings();
   }
 
   componentDidMount() {
@@ -71,7 +59,7 @@ class Settings extends React.Component {
   updateUseDevLattice(evt) {
     const settings = JSON.parse(JSON.stringify(this.state.settings));
     settings.devLattice = evt.target.checked
-    this.setState({ settings })
+    this.setState({ settings }, this.submit)
   }
 
   removeKeyring(login) {
@@ -115,20 +103,22 @@ class Settings extends React.Component {
 
   handleChangeBitcoinVersionSetting(evt) {
     const settings = JSON.parse(JSON.stringify(this.state.settings));
-    settings.btcPurpose = parseInt(evt.key);
-    this.setState({ settings })
+    settings.btcPurpose = parseInt(evt.target.value);
+    this.setState({ settings }, this.submit)
   }
 
   getBtcPurposeName() {
     const purpose = this.state.settings.btcPurpose ?
                     this.state.settings.btcPurpose :
                     getBtcPurpose();
-    if (purpose === BTC_PURPOSE_LEGACY) {
-      return BTC_PURPOSE_LEGACY_STR
-    } else if (purpose === BTC_PURPOSE_WRAPPED_SEGWIT) {
-      return BTC_PURPOSE_WRAPPED_SEGWIT_STR
-    } else if (purpose === BTC_PURPOSE_SEGWIT) {
-      return BTC_PURPOSE_SEGWIT_STR;
+    if (purpose === constants.BTC_PURPOSE_NONE) {
+      return constants.BTC_PURPOSE_NONE_STR;
+    } else if (purpose === constants.BTC_PURPOSE_LEGACY) {
+      return constants.BTC_PURPOSE_LEGACY_STR
+    } else if (purpose === constants.BTC_PURPOSE_WRAPPED_SEGWIT) {
+      return constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR
+    } else if (purpose === constants.BTC_PURPOSE_SEGWIT) {
+      return constants.BTC_PURPOSE_SEGWIT_STR;
     } else {
       return 'Error finding BTC version'
     }
@@ -137,26 +127,28 @@ class Settings extends React.Component {
   renderBitcoinVersionSetting() {
     // NOTE: Firmware does not yet support segwit addresses
     // TODO: Uncomment this when firmware is updated
-    const menu = (
-      <Menu onClick={this.handleChangeBitcoinVersionSetting.bind(this)}>
-        {/* <Menu.Item key={BTC_PURPOSE_SEGWIT}>
-          {BTC_PURPOSE_SEGWIT_STR}
-        </Menu.Item> */}
-        <Menu.Item key={BTC_PURPOSE_WRAPPED_SEGWIT}>
-          {BTC_PURPOSE_WRAPPED_SEGWIT_STR}
-        </Menu.Item>
-        {/* Don't uncomment this until segwit support is released
-        <Menu.Item key={BTC_PURPOSE_LEGACY}>
-          {BTC_PURPOSE_LEGACY_STR}
-        </Menu.Item> */}
-      </Menu>
-    )
+    const purpose = getBtcPurpose() || constants.BTC_PURPOSE_NONE;
     return (
       <Card>
-        <h4>Bitcoin Address Type</h4>
-        <Dropdown overlay={menu}>
-          <Button>{this.getBtcPurposeName()}</Button>
-        </Dropdown>
+        <h4>Bitcoin Wallet Type</h4>
+        <Radio.Group  onChange={this.handleChangeBitcoinVersionSetting.bind(this)}
+                      defaultValue={purpose}>
+          <Space direction="vertical">
+            <Radio value={constants.BTC_PURPOSE_NONE}>
+              Hide BTC Wallet
+            </Radio>
+            {/* <Radio value={constants.BTC_PURPOSE_SEGWIT}>
+              {constants.BTC_PURPOSE_SEGWIT_STR}
+            </Radio> */}
+            <Radio value={constants.BTC_PURPOSE_WRAPPED_SEGWIT}>
+              {constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR}
+            </Radio>
+            {/* Don't uncomment this until segwit support is released
+            <Radio value={constants.BTC_PURPOSE_LEGACY}>
+              {constants.BTC_PURPOSE_LEGACY_STR}
+            </Radio> */}
+          </Space>
+        </Radio.Group>
       </Card>
     )
   }

@@ -20,6 +20,6 @@ export { default as Error } from './error'
 export { default as ValidateSig } from './validateSig'
 
 // Wallet
-export { Wallet } from './wallet/index'
-export { Receive } from './wallet/index'
-export { Send } from './wallet/index'
+export { Wallet } from './btc-wallet/index'
+export { Receive } from './btc-wallet/index'
+export { Send } from './btc-wallet/index'
