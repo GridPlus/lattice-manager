@@ -1,24 +1,12 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  Input,
-  Modal,
-  Result,
-  Row,
-  Table,
-  Tabs,
-  Tag,
-} from "antd";
+import { Alert, Button, Card, Input, Result, Space, Tabs } from "antd";
 import "antd/dist/antd.dark.css";
 import React from "react";
 import { constants } from "../util/helpers";
+import { ContractCard } from "./ContractCard";
 import { PageContent } from "./index";
 import "./styles.css";
 
-const MAX_SPAN_W = 24;
 const defaultState = {
   contract: null,
   defs: [],
@@ -32,72 +20,6 @@ const TAB_KEYS = {
   SINGLE_ADDR: "2",
   CUSTOM: "3",
 };
-const PACKS = {
-  AAVE: {
-    name: "AAVE Pack",
-    desc: "Contract definitions from AAVE",
-    url: "v2_aave",
-  },
-  ALCHEMIX: {
-    name: "Alchemix Pack",
-    desc: "Contract defintions from Alchemix",
-    url: "v2_alchemix",
-  },
-  BALANCER: {
-    name: "Balancer Pack",
-    desc: "Contract definitions from Balancer V2. NOTE: Some unsupported definitions were skipped.",
-    url: "v2_balancer",
-    website: "https://docs.balancer.fi/v/v1/smart-contracts/addresses",
-  },
-  CRYPTEX: {
-    name: "Cryptex Pack",
-    desc: "Contract definitions from Cryptex",
-    url: "v2_cryptex",
-  },
-  CURVE: {
-    name: "Curve Pack",
-    desc: "Contract definitions from Curve Finance",
-    url: "v2_curve",
-    website: "https://curve.readthedocs.io/ref-addresses.html",
-  },
-  GNOSIS: {
-    name: "Gnosis Safe Pack",
-    desc: "Contract definitions for the Gnosis Safe application",
-    url: "v2_gnosis",
-    website:
-      "https://github.com/gnosis/safe-contracts/blob/v1.3.0/CHANGELOG.md",
-  },
-  MAKER: {
-    name: "Maker Pack",
-    desc: "Contract definitions from Maker",
-    url: "v2_maker",
-  },
-  OPYN: {
-    name: "Opyn Pack",
-    desc: "Contract definitions from Opyn V3",
-    url: "v2_opyn",
-    website: "https://opyn.gitbook.io/opyn/contracts/addressbook-1",
-  },
-  SUSHISWAP: {
-    name: "SushiSwap Pack",
-    desc: "Contract definitions from SushiSwap",
-    url: "v2_uniswap",
-    app: "SushiSwap",
-    website: "https://dev.sushi.com/sushiswap/contracts",
-  },
-  UNISWAP: {
-    name: "UniSwap Pack",
-    desc: "Contract definitions from Uniswap V2 and V3.",
-    url: "v2_uniswap",
-    website: "https://github.com/Uniswap/v3-periphery/blob/main/deploys.md",
-  },
-  YEARN: {
-    name: "Yearn Pack",
-    desc: "Contract definitions from Yearn Finance",
-    url: "v2_yearn",
-  },
-};
-const PACKS_PER_ROW = 3;
 const manualPlaceholder =
   '[{"inputs":[{"internalType":"address[]","name":"_components","type":"address[]"},{"internalType":"int256[]","name":"_units","type":"int256[]"},{"internalType":"address[]","name":"_modules","type":"address[]"},{"internalType":"contract IController","name":"_controller","type":"address"},{"internalType":"address","name":"_manager","type":"address"},{"internalType":"string","name":"_name","type":"string"},';
 
@@ -114,24 +36,14 @@ class EthContracts extends React.Component {
       tab: TAB_KEYS.PATH,
       packData: {},
       selectedPackKey: "AAVE",
-      modal: false,
     };
 
     this.addDefs = this.addDefs.bind(this);
     this.onSmartContractAddress = this.onSmartContractAddress.bind(this);
-    this.loadPackData = this.loadPackData.bind(this);
     this.renderSuccessAlert = this.renderSuccessAlert.bind(this);
     this.renderPackCard = this.renderPackCard.bind(this);
     this.renderCustomCard = this.renderCustomCard.bind(this);
     this.renderSearchCard = this.renderSearchCard.bind(this);
-  }
-
-  showModal() {
-    this.setState({ modal: true });
-  }
-
-  hideModal() {
-    this.setState({ modal: false });
   }
 
   onTabChange(key) {
@@ -187,22 +99,19 @@ class EthContracts extends React.Component {
     }
   }
 
-  loadPackData(key) {
-    if (!PACKS[key]) return;
-    fetch(`${constants.AWS_BUCKET_URL}/${PACKS[key].url}.json`)
+  loadPackIndex() {
+    fetch(`${constants.ABI_PACK_URL}/`)
       .then((response) => response.json())
       .then((resp) => {
         if (resp.err) throw new Error(resp.err);
-        const newPackData = JSON.parse(JSON.stringify(this.state.packData));
-        newPackData[key] = resp;
-        this.setState({ packData: newPackData });
+        this.setState({ packs: resp });
       })
       .catch((err) => {
         this.setState({ error: err.toString(), ...defaultState });
       });
   }
 
-  addDefs(skipErrors = false) {
+  addDefs(skipErrors = false, defsToAdd = null) {
     this.setState({ loading: true, error: null });
     // Longer timeout for loading these since requests may get dropped
     this.props.session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
@@ -222,75 +131,6 @@ class EthContracts extends React.Component {
         this.setState({ error: null, loading: false, success: true });
       }
     });
-  }
-
-  renderModal() {
-    if (!this.state.packData[this.state.selectedPackKey]) return;
-    const contracts = [];
-    this.state.packData[this.state.selectedPackKey].metadata.forEach((d) => {
-      // Adding these hacky references since the main source of data is in an S3 bucket
-      // TODO: Overhaul how these packs are loaded/stored/sourced... eventually
-      const localPack = PACKS[this.state.selectedPackKey];
-      const website = localPack.website ? localPack.website : d.website;
-      const app = localPack.app ? localPack.app : d.app;
-      contracts.push({
-        key: d.key,
-        address: d.address,
-        app,
-        website,
-      });
-    });
-    return (
-      <div>
-        <Modal
-          title={PACKS[this.state.selectedPackKey].name}
-          visible={this.state.modal}
-          onOk={this.hideModal.bind(this)}
-          onCancel={this.hideModal.bind(this)}
-        >
-          <Table dataSource={contracts} key="main-table">
-            <Table.Column
-              title="Address"
-              dataIndex="address"
-              key="address"
-              render={(addr) => (
-                <Tag color="blue" key={`tag-${addr}`}>
-                  <a
-                    className="lattice-a"
-                    href={`https://etherscan.io/address/${addr}`}
-                    target={"_blank"}
-                    rel={"noopener noreferrer"}
-                    key={`a-${addr}`}
-                  >
-                    {`${addr.slice(0, 10)}...${addr.slice(
-                      addr.length - 8,
-                      addr.length
-                    )}`}
-                  </a>
-                </Tag>
-              )}
-            />
-            <Table.Column title="App" dataIndex="app" key="app" />
-            <Table.Column
-              title="Source"
-              dataIndex="website"
-              key="website"
-              render={(url) => (
-                <a
-                  className="lattice-a"
-                  href={url}
-                  target={"_blank"}
-                  rel={"noopener noreferrer"}
-                  key={`a-${url}`}
-                >
-                  Link
-                </a>
-              )}
-            />
-          </Table>
-        </Modal>
-      </div>
-    );
   }
 
   renderBanner() {
@@ -345,68 +185,6 @@ class EthContracts extends React.Component {
         <Tabs.TabPane tab="Address" key={TAB_KEYS.SINGLE_ADDR} />
         <Tabs.TabPane tab="Manual" key={TAB_KEYS.CUSTOM} />
       </Tabs>
-    );
-  }
-
-  renderPack(key) {
-    if (!PACKS[key]) return;
-    const isLoadingDefs = this.state.success || this.state.loading;
-    const onCurrentKey = this.state.selectedPackKey === key;
-    let shouldLoad = this.state.loading && onCurrentKey;
-    if (isLoadingDefs && !onCurrentKey) return;
-    return (
-      <Card bordered={true} key={`card-${key}`}>
-        <center>
-          <p className="lattice-h3">{PACKS[key].name}</p>
-          {this.state.packData[key] ? (
-            <Button
-              type="link"
-              onClick={() => {
-                this.setState(
-                  { selectedPackKey: key, success: false, loading: false },
-                  this.showModal.bind(this)
-                );
-              }}
-            >
-              View Contents
-            </Button>
-          ) : null}
-          {this.state.packData[key] ? (
-            <div>
-              {this.state.success && onCurrentKey ? (
-                <div>{this.renderSuccessAlert("Continue")}</div>
-              ) : isLoadingDefs && this.state.selectedPackKey !== key ? null : (
-                <Button
-                  type="primary"
-                  loading={shouldLoad}
-                  onClick={() => {
-                    this.setState(
-                      {
-                        defs: this.state.packData[key].defs,
-                        selectedPackKey: key,
-                        success: false,
-                        loading: false,
-                      },
-                      this.addDefs
-                    );
-                  }}
-                >
-                  {shouldLoad ? "Installing..." : "Install"}
-                </Button>
-              )}
-            </div>
-          ) : isLoadingDefs === false ? (
-            <Button
-              type="link"
-              onClick={() => {
-                this.loadPackData(key);
-              }}
-            >
-              Check Latest
-            </Button>
-          ) : null}
-        </center>
-      </Card>
     );
   }
 
@@ -577,33 +355,20 @@ class EthContracts extends React.Component {
   }
 
   renderPackCard() {
-    const numRows = Object.keys(PACKS).length / PACKS_PER_ROW;
-    const rows = [];
-    for (let i = 0; i < numRows; i++) {
-      const cards = [];
-      for (let j = 0; j < PACKS_PER_ROW; j++) {
-        cards.push(
-          <Col
-            span={Math.floor(MAX_SPAN_W / PACKS_PER_ROW)}
-            key={`col_${i}_${j}`}
-          >
-            {this.renderPack(Object.keys(PACKS)[i * PACKS_PER_ROW + j])}
-          </Col>
-        );
-      }
-      rows.push(
-        <Row justify="center" key={`row-${i}`}>
-          {cards}
-        </Row>
-      );
-    }
+    const packs = this.state.packs ?? [];
     return (
       <div>
         <p>
           Once loaded, please click View Contents to see the specific contracts
           being loaded.
         </p>
-        {rows}
+        {
+          <Space size={"large"} wrap align="center">
+            {packs.map((pack) => (
+              <ContractCard pack={pack} session={this.props.session} />
+            ))}
+          </Space>
+        }
       </div>
     );
   }
@@ -630,10 +395,13 @@ class EthContracts extends React.Component {
     );
   }
 
+  componentWillMount() {
+    this.loadPackIndex();
+  }
+
   render() {
     const content = (
       <div>
-        {this.renderModal()}
         {this.renderBanner()}
         <Card
           title={
