@@ -20,6 +20,7 @@ const constants = {
     BTC_DEFAULT_FEE_RATE: process.env.REACT_APP_BTC_DEFAULT_FEE_RATE || 10, // 10 sat/byte
     BTC_TX_BASE_URL: process.env.REACT_APP_BTC_TX_BASE_URL || 'https://www.blockchain.com/btc/tx',
     PAGE_SIZE: 20, // 20 transactions per requested page, per `gridplus-cloud-services`
+    CONTRACT_PAGE_SIZE: 6,
     LOST_PAIRING_ERR: "NOT_PAIRED",
     LOST_PAIRING_MSG: "Cannot find Lattice connection. Please re-connect.",
     BTC_TESTNET: process.env.REACT_APP_BTC_TESTNET || null,

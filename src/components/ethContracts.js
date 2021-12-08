@@ -1,9 +1,9 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Input, Result, Space, Tabs } from "antd";
+import { Alert, Button, Card, Input, Result, Tabs } from "antd";
 import "antd/dist/antd.dark.css";
 import React from "react";
 import { constants } from "../util/helpers";
-import { ContractCard } from "./ContractCard";
+import { ContractCardList } from "./ContractCardList";
 import { PageContent } from "./index";
 import "./styles.css";
 
@@ -34,7 +34,6 @@ class EthContracts extends React.Component {
       success: false,
       loading: false,
       tab: TAB_KEYS.PATH,
-      packData: {},
       selectedPackKey: "AAVE",
     };
 
@@ -97,18 +96,6 @@ class EthContracts extends React.Component {
           });
       }, 5000); // 1 request per 5 seconds with no API key provided
     }
-  }
-
-  loadPackIndex() {
-    fetch(`${constants.ABI_PACK_URL}/`)
-      .then((response) => response.json())
-      .then((resp) => {
-        if (resp.err) throw new Error(resp.err);
-        this.setState({ packs: resp });
-      })
-      .catch((err) => {
-        this.setState({ error: err.toString(), ...defaultState });
-      });
   }
 
   addDefs(skipErrors = false, defsToAdd = null) {
@@ -355,22 +342,7 @@ class EthContracts extends React.Component {
   }
 
   renderPackCard() {
-    const packs = this.state.packs ?? [];
-    return (
-      <div>
-        <p>
-          Once loaded, please click View Contents to see the specific contracts
-          being loaded.
-        </p>
-        {
-          <Space size={"large"} wrap align="center">
-            {packs.map((pack) => (
-              <ContractCard pack={pack} session={this.props.session} />
-            ))}
-          </Space>
-        }
-      </div>
-    );
+    return <ContractCardList session={this.props.session} />;
   }
 
   renderCard() {
@@ -393,10 +365,6 @@ class EthContracts extends React.Component {
         {f()}
       </div>
     );
-  }
-
-  componentWillMount() {
-    this.loadPackIndex();
   }
 
   render() {

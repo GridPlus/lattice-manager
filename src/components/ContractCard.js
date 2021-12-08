@@ -69,8 +69,8 @@ export function ContractCard({ pack, session }) {
   return (
     <Card
       bordered={true}
-      title={metadata.name}
-      style={{ minWidth: 350, margin: 12 }}
+      title={pack.name}
+      style={{ minWidth: 350 }}
       key={`card-${pack.name}`}
       extra={AddDefsButton}
       actions={[
@@ -87,10 +87,10 @@ export function ContractCard({ pack, session }) {
         </Button>,
       ]}
     >
-      <p className="lattice-h3">{metadata.desc}</p>
+      <p className="lattice-h3">{pack.desc}</p>
 
       <Modal
-        title={metadata.name}
+        title={pack.name}
         visible={isModalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
