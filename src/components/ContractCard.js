@@ -1,7 +1,6 @@
 import {
   CheckCircleOutlined,
-  CheckOutlined,
-  DownloadOutlined,
+  LinkOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
 import { Button, Card, Modal, Table, Tag } from "antd";
@@ -11,10 +10,8 @@ import { constants } from "../util/helpers";
 export function ContractCard({ pack, session }) {
   const [metadata, setMetadata] = useState({});
   const [contract, setContract] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
-  const [isLatestLoaded, setIsLatestLoaded] = useState(false);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -35,28 +32,18 @@ export function ContractCard({ pack, session }) {
       session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
       if (err) {
         setIsAdded(false);
-        setIsLoading(false);
       } else {
         setIsAdded(true);
-        setIsLoading(false);
       }
     });
   };
 
-  const handleLoadLatest = () => {
-    loadContractData();
-    setIsAdded(false);
-    setIsLatestLoaded(true);
-  };
-
   const loadContractData = useCallback(() => {
-    setIsLoading(true);
     fetch(`${constants.ABI_PACK_URL}/${pack.fname}`)
       .then((response) => response.json())
       .then((resp) => {
         setMetadata(resp.metadata);
         setContract(resp.defs);
-        setIsLoading(false);
       });
   }, [pack]);
 
@@ -70,25 +57,12 @@ export function ContractCard({ pack, session }) {
     </Button>
   ) : (
     <Button
-      type="default"
+      type="primary"
+      ghost
       onClick={handleAddClick}
       icon={<PlusCircleOutlined />}
     >
       Add to Lattice
-    </Button>
-  );
-
-  const LoadLatestButton = isLatestLoaded ? (
-    <Button type="default" icon={<CheckOutlined />} disabled={isLatestLoaded}>
-      Loaded
-    </Button>
-  ) : (
-    <Button
-      type="default"
-      onClick={handleLoadLatest}
-      icon={<DownloadOutlined />}
-    >
-      Load Latest
     </Button>
   );
 
@@ -97,14 +71,20 @@ export function ContractCard({ pack, session }) {
       bordered={true}
       title={metadata.name}
       style={{ minWidth: 350, margin: 12 }}
-      hoverable={true}
       key={`card-${pack.name}`}
       extra={AddDefsButton}
       actions={[
         <Button type="default" onClick={showModal}>
           View Contents
         </Button>,
-        LoadLatestButton,
+        <Button
+          type="text"
+          href={metadata.website}
+          target="_blank"
+          icon={<LinkOutlined />}
+        >
+          Website
+        </Button>,
       ]}
     >
       <p className="lattice-h3">{metadata.desc}</p>
