@@ -12,6 +12,7 @@ export function ContractCard({ pack, session }) {
   const [contract, setContract] = useState({});
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -26,6 +27,7 @@ export function ContractCard({ pack, session }) {
   };
 
   const handleAddClick = () => {
+    setIsAdding(true);
     session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
     session.addAbiDefs(contract, (err) => {
       // Reset timeout to default
@@ -35,6 +37,7 @@ export function ContractCard({ pack, session }) {
       } else {
         setIsAdded(true);
       }
+      setIsAdding(false);
     });
   };
 
@@ -61,8 +64,9 @@ export function ContractCard({ pack, session }) {
       ghost
       onClick={handleAddClick}
       icon={<PlusCircleOutlined />}
+      loading={isAdding}
     >
-      Add to Lattice
+      {isAdding ? "Adding" : "Add to Lattice"}
     </Button>
   );
 
