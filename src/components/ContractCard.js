@@ -74,7 +74,10 @@ export function ContractCard({ pack, session }) {
     <Card
       bordered={true}
       title={pack.name}
-      style={{ minWidth: 350 }}
+      style={{
+        flex: "1 1 30%",
+        margin: "10px",
+      }}
       key={`card-${pack.name}`}
       extra={AddDefsButton}
       actions={[

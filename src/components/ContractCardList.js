@@ -71,11 +71,11 @@ export function ContractCardList({ session }) {
             total={filteredPacks?.length}
           />
         </Space>
-        <Space size={"large"} wrap align="center">
+        <div style={{ display: "flex", flexWrap: "wrap" }}>
           {paginatedPacks.map((pack) => (
             <ContractCard pack={pack} session={session} key={pack.name} />
           ))}
-        </Space>
+        </div>
       </Space>
     </div>
   );
