@@ -57,6 +57,12 @@ export function ContractCardList({ session }) {
         Once loaded, please click View Contents to see the specific contracts
         being loaded.
       </p>
+      <p>
+        Don't see what you're looking for?{" "}
+        <a href="https://github.com/GridPlus/abi-pack-framework">
+          Submit a pull request.
+        </a>
+      </p>
       <Space direction="vertical">
         <Space size={"large"} wrap align="center">
           <Input.Group compact>
@@ -71,7 +77,7 @@ export function ContractCardList({ session }) {
             total={filteredPacks?.length}
           />
         </Space>
-        <div style={{ display: "flex", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
           {paginatedPacks.map((pack) => (
             <ContractCard pack={pack} session={session} key={pack.name} />
           ))}

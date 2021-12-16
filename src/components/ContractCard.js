@@ -76,7 +76,6 @@ export function ContractCard({ pack, session }) {
       title={pack.name}
       style={{
         flex: "1 1 30%",
-        margin: "10px",
       }}
       key={`card-${pack.name}`}
       extra={AddDefsButton}
