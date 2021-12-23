@@ -266,8 +266,6 @@ class KVFiles extends React.Component {
     const displayPage = this.state.page + 1;
     const totalPages = Math.max(1, Math.ceil(this.state.totalRecords / RECORDS_PER_PAGE));
     const fetchedPages = Math.max(1, Math.ceil(this.state.records.length / RECORDS_PER_PAGE));
-    const hasNextPage = totalPages > displayPage;
-    const hasPrevPage = displayPage > 1;
     const start = this.state.page * RECORDS_PER_PAGE;
     const end = (1 + this.state.page) * RECORDS_PER_PAGE;
     const data = this.state.records.slice(start, end)
@@ -282,7 +280,12 @@ class KVFiles extends React.Component {
               dataSource={data}
               pagination={{
                 position: ["bottomCenter"],
+                pageSize: RECORDS_PER_PAGE,
+                defaultCurrent: displayPage,
                 showQuickJumper: true,
+                onChange: () => {
+                  if (fetchedPages < totalPages) this.fetchRecords(); 
+                }
               }}
             >
               <Table.Column title="Name" dataIndex="val" key="val"
