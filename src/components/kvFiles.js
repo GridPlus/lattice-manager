@@ -278,7 +278,13 @@ class KVFiles extends React.Component {
       <Card title={'Saved Addresses'} extra={extraLink} bordered={true}>
         {this.state.loading ? this.renderLoading() : (
           <div>
-            <Table dataSource={data} pagination={false}>
+             <Table
+              dataSource={data}
+              pagination={{
+                position: ["bottomCenter"],
+                showQuickJumper: true,
+              }}
+            >
               <Table.Column title="Name" dataIndex="val" key="val"
                 render={val => (
                   <div><b>{val}</b></div>
@@ -304,43 +310,16 @@ class KVFiles extends React.Component {
                 )}
               />
             </Table>
-            <br/>
-            <center>
-              <Row justify='center'>
-                <Col span={3}>
-                  <Button disabled={!hasPrevPage} 
-                          onClick={() => { this.setState({ page: this.state.page - 1 })}}
-                  >
-                    Prev
-                  </Button>
-                </Col>
-                <Col span={5} offset={2}>
-                  <center><p>Page {displayPage} of {totalPages}</p></center>
-                </Col>
-                <Col span={3} offset={2}>
-                  <Button disabled={!hasNextPage} 
-                          onClick={() => { 
-                            this.setState(
-                              { page: this.state.page + 1 }, 
-                              () => { if (fetchedPages < totalPages) this.fetchRecords(); }
-                            );
-                          }}
-                  >
-                    Next
-                  </Button>
-                </Col>
-              </Row>
-              <Row justify='center'>
-                {this.getNumSelected() > 0 ? (
-                  <Button type="danger" 
-                          onClick={this.removeSelected.bind(this)}
-                          style={{ margin: '5px 0 0 0' }}
-                  >
-                    Remove Selected
-                  </Button>
-                ) : null}
-              </Row>
-            </center>
+            <Row justify='center'>
+              {this.getNumSelected() > 0 ? (
+                <Button type="danger" 
+                        onClick={this.removeSelected.bind(this)}
+                        style={{ margin: '5px 0 0 0' }}
+                >
+                  Remove Selected
+                </Button>
+              ) : null}
+            </Row>
           </div>
         )}
       </Card>
