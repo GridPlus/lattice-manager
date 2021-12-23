@@ -266,8 +266,6 @@ class KVFiles extends React.Component {
     const displayPage = this.state.page + 1;
     const totalPages = Math.max(1, Math.ceil(this.state.totalRecords / RECORDS_PER_PAGE));
     const fetchedPages = Math.max(1, Math.ceil(this.state.records.length / RECORDS_PER_PAGE));
-    const hasNextPage = totalPages > displayPage;
-    const hasPrevPage = displayPage > 1;
     const start = this.state.page * RECORDS_PER_PAGE;
     const end = (1 + this.state.page) * RECORDS_PER_PAGE;
     const data = this.state.records.slice(start, end)
@@ -278,7 +276,18 @@ class KVFiles extends React.Component {
       <Card title={'Saved Addresses'} extra={extraLink} bordered={true}>
         {this.state.loading ? this.renderLoading() : (
           <div>
-            <Table dataSource={data} pagination={false}>
+             <Table
+              dataSource={data}
+              pagination={{
+                position: ["bottomCenter"],
+                pageSize: RECORDS_PER_PAGE,
+                defaultCurrent: displayPage,
+                showQuickJumper: true,
+                onChange: () => {
+                  if (fetchedPages < totalPages) this.fetchRecords(); 
+                }
+              }}
+            >
               <Table.Column title="Name" dataIndex="val" key="val"
                 render={val => (
                   <div><b>{val}</b></div>
@@ -304,43 +313,16 @@ class KVFiles extends React.Component {
                 )}
               />
             </Table>
-            <br/>
-            <center>
-              <Row justify='center'>
-                <Col span={3}>
-                  <Button disabled={!hasPrevPage} 
-                          onClick={() => { this.setState({ page: this.state.page - 1 })}}
-                  >
-                    Prev
-                  </Button>
-                </Col>
-                <Col span={5} offset={2}>
-                  <center><p>Page {displayPage} of {totalPages}</p></center>
-                </Col>
-                <Col span={3} offset={2}>
-                  <Button disabled={!hasNextPage} 
-                          onClick={() => { 
-                            this.setState(
-                              { page: this.state.page + 1 }, 
-                              () => { if (fetchedPages < totalPages) this.fetchRecords(); }
-                            );
-                          }}
-                  >
-                    Next
-                  </Button>
-                </Col>
-              </Row>
-              <Row justify='center'>
-                {this.getNumSelected() > 0 ? (
-                  <Button type="danger" 
-                          onClick={this.removeSelected.bind(this)}
-                          style={{ margin: '5px 0 0 0' }}
-                  >
-                    Remove Selected
-                  </Button>
-                ) : null}
-              </Row>
-            </center>
+            <Row justify='center'>
+              {this.getNumSelected() > 0 ? (
+                <Button type="danger" 
+                        onClick={this.removeSelected.bind(this)}
+                        style={{ margin: '5px 0 0 0' }}
+                >
+                  Remove Selected
+                </Button>
+              ) : null}
+            </Row>
           </div>
         )}
       </Card>
