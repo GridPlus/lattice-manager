@@ -3,16 +3,16 @@ import React, { useMemo, useState } from "react";
 import { constants } from "../util/helpers";
 const { Input, Card, Button, Result, Select } = require("antd");
 const { Option } = Select;
+const defaultNetwork = constants.CONTRACT_NETWORKS[0];
 
 export const SearchCard = ({ session }) => {
-  const defaultNetwork = constants.CONTRACT_NETWORKS[0].value;
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [success, setSuccess] = useState(false);
   const [contract, setContract] = useState("");
   const [error, setError] = useState("");
   const [defs, setDefs] = useState([]);
-  const [network, setNetwork] = useState(defaultNetwork);
+  const [network, setNetwork] = useState(defaultNetwork.value);
 
   const resetState = () => {
     setLoading(false);
@@ -130,7 +130,7 @@ export const SearchCard = ({ session }) => {
   );
 
   const ListOfNetworkLinks = () => {
-    const networks = constants.CONTRACT_NETWORKS;
+    const networks = [...constants.CONTRACT_NETWORKS];
     const last = networks.pop();
     return (
       <>
@@ -172,7 +172,7 @@ export const SearchCard = ({ session }) => {
         <Select
           style={{ width: "20%" }}
           showSearch
-          defaultValue={defaultNetwork}
+          defaultValue={defaultNetwork.value}
           optionFilterProp="children"
           onChange={onChange}
           filterOption={(input, option) =>
