@@ -1,19 +1,18 @@
-import React from 'react';
-import 'antd/dist/antd.dark.css'
-import './styles.css'
-import { Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
-import { 
-  HomeOutlined, AuditOutlined, DollarOutlined, TagsOutlined, 
-  WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
-  ReloadOutlined, CreditCardOutlined, CheckOutlined, SettingOutlined 
+import {
+  ArrowDownOutlined, ArrowUpOutlined, AuditOutlined, CheckOutlined, CreditCardOutlined, HomeOutlined, ReloadOutlined, SettingOutlined, TagsOutlined,
+  WalletOutlined
 } from '@ant-design/icons';
+import { Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
+import 'antd/dist/antd.dark.css';
+import React from 'react';
 import { default as SDKSession } from '../sdk/sdkSession';
-import { 
-  Connect, Error, Landing, Loading, Pair, Permissions, Send, 
-  Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
-} from './index'
-import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers'
-const { Content, Footer, Sider } = Layout;
+import { constants, getBtcPurpose, getLocalStorageSettings } from '../util/helpers';
+import {
+  Connect, Error, EthContracts, KvFiles, Landing, Loading, Pair, Receive, Send, Settings, ValidateSig, Wallet
+} from './index';
+import './styles.css';
+
+const { Content, Footer, Sider, Header } = Layout;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
 
@@ -487,7 +486,7 @@ class Main extends React.Component {
   //------------------------------------------
   renderMenu() {
     const collapsed = this.isMobile();
-    const mode = collapsed ? 'horizontal' : 'inline';
+    const mode = collapsed ? 'vertical' : 'inline';
     const hideWallet = constants.BTC_PURPOSE_NONE === getBtcPurpose();
     return (
       <Sider collapsed={collapsed}>
