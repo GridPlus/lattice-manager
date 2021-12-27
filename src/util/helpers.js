@@ -44,7 +44,28 @@ const constants = {
     BTC_WRAPPED_SEGWIT_VERSION: 0x05,
     RATE_LIMIT: 1000, // 1s between requests
     GET_ABI_URL: 'https://api.etherscan.io/api?module=contract&action=getabi&address=',
-}
+    CONTRACT_NETWORKS: [
+        {
+          label: "Etherscan",
+          value: "etherscan",
+          url: "https://etherscan.io",
+          api: "https://api.etherscan.io/api?module=contract&action=getabi&address=",
+        },
+        {
+          label: "Polygonscan",
+          value: "polygon",
+          url: "https://polygonscan.com",
+          api: "https://api.polygonscan.com/api?module=contract&action=getabi&address=",
+        },
+        {
+          label: "BscScan",
+          value: "binance",
+          url: "https://bscscan.com/",
+          api: "https://api.bscscan.com/api?module=contract&action=getabi&address=",
+        },
+      ],
+};
+
 
 const devConstants = {
     BTC_DEV_DATA_API: 'https://blockstream.info/testnet/api',

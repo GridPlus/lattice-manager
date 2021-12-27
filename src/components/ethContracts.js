@@ -5,6 +5,7 @@ import React from "react";
 import { constants } from "../util/helpers";
 import { ContractCardList } from "./ContractCardList";
 import { PageContent } from "./index";
+import { SearchCard } from "./SearchCard";
 import "./styles.css";
 
 const defaultState = {
@@ -176,59 +177,7 @@ class EthContracts extends React.Component {
   }
 
   renderSearchCard() {
-    return (
-      <div>
-        <p>
-          You can install contract data from any supported contract which has
-          been verified by&nbsp;
-          <a
-            className="lattice-a"
-            href="https://etherscan.io"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Etherscan
-          </a>
-          . Search for a verified smart contract:
-        </p>
-        <Input.Search
-          placeholder="Contract address"
-          allowClear
-          enterButton
-          loading={this.state.loading && !this.state.contract}
-          onSearch={this.onSmartContractAddress}
-        />
-        <br />
-        <br />
-        {this.state.contract ? (
-          <div>
-            {this.state.success ? (
-              <div>{this.renderSuccessAlert()}</div>
-            ) : (
-              <Card title={this.state.contract}>
-                <p>
-                  Found <b>{this.state.defs.length}</b> functions to add from
-                  this contract.
-                </p>
-                <Button
-                  type="primary"
-                  onClick={this.addDefs}
-                  loading={this.state.loading}
-                >
-                  {this.state.loading ? "Installing..." : "Install"}
-                </Button>
-                {this.state.success ? (
-                  <div>
-                    <br />
-                    {this.renderSuccessAlert()}
-                  </div>
-                ) : null}
-              </Card>
-            )}
-          </div>
-        ) : null}
-      </div>
-    );
+    return <SearchCard session={this.props.session} />;
   }
 
   // TEMPORARY FUNCTION TO REMOVE FUNCTIONS WITH ZERO LENGTH PARAM NAMES
