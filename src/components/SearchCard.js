@@ -106,7 +106,7 @@ export const SearchCard = ({ session }) => {
   );
 
   const ErrorAlert = () => (
-    <Result status="error" title="Error" subTitle={error} />
+    <Result status="error" subTitle={error} />
   );
 
   const NetworkLinkList = () => {
