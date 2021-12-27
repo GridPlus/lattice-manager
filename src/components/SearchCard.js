@@ -1,7 +1,8 @@
+import { DownloadOutlined } from "@ant-design/icons";
+import { Button, Card, Input, Result, Select } from "antd";
 import throttle from "lodash/throttle";
 import React, { useMemo, useState } from "react";
 import { constants } from "../util/helpers";
-const { Input, Card, Button, Result, Select } = require("antd");
 const { Option } = Select;
 const defaultNetwork = constants.CONTRACT_NETWORKS[0];
 
@@ -12,9 +13,9 @@ export const SearchCard = ({ session }) => {
   const [contract, setContract] = useState("");
   const [error, setError] = useState("");
   const [defs, setDefs] = useState([]);
-  const [network, setNetwork] = useState(defaultNetwork.value);
+  const [networkValue, setNetworkValue] = useState(defaultNetwork.value);
 
-  const resetState = () => {
+  const resetData = () => {
     setLoading(false);
     setSuccess(false);
     setInstalling(false);
@@ -22,30 +23,9 @@ export const SearchCard = ({ session }) => {
     setDefs([]);
   };
 
-  function onChange(value) {
-    setNetwork(value);
-  }
-
-  // TEMPORARY FUNCTION TO REMOVE FUNCTIONS WITH ZERO LENGTH PARAM NAMES
-  // SEE: https://github.com/GridPlus/gridplus-sdk/issues/1540xfDcC959b0AA82E288E4154cB1C770C6c4e958a91
-  function TMP_REMOVE_ZERO_LEN_PARAMS(defs) {
-    const newDefs = [];
-    defs.forEach((def) => {
-      let shouldAdd = true;
-      if (def.name.length === 0) {
-        shouldAdd = false;
-      } else {
-        def.params.forEach((param) => {
-          if (param.name.length === 0) shouldAdd = false;
-        });
-      }
-      if (shouldAdd === true) newDefs.push(def);
-    });
-    return newDefs;
-  }
-
-  const getNetworkApiUrl = () =>
-    constants.CONTRACT_NETWORKS.find((cn) => cn.value === network).api;
+  const getNetwork = () =>
+    constants.CONTRACT_NETWORKS.find(({ value }) => value === networkValue) ??
+    defaultNetwork;
 
   function fetchContractData(input) {
     if (
@@ -55,25 +35,23 @@ export const SearchCard = ({ session }) => {
     ) {
       // Not a valid address
       setError("Invalid Ethereum contract address");
-      resetState();
+      resetData();
     } else {
-      fetch(`${getNetworkApiUrl()}${input}`)
+      const networkToFetch = getNetwork();
+      fetch(`${networkToFetch.api}${input}`)
         .then((response) => response.json())
         .then((resp) => {
           // Map confusing error strings to better descriptions
           if (resp.result === "Contract source code not verified") {
-            resp.result =
-              "Contract source code not published to Etherscan or not verified. Cannot determine data.";
+            resp.result = `Contract source code not published to ${networkToFetch.label} or not verified. Cannot determine data.`;
           }
           if (resp.status === "0") {
             setError(resp.result);
-            resetState();
+            resetData();
           } else {
             try {
               const result = JSON.parse(resp.result);
-              const defs = TMP_REMOVE_ZERO_LEN_PARAMS(
-                session.client.parseAbi("etherscan", result, true)
-              );
+              const defs = session.client.parseAbi("etherscan", result, true);
               setDefs(defs);
               setContract(input);
               setError("");
@@ -81,13 +59,13 @@ export const SearchCard = ({ session }) => {
               setLoading(false);
             } catch (err) {
               setError(err.toString());
-              resetState();
+              resetData();
             }
           }
         })
         .catch((err) => {
           setError(err.toString());
-          resetState();
+          resetData();
         });
     }
   }
@@ -95,18 +73,20 @@ export const SearchCard = ({ session }) => {
   const throttledFetch = useMemo(
     () => throttle(fetchContractData, 5100),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [network]
+    [networkValue]
   );
 
   function addDefs() {
     setInstalling(true);
     setError("");
+    // Longer timeout for loading these since requests may get dropped
     session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
     session.addAbiDefs(defs, (err) => {
+      // Reset timeout to default
       session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
       if (err) {
         setError(err.toString());
-        resetState();
+        resetData();
       } else {
         setSuccess(true);
         setError("");
@@ -129,33 +109,28 @@ export const SearchCard = ({ session }) => {
     <Result status="error" title="Error" subTitle={error} />
   );
 
-  const ListOfNetworkLinks = () => {
+  const NetworkLinkList = () => {
     const networks = [...constants.CONTRACT_NETWORKS];
     const last = networks.pop();
+    const NetworkLink = ({ network }) => (
+      <a
+        className="lattice-a"
+        href={network.url}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {network.label}
+      </a>
+    );
     return (
       <>
-        {networks.map((_network) => (
-          <>
-            <a
-              className="lattice-a"
-              href={_network.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {_network.label}
-            </a>
-            <span>, </span>
-          </>
+        {networks.map((network) => (
+          <span key={network.label}>
+            <NetworkLink network={network} />
+            {", "}
+          </span>
         ))}
-        or{" "}
-        <a
-          className="lattice-a"
-          href={last.url}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {last.label}
-        </a>
+        or <NetworkLink network={last} />
       </>
     );
   };
@@ -165,16 +140,16 @@ export const SearchCard = ({ session }) => {
       <p>
         You can install contract data from any supported contract which has been
         verified by&nbsp;
-        <ListOfNetworkLinks />.
+        <NetworkLinkList />.
       </p>
       <p>Search for a verified smart contract:</p>
       <Input.Group>
         <Select
-          style={{ width: "20%" }}
+          style={{ minWidth: "20%" }}
           showSearch
           defaultValue={defaultNetwork.value}
           optionFilterProp="children"
-          onChange={onChange}
+          onChange={setNetworkValue}
           filterOption={(input, option) =>
             option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }
@@ -186,7 +161,7 @@ export const SearchCard = ({ session }) => {
           ))}
         </Select>
         <Input.Search
-          style={{ width: "80%" }}
+          style={{ maxWidth: "80%" }}
           placeholder="Contract address"
           allowClear
           enterButton
@@ -198,17 +173,27 @@ export const SearchCard = ({ session }) => {
         />
       </Input.Group>
 
-      {contract && (
-        <Card title={contract} style={{ marginTop: "20px" }}>
+      {contract && !success && !error && (
+        <Card
+          title={contract}
+          style={{ marginTop: "20px" }}
+          actions={[
+            <Button
+              type="primary"
+              onClick={addDefs}
+              loading={installing}
+              icon={<DownloadOutlined />}
+            >
+              {installing ? "Installing..." : "Install"}
+            </Button>,
+          ]}
+        >
           <p>
             Found <b>{defs.length}</b> functions to add from this contract.
           </p>
-          <Button type="primary" onClick={addDefs} loading={installing}>
-            {installing ? "Installing..." : "Install"}
-          </Button>
-          {success && <SuccessAlert />}
         </Card>
       )}
+      {success && <SuccessAlert />}
       {error && <ErrorAlert />}
     </div>
   );

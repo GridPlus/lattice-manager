@@ -52,13 +52,13 @@ const constants = {
           api: "https://api.etherscan.io/api?module=contract&action=getabi&address=",
         },
         {
-          label: "Polygon",
+          label: "Polygonscan",
           value: "polygon",
           url: "https://polygonscan.com",
           api: "https://api.polygonscan.com/api?module=contract&action=getabi&address=",
         },
         {
-          label: "Binance",
+          label: "BscScan",
           value: "binance",
           url: "https://bscscan.com/",
           api: "https://api.bscscan.com/api?module=contract&action=getabi&address=",
