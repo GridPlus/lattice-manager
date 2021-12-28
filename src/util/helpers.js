@@ -63,6 +63,12 @@ const constants = {
           url: "https://bscscan.com/",
           api: "https://api.bscscan.com/api?module=contract&action=getabi&address=",
         },
+        {
+          label: "SnowTrace",
+          value: "snowtrace",
+          url: "https://snowtrace.io/",
+          api: "https://api.snowtrace.io/api?module=contract&action=getabi&address=",
+        },
       ],
 };
 
