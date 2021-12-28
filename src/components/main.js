@@ -125,6 +125,11 @@ class Main extends React.Component {
 
   updateWidth() {
     this.setState({ windowWidth:  window.innerWidth });
+    if (this.isMobile() && !this.state.collapsed) {
+      this.setState({ collapsed: true })
+    } else if (!this.isMobile() && this.state.collapsed) {
+      this.setState({ collapsed: false })
+    }
   }
 
   isMobile() {
