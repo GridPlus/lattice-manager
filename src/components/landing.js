@@ -8,7 +8,7 @@ import { Card, Col, Divider, Row } from 'antd'
 class Landing extends React.Component {
   renderCard() {
     return (
-      <Card bordered={true}>
+      <Card bordered={true} style={{textAlign: "center"}}>
         <Row justify='center'>
           <Col span={20}>
             <p className='lattice-h1'><DesktopOutlined/>&nbsp;Lattice Manager</p>
@@ -52,21 +52,19 @@ class Landing extends React.Component {
           </Col>
         </Row>
         <Divider/>
-        <img src="lattice-landing.jpg" style={{width: '100%'}} alt="loading"/>
+        <img
+          src="lattice-landing.jpg"
+          style={{ maxHeight: "500px", maxWidth: "100%" }}
+          alt="lattice-one-device"
+        />
       </Card>
     )
   }
 
 
   render() {
-    const content = (
-      <center>
-        {this.renderCard()}
-      </center>
-    )
-
     return (
-      <PageContent content={content} isMobile={this.props.isMobile}/>
+      <PageContent content={this.renderCard()} isMobile={this.props.isMobile}/>
     )
   }
 }

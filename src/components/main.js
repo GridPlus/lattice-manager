@@ -3,7 +3,7 @@ import 'antd/dist/antd.dark.css'
 import './styles.css'
 import { Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
 import { 
-  HomeOutlined, AuditOutlined, DollarOutlined, TagsOutlined, 
+  HomeOutlined, AuditOutlined, MenuOutlined, TagsOutlined, 
   WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
   ReloadOutlined, CreditCardOutlined, CheckOutlined, SettingOutlined 
 } from '@ant-design/icons';
@@ -25,6 +25,7 @@ class Main extends React.Component {
       menuItem: DEFAULT_MENU_ITEM,
       // GridPlusSDK session object
       session: null,
+      collapsed: false,
       error: { msg: null, cb: null },
       pendingMsg: null,
       // Waiting on asynchronous data, usually from the Lattice
@@ -70,6 +71,7 @@ class Main extends React.Component {
     // Listen for window resize
     window.addEventListener('resize', this.updateWidth);
 
+    if (this.isMobile()) this.setState({collapsed: true})
     // Metamask connects through a keyring and in these cases we need
     // to utilize window.postMessage once we connect.
     // We can extend this pattern to other apps in the future.
@@ -267,8 +269,10 @@ class Main extends React.Component {
     this.state.session.setPage(page);
   }
 
-  handleMenuChange({key}) {
-    this.setState({ menuItem: key })
+  handleMenuChange ({ key }) {
+    const stateUpdate = { menuItem: key }
+    if (this.isMobile()) stateUpdate.collapsed = true
+    this.setState(stateUpdate)
   }
 
   handleLogout(err=null) {
@@ -486,51 +490,53 @@ class Main extends React.Component {
   // RENDERERS
   //------------------------------------------
   renderMenu() {
-    const collapsed = this.isMobile();
-    const mode = collapsed ? 'vertical' : 'inline';
     const hideWallet = constants.BTC_PURPOSE_NONE === getBtcPurpose();
     return (
-      <Sider collapsed={collapsed}>
-        <Menu theme="dark" mode={mode} onSelect={this.handleMenuChange}>
-          <Menu.Item key="menu-landing">
+      <Sider
+        collapsed={this.state.collapsed}
+        collapsedWidth={0}
+      >
+        <Menu theme="dark" mode="inline" onSelect={this.handleMenuChange}>
+          {/* Setting title={null} removes floating tooltip on mobile */}
+          <Menu.Item key="menu-landing" title={null}>
             <HomeOutlined/>
             <span>Home</span>
-          </Menu.Item>          
-          <Menu.Item key="menu-kv-records">
-            <TagsOutlined/>
+            </Menu.Item>
+          <Menu.Item key="menu-kv-records" title={null}>
+            <TagsOutlined />
             <span>Address Tags</span>
           </Menu.Item>
-          <Menu.Item key="menu-eth-contracts">
-            <AuditOutlined/>
+          <Menu.Item key="menu-eth-contracts" title={null}>
+            <AuditOutlined />
             <span>Contracts</span>
           </Menu.Item>
           {/* <Menu.Item key="menu-permissions">
             <DollarOutlined/>
             <span>Limits</span>
           </Menu.Item> */}
-          <Menu.Item key="menu-settings">
-            <SettingOutlined/>
+          <Menu.Item key="menu-settings" title={null}>
+            <SettingOutlined />
             <span>Settings</span>
           </Menu.Item>
           {!hideWallet ? (
             <Menu.SubMenu title="BTC Wallet" key="submenu-wallet">
-              <Menu.Item key="menu-wallet">
-                <WalletOutlined/>
+              <Menu.Item key="menu-wallet" title={null}>
+                <WalletOutlined />
                 <span>History</span>
               </Menu.Item>
-              <Menu.Item key="menu-send">
-                <ArrowUpOutlined/>
+              <Menu.Item key="menu-send" title={null}>
+                <ArrowUpOutlined />
                 <span>Send</span>
               </Menu.Item>
-              <Menu.Item key="menu-receive">
-                <ArrowDownOutlined/>
+              <Menu.Item key="menu-receive" title={null}>
+                <ArrowDownOutlined />
                 <span>Receive</span>
               </Menu.Item>
             </Menu.SubMenu>
           ) : null}
         </Menu>
       </Sider>
-    )
+    );
   }
 
   renderSidebar() {
@@ -542,16 +548,28 @@ class Main extends React.Component {
 
   renderHeaderText() {
     return (
-      <a  className='lattice-a'
-          href='https://gridplus.io' 
-          target='_blank' 
-          rel='noopener noreferrer'
-      >
-        <img  alt="GridPlus" 
-              src={'/gridplus-logo.png'}
-              style={{height: '1em'}}/>
-      </a>
-    )
+      <>
+        {this.isMobile() ? (
+          <Button
+            onClick={() => this.setState({ collapsed: !this.state.collapsed })}
+            type="text"
+            size="large"
+            icon={<MenuOutlined />}
+            style={{ backgroundColor: "transparent", marginRight: "5px" }}
+          />
+        ) : null}
+        <a
+          className="lattice-a"
+          href="https://gridplus.io"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img  alt="GridPlus" 
+                src={'/gridplus-logo.png'}
+                style={{height: '1em'}}/>
+        </a>
+      </>
+    );
   }
 
   renderHeader() {
@@ -663,7 +681,7 @@ class Main extends React.Component {
         )
       case DEFAULT_MENU_ITEM:
         return (
-          <Landing isMobile={() => { this.isMobile() }}/>
+          <Landing isMobile={() => this.isMobile()}/>
         );
       default:
         return;
