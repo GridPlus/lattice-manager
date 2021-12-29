@@ -76,6 +76,7 @@ export function ContractCard({ pack, session }) {
       title={pack.name}
       style={{
         flex: "1 1 30%",
+        maxWidth: "33%",
       }}
       key={`card-${pack.name}`}
       extra={AddDefsButton}
@@ -92,6 +93,7 @@ export function ContractCard({ pack, session }) {
           Website
         </Button>,
       ]}
+      bodyStyle={{ height: "7em" }}
     >
       <p className="lattice-h3">{pack.desc}</p>
 
