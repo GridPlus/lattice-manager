@@ -8,11 +8,11 @@ import React, { useCallback, useEffect, useState } from "react";
 import { constants } from "../util/helpers";
 
 export function ContractCard({ pack, session }) {
-  const [metadata, setMetadata] = useState({});
   const [contract, setContract] = useState({});
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const { url } = constants.CONTRACT_NETWORKS[pack.network];
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -45,7 +45,6 @@ export function ContractCard({ pack, session }) {
     fetch(`${constants.ABI_PACK_URL}/${pack.fname}`)
       .then((response) => response.json())
       .then((resp) => {
-        setMetadata(resp.metadata);
         setContract(resp.defs);
       });
   }, [pack]);
@@ -86,7 +85,7 @@ export function ContractCard({ pack, session }) {
         </Button>,
         <Button
           type="text"
-          href={metadata.website}
+          href={pack.website}
           target="_blank"
           icon={<LinkOutlined />}
         >
@@ -104,7 +103,7 @@ export function ContractCard({ pack, session }) {
         onCancel={handleCancel}
         width={1000}
       >
-        <Table dataSource={metadata.addresses}>
+        <Table dataSource={pack.addresses}>
           <Table.Column
             title="Address"
             dataIndex="address"
@@ -113,7 +112,7 @@ export function ContractCard({ pack, session }) {
               <Tag color="blue" key={`tag-${address}`}>
                 <a
                   className="lattice-a"
-                  href={`https://etherscan.io/address/${address}`}
+                  href={`${url}/address/${address}`}
                   target={"_blank"}
                   rel={"noopener noreferrer"}
                   key={`a-${address}`}

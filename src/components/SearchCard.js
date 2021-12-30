@@ -1,9 +1,9 @@
 import { DownloadOutlined } from "@ant-design/icons";
-import { Button, Card, Input, Result, Select } from "antd";
+import { Button, Card, Input, Result } from "antd";
 import throttle from "lodash/throttle";
 import React, { useMemo, useState } from "react";
 import { constants } from "../util/helpers";
-const { Option } = Select;
+import { SelectNetwork } from "./SelectNetwork";
 const defaultNetwork =
   constants.CONTRACT_NETWORKS[constants.DEFAULT_CONTRACT_NETWORK];
 
@@ -14,7 +14,7 @@ export const SearchCard = ({ session }) => {
   const [contract, setContract] = useState("");
   const [error, setError] = useState("");
   const [defs, setDefs] = useState([]);
-  const [networkValue, setNetworkValue] = useState(constants.DEFAULT_CONTRACT_NETWORK);
+  const [network, setNetwork] = useState(constants.DEFAULT_CONTRACT_NETWORK);
 
   const resetData = () => {
     setLoading(false);
@@ -25,7 +25,7 @@ export const SearchCard = ({ session }) => {
   };
 
   const getNetwork = () =>
-    constants.CONTRACT_NETWORKS[networkValue] ?? defaultNetwork;
+    constants.CONTRACT_NETWORKS[network] ?? defaultNetwork;
 
   function fetchContractData(input) {
     if (
@@ -73,7 +73,7 @@ export const SearchCard = ({ session }) => {
   const throttledFetch = useMemo(
     () => throttle(fetchContractData, 5100),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [networkValue]
+    [network]
   );
 
   function addDefs() {
@@ -108,7 +108,9 @@ export const SearchCard = ({ session }) => {
   const ErrorAlert = () => <Result status="error" subTitle={error} />;
 
   const NetworkLinkList = () => {
-    const networks = Object.entries(constants.CONTRACT_NETWORKS).map(([key, value]) => value);
+    const networks = Object.entries(constants.CONTRACT_NETWORKS).map(
+      ([, value]) => value
+    );
     const last = networks.pop();
     const NetworkLink = ({ network }) => (
       <a
@@ -142,22 +144,7 @@ export const SearchCard = ({ session }) => {
       </p>
       <p>Search for a verified smart contract:</p>
       <Input.Group>
-        <Select
-          style={{ minWidth: "20%" }}
-          showSearch
-          defaultValue={constants.DEFAULT_CONTRACT_NETWORK}
-          optionFilterProp="children"
-          onChange={setNetworkValue}
-          filterOption={(input, option) =>
-            option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }
-        >
-          {Object.entries(constants.CONTRACT_NETWORKS).map(([key, value]) => (
-            <Option key={key} value={key}>
-              {value.label}
-            </Option>
-          ))}
-        </Select>
+        <SelectNetwork setNetwork={setNetwork} />
         <Input.Search
           style={{ maxWidth: "80%" }}
           placeholder="Contract address"

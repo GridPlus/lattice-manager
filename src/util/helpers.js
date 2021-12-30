@@ -47,25 +47,25 @@ const constants = {
     DEFAULT_CONTRACT_NETWORK: 'ethereum',
     CONTRACT_NETWORKS: {
         ethereum: {
-          label: "Etherscan",
+          label: "Ethereum",
           url: "https://etherscan.io",
           baseUrl: "https://api.etherscan.io",
           apiRoute: "api?module=contract&action=getabi&address=",
         },
         polygon: {
-          label: "Polygonscan",
+          label: "Polygon",
           url: "https://polygonscan.com",
           baseUrl: "https://api.polygonscan.com",
           apiRoute: "api?module=contract&action=getabi&address=",
         },
         binance: {
-          label: "BscScan",
+          label: "Binance",
           url: "https://bscscan.com/",
           baseUrl: "https://api.bscscan.com",
           apiRoute: "api?module=contract&action=getabi&address=",
         },
         avalanche: {
-          label: "SnowTrace",
+          label: "Avalanche",
           url: "https://snowtrace.io",
           baseUrl: "https://api.snowtrace.io",
           apiRoute: "api?module=contract&action=getabi&address=",
