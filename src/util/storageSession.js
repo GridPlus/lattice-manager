@@ -1,8 +1,9 @@
-import { constants } from './helpers';
+import localStorage from './localStorage';
+
 class StorageSession {
   constructor(device_id, pass) {
     this.data = null;
-    this.store = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}');
+    this.store = localStorage.getRootStore();
   }
 
   isObject(o) {
@@ -49,7 +50,7 @@ class StorageSession {
       this.updateBranch(data, this.store[deviceID][wallet_uid], k);
     })
     // Update the store itself
-    window.localStorage.setItem(constants.ROOT_STORE, JSON.stringify(this.store));
+    localStorage.setRootStore(this.store);
   }
 
   getWalletData(deviceID, wallet_uid) {
