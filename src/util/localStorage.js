@@ -33,7 +33,7 @@ const setSettings = (value) => setRootStoreItem("settings", value);
 
 const getKeyring = () => getRootStoreItem("keyring");
 
-const getKeyringItem = (key) => getRootStoreItem("keyring")?.[key];
+const getKeyringItem = (key) => getRootStoreItem("keyring")?.[key] ?? {};
 const setKeyringItem = (key, value) =>
   setRootStoreItem("keyring", { [`${key}`]: value });
 const removeKeyringItem = (key) =>
