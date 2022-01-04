@@ -12,7 +12,8 @@ import {
   Connect, Error, Landing, Loading, Pair, Permissions, Send, 
   Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
 } from './index'
-import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers'
+import { constants, getBtcPurpose } from '../util/helpers'
+import localStorage from '../util/localStorage';
 const { Content, Footer, Sider } = Layout;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
@@ -91,7 +92,7 @@ class Main extends React.Component {
       window.onload = this.handleKeyringOpener();
       this.setState({ name: keyringName }, () => {
         // Check if this keyring has already logged in. This login should expire after a period of time.
-        const prevKeyringLogin = this.getPrevKeyringLogin();
+        const prevKeyringLogin = localStorage.getKeyringItem(keyringName);
         const keyringTimeoutBoundary = new Date().getTime() - constants.KEYRING_LOGOUT_MS;
         if (!forceLogin && prevKeyringLogin && prevKeyringLogin.lastLogin > keyringTimeoutBoundary) {
           this.connect( prevKeyringLogin.deviceID, 
@@ -99,7 +100,7 @@ class Main extends React.Component {
                         () => this.connectSession(prevKeyringLogin));
         } else {
           // If the login has expired, clear it now.
-          this.clearPrevKeyringLogin();
+          localStorage.removeKeyringItem(keyringName)
         }
       })
     } else if (hwCheck) {
@@ -107,8 +108,7 @@ class Main extends React.Component {
       this.setState({ hwCheck })
     } else {
       // Lookup deviceID and pw from storage
-      const deviceID = window.localStorage.getItem('gridplus_web_wallet_id');
-      const password = window.localStorage.getItem('gridplus_web_wallet_password');
+      const { deviceID, password } = localStorage.getLogin()
       if (deviceID && password)
         this.connect(deviceID, password, () => this.connectSession())
     }
@@ -140,7 +140,7 @@ class Main extends React.Component {
     const updates = { deviceID, password };
     if (!this.state.session) {
       // Create a new session if we don't have one.
-      const settings = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}').settings || {};
+      const settings = localStorage.getSettings()
       updates.session = new SDKSession(deviceID, this.setError, this.state.name, settings);
     }
     this.setState(updates, cb);
@@ -168,51 +168,6 @@ class Main extends React.Component {
   // KEYRING HANDLERS
   //------------------------------------------
 
-  saveKeyringLogin() {
-    if (this.state.name) {
-      const _storage = window.localStorage.getItem(constants.ROOT_STORE) || JSON.stringify({});
-      try {
-        const storage = JSON.parse(_storage);
-        if (!storage.settings)
-          storage.settings = {};
-        if (!storage.settings.keyringLogins)
-          storage.settings.keyringLogins = {};
-        storage.settings.keyringLogins[this.state.name] = {
-          deviceID: this.state.deviceID,
-          password: this.state.password,
-          lastLogin: new Date().getTime()
-        }
-        window.localStorage.setItem(constants.ROOT_STORE, JSON.stringify(storage));
-      } catch (err) {
-        console.error(`Error saving keyring login: ${err.toString()}`)
-      }
-    }
-  }
-
-  getPrevKeyringLogin() {
-    if (this.state.name) {
-      const _storage = window.localStorage.getItem(constants.ROOT_STORE);
-      try {
-        const storage = JSON.parse(_storage);
-        return storage.settings.keyringLogins[this.state.name];
-      } catch (e) {
-        return {};
-      }
-    }
-  }
-
-  clearPrevKeyringLogin() {
-    if (this.state.name) {
-      const _storage = window.localStorage.getItem(constants.ROOT_STORE);
-      try {
-        const storage = JSON.parse(_storage);
-        delete storage.settings.keyringLogins[this.state.name];
-      } catch (err) {
-        console.error(`Error clearing keyring login: ${err.toString()}`)
-      }
-    }
-  }
-
   handleKeyringOpener() {
     this.setState({ openedByKeyring: true })
   }
@@ -221,7 +176,11 @@ class Main extends React.Component {
     if (!this.state.openedByKeyring)
       return;
     // Save the login for later
-    this.saveKeyringLogin();
+    localStorage.setKeyringItem(this.state.name, {
+      deviceID: this.state.deviceID,
+      password: this.state.password,
+      lastLogin: new Date().getTime()
+    })
     // Send the data back to the opener
     const data = {
       deviceID: this.state.deviceID,
@@ -229,7 +188,7 @@ class Main extends React.Component {
       endpoint: constants.BASE_SIGNING_URL,
     };
     // Check if there is a custom endpoint configured
-    const settings = getLocalStorageSettings();
+    const settings = localStorage.getSettings();
     if (settings.customEndpoint && settings.customEndpoint !== '') {
       data.endpoint = settings.customEndpoint;
     }
@@ -284,8 +243,7 @@ class Main extends React.Component {
     this.unwait();
     this.state.session.disconnect();
     this.setState({ session: null });
-    window.localStorage.removeItem('gridplus_web_wallet_id');
-    window.localStorage.removeItem('gridplus_web_wallet_password');
+    localStorage.removeLogin()
     if (err && err === constants.LOST_PAIRING_MSG)
       this.setError({ err })
   }
@@ -339,8 +297,7 @@ class Main extends React.Component {
           // We connected!
           // 1. Save these credentials to localStorage if this is NOT a keyring
           if (!this.state.openedByKeyring) {
-            window.localStorage.setItem('gridplus_web_wallet_id', deviceID);
-            window.localStorage.setItem('gridplus_web_wallet_password', password);
+            localStorage.setLogin({ deviceID, password })
           }
           // 2. Clear errors and alerts
           this.setError();

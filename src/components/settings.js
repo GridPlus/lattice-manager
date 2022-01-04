@@ -4,72 +4,57 @@ import { Button, Card, Checkbox, Col, Collapse, Input, Radio, Row, Space, Table 
 import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import './styles.css'
-import { constants, getLocalStorageSettings, getBtcPurpose } from '../util/helpers';
+import omit from "lodash/omit"
+import { constants, getBtcPurpose } from '../util/helpers';
+import localStorage from '../util/localStorage';
 
 class Settings extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      settings: {
-        customEndpoint: '',
-        keyringLogins: {},
-        btcPurpose: getBtcPurpose(),
-      },
-      local: {},
+      settings: localStorage.getSettings(),
+      keyring: localStorage.getKeyring(),
     }
     this.getBtcPurposeName = this.getBtcPurposeName.bind(this)
   }
 
-  componentDidMount() {
-    this.getSettings();
-  }
-
-  getSettings() {
-    const settings = getLocalStorageSettings();
-    this.setState({ settings })
-  }
 
   submit() {
-    // Save the settings to local storage
-    const storage = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}');
-    storage.settings = this.state.settings
-    window.localStorage.setItem(constants.ROOT_STORE, JSON.stringify(storage));
+    // Save the settings to localStorage
+    localStorage.setSettings(this.state.settings)
     // Reload the page for the changes to take effect
     window.location.reload();
   }
 
   updateUseCustomEndpoint(value) {
-    const settings = JSON.parse(JSON.stringify(this.state.settings));
-    const local = this.state.local;
-    local.useCustomEndpoint = value;
+    const settings = this.state.settings;
     if (value !== true) {
       // Reset the custom endpoint if this value is false
       settings.customEndpoint = '';
     }
-    this.setState({ settings, local });
+    this.setState({ settings });
   }
 
   updateCustomEndpoint(evt) {
-    const settings = JSON.parse(JSON.stringify(this.state.settings));
+    const settings = this.state.settings;
     settings.customEndpoint = evt.target.value;
     this.setState({ settings });
   }
 
   updateUseDevLattice(evt) {
-    const settings = JSON.parse(JSON.stringify(this.state.settings));
+    const settings = this.state.settings;
     settings.devLattice = evt.target.checked
     this.setState({ settings }, this.submit)
   }
 
-  removeKeyring(login) {
-    const settings = this.state.settings || {};
-    delete settings.keyringLogins[login.name]
-    this.setState({ settings })
+  removeKeyring ({ name }) {
+    localStorage.removeKeyringItem(name)
+    this.setState({ keyring: omit(this.state.keyring, name) })
   }
 
   resetState() {
-    window.localStorage.removeItem(constants.ROOT_STORE);
+    localStorage.removeRootStore()
     window.location.reload();
   }
 
@@ -102,7 +87,7 @@ class Settings extends React.Component {
   }
 
   handleChangeBitcoinVersionSetting(evt) {
-    const settings = JSON.parse(JSON.stringify(this.state.settings));
+    const settings = this.state.settings;
     settings.btcPurpose = parseInt(evt.target.value);
     this.setState({ settings }, this.submit)
   }
@@ -173,7 +158,7 @@ class Settings extends React.Component {
   }
 
   renderKeyringsSetting() {
-    const { keyringLogins = {} } = this.state.settings;
+    const keyring = localStorage.getKeyring()
     const cols = [
       { 
         title: 'App Name', 
@@ -190,7 +175,7 @@ class Settings extends React.Component {
       }
     ]
     const data = [];
-    Object.keys(keyringLogins)
+    Object.keys(keyring)
       .sort((a, b) => { return a.toLowerCase() > b.toLowerCase() ? 1 : -1 })
       .forEach((name) => { data.push({ name }) })
     return (

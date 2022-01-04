@@ -1,13 +1,15 @@
+
+import localStorage from "./localStorage"
+
 const bs58check = require('bs58check');
 const bech32 = require('bech32').bech32;
 const HARDENED_OFFSET = 0x80000000;
-const constants = {
+export const constants = {
     DEFAULT_APP_NAME: 'Lattice Manager',
     ENV: process.env.REACT_APP_ENV || 'prod',
     BASE_SIGNING_URL: process.env.REACT_APP_BASE_SIGNING_URL || 'https://signing.gridpl.us',
     BTC_PROD_DATA_API: 'https://blockchain.info',
     BTC_BROADCAST_ENDPOINT: 'https://blockstream.info/api/tx',
-    ROOT_STORE: process.env.REACT_APP_ROOT_STORE || 'gridplus',
     HARDENED_OFFSET,
     ASYNC_SDK_TIMEOUT: 60000,
     SHORT_TIMEOUT: 30000,
@@ -91,13 +93,13 @@ const devConstants = {
 
 // NEW: If you have checked the "Using Dev Lattice" box in settings, the constants
 // are swapped out here
-const localSettings = getLocalStorageSettings();
+const localSettings = localStorage.getSettings();
 if (localSettings.devLattice) {
     Object.keys(devConstants).forEach((key) => {
         constants[key] = devConstants[key];
     })
 }
-exports.constants = constants;
+
 
 //--------------------------------------------
 // CHAIN DATA SYNCING HELPERS
@@ -188,7 +190,7 @@ function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
     })
 }
 
-exports.fetchBtcUtxos = function(addresses, cb) {
+export function fetchBtcUtxos(addresses, cb) {
     if (!addresses)
         return cb('Cannot fetch UTXOs - bad input');
     else if (addresses.length < 1)
@@ -344,7 +346,7 @@ function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
     })
 }
 
-exports.fetchBtcTxs = function(addresses, cb) {
+export function fetchBtcTxs(addresses, cb) {
     if (!addresses)
         return cb('Cannot fetch transactions - bad input');
     else if (addresses.length < 1)
@@ -355,7 +357,7 @@ exports.fetchBtcTxs = function(addresses, cb) {
 }
 //====== END TXS ==================
 
-exports.fetchBtcPrice = function(cb) {
+export function fetchBtcPrice(cb) {
     const url = 'https://api.blockchain.com/v3/exchange/tickers/BTC-USD'
     fetchJSON(url, null, (err, data) => {
         if (err)
@@ -366,7 +368,7 @@ exports.fetchBtcPrice = function(cb) {
     })
 }
 
-exports.broadcastBtcTx = function(rawTx, cb) {
+export function broadcastBtcTx(rawTx, cb) {
     const opts = {
         method: 'POST',
         body: rawTx
@@ -381,23 +383,9 @@ exports.broadcastBtcTx = function(rawTx, cb) {
 //--------------------------------------------
 
 //--------------------------------------------
-// LOCAL STORAGE HELPERS
-//--------------------------------------------
-function getLocalStorageSettings() {
-    const storage = JSON.parse(window.localStorage.getItem(constants.ROOT_STORE) || '{}');
-    const settings = storage.settings ? storage.settings : {};
-    return settings;
-}
-exports.getLocalStorageSettings = getLocalStorageSettings;
-
-//--------------------------------------------
-// END LOCAL STORAGE HELPERS
-//--------------------------------------------
-
-//--------------------------------------------
 // OTHER HELPERS
 //--------------------------------------------
-exports.harden = function(x) {
+export function harden(x) {
   return x + HARDENED_OFFSET;
 }
 
@@ -448,18 +436,17 @@ function _blockchainDotComScriptToAddr(_scriptStr) {
     }
 }
 
-function getBtcPurpose() {
-    const localSettings = getLocalStorageSettings();
+export function getBtcPurpose() {
+    const localSettings = localStorage.getSettings();
     return  localSettings.btcPurpose ? 
             localSettings.btcPurpose : 
             constants.BTC_PURPOSE_NONE;
 }
-exports.getBtcPurpose = getBtcPurpose;
 
 // Calculate how many bytes will be in a transaction given purpose and input count
 // Calculations come from: https://github.com/jlopp/bitcoin-transaction-size-calculator/blob/master/index.html
 // Not a perfect calculation but pretty close
-function getBtcNumTxBytes(numInputs) {
+export function getBtcNumTxBytes(numInputs) {
     let inputSize, outputSize, inputWitnessSize
     const purpose = getBtcPurpose();
     if (purpose === constants.BTC_PURPOSE_LEGACY) {
@@ -480,9 +467,8 @@ function getBtcNumTxBytes(numInputs) {
     const txVBytes =  10 + vFactor + inputSize * numInputs + outputSize * 2;
   return (3 * vFactor) + txVBytes + inputWitnessSize * numInputs;
 }
-exports.getBtcNumTxBytes = getBtcNumTxBytes;
 
-exports.buildBtcTxReq = function(   recipient, 
+export function buildBtcTxReq (   recipient, 
                                     btcValue, 
                                     utxos, 
                                     addrs, 
@@ -535,7 +521,7 @@ exports.buildBtcTxReq = function(   recipient,
     return { currency: 'BTC', data: req }
 }
 
-exports.validateBtcAddr = function(addr) {
+export function validateBtcAddr(addr) {
     if (addr === '') return null;
     try {
         bs58check.decode(addr);
@@ -550,14 +536,14 @@ exports.validateBtcAddr = function(addr) {
     }
 }
 
-exports.toHexStr = function(bn) {
+export function toHexStr(bn) {
     const s = bn.toString(16);
     const base = s.length % 2 === 0 ? s : `0${s}`;
     return `0x${base}`; 
 }
 
 // Filter out any duplicate objects based on `keys`
-function filterUniqueObjects(objs, keys) {
+export function filterUniqueObjects(objs, keys) {
     const filtered = [];
     // Copy the objects in reversed order so that newer instances
     // are applied first
@@ -582,7 +568,6 @@ function filterUniqueObjects(objs, keys) {
     // Return in the original order
     return filtered.reverse();
 }
-exports.filterUniqueObjects = filterUniqueObjects;
 //--------------------------------------------
 // END OTHER HELPERS
 //--------------------------------------------
