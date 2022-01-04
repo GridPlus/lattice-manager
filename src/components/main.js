@@ -434,6 +434,7 @@ class Main extends React.Component {
       if (err)
         return this.setError({ msg: err, cb: this.refreshWallets })
       this.setError();
+      this.fetchBtcData()
     })
   }
 
