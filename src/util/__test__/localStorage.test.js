@@ -45,17 +45,24 @@ describe("localStorage", () => {
     expect(localStorage.getKeyringItem(key)).toStrictEqual({});
   });
 
-  test("should store walletId", () => {
-    localStorage.setWalletId(value);
-    expect(localStorage.getWalletId()).toStrictEqual(value);
-    localStorage.removeWalletId();
-    expect(localStorage.getWalletId()).toBe(null);
+  test("should store loginId", () => {
+    localStorage.setLoginId(value);
+    expect(localStorage.getLoginId()).toStrictEqual(value);
+    localStorage.removeLoginId();
+    expect(localStorage.getLoginId()).toBe(null);
   });
 
-  test("should store walletPassword", () => {
-    localStorage.setWalletPassword(value);
-    expect(localStorage.getWalletPassword()).toStrictEqual(value);
-    localStorage.removeWalletPassword();
-    expect(localStorage.getWalletPassword()).toBe(null);
+  test("should store loginPassword", () => {
+    localStorage.setLoginPassword(value);
+    expect(localStorage.getLoginPassword()).toStrictEqual(value);
+    localStorage.removeLoginPassword();
+    expect(localStorage.getLoginPassword()).toBe(null);
+  });
+
+  test("should store login", () => {
+    localStorage.setLogin({deviceID: key, password: value});
+    expect(localStorage.getLogin()).toStrictEqual({deviceID: key, password: value});
+    localStorage.removeLogin();
+    expect(localStorage.getLogin()).toStrictEqual({deviceID: null, password: null});
   });
 });

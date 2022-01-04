@@ -1,7 +1,10 @@
 import omit from "lodash/omit";
-const WALLET_ID_STORAGE_KEY = "gridplus_web_wallet_id";
-const WALLET_PASSWORD_STORAGE_KEY = "gridplus_web_wallet_password";
+
+const LOGIN_ID_STORAGE_KEY = "gridplus_web_wallet_id";
+const LOGIN_PASSWORD_STORAGE_KEY = "gridplus_web_wallet_password";
 const ROOT_STORE = process.env.REACT_APP_ROOT_STORE || "gridplus";
+
+// #region -- Generic Local Storage Functions
 
 const getItem = (key) => JSON.parse(window.localStorage.getItem(key));
 const setItem = (key, value) =>
@@ -28,8 +31,16 @@ const removeRootStoreItem = (key) =>
     JSON.stringify(omit(getRootStore(), key))
   );
 
+// #endregion
+
+// #region -- Settings Functions
+
 const getSettings = () => getRootStoreItem("settings");
 const setSettings = (value) => setRootStoreItem("settings", value);
+
+// #endregion
+
+// #region -- Keyring Functions
 
 const getKeyring = () => getRootStoreItem("keyring");
 
@@ -39,14 +50,32 @@ const setKeyringItem = (key, value) =>
 const removeKeyringItem = (key) =>
   setRootStoreItem("keyring", omit(getKeyring(), key));
 
-const getWalletId = () => getItem(WALLET_ID_STORAGE_KEY);
-const setWalletId = (value) => setItem(WALLET_ID_STORAGE_KEY, value);
-const removeWalletId = () => removeItem(WALLET_ID_STORAGE_KEY);
+// #endregion
 
-const getWalletPassword = () => getItem(WALLET_PASSWORD_STORAGE_KEY);
-const setWalletPassword = (value) =>
-  setItem(WALLET_PASSWORD_STORAGE_KEY, value);
-const removeWalletPassword = () => removeItem(WALLET_PASSWORD_STORAGE_KEY);
+// #region -- Login Functions
+
+const getLoginId = () => getItem(LOGIN_ID_STORAGE_KEY);
+const setLoginId = (value) => setItem(LOGIN_ID_STORAGE_KEY, value);
+const removeLoginId = () => removeItem(LOGIN_ID_STORAGE_KEY);
+
+const getLoginPassword = () => getItem(LOGIN_PASSWORD_STORAGE_KEY);
+const setLoginPassword = (value) => setItem(LOGIN_PASSWORD_STORAGE_KEY, value);
+const removeLoginPassword = () => removeItem(LOGIN_PASSWORD_STORAGE_KEY);
+
+const getLogin = () => ({
+  deviceID: getLoginId(),
+  password: getLoginPassword(),
+});
+const setLogin = ({ deviceID, password }) => {
+  setLoginId(deviceID);
+  setLoginPassword(password);
+};
+const removeLogin = () => {
+  removeLoginId();
+  removeLoginPassword();
+};
+
+// #endregion
 
 export default {
   getItem,
@@ -60,14 +89,17 @@ export default {
   removeRootStoreItem,
   getSettings,
   setSettings,
-  getWalletId,
-  setWalletId,
-  removeWalletId,
-  getWalletPassword,
-  setWalletPassword,
-  removeWalletPassword,
+  getLoginId,
+  setLoginId,
+  removeLoginId,
+  getLoginPassword,
+  setLoginPassword,
+  removeLoginPassword,
   getKeyring,
   getKeyringItem,
   setKeyringItem,
   removeKeyringItem,
+  getLogin,
+  setLogin,
+  removeLogin,
 };

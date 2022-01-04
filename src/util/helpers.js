@@ -10,7 +10,6 @@ export const constants = {
     BASE_SIGNING_URL: process.env.REACT_APP_BASE_SIGNING_URL || 'https://signing.gridpl.us',
     BTC_PROD_DATA_API: 'https://blockchain.info',
     BTC_BROADCAST_ENDPOINT: 'https://blockstream.info/api/tx',
-    ROOT_STORE: process.env.REACT_APP_ROOT_STORE || 'gridplus',
     HARDENED_OFFSET,
     ASYNC_SDK_TIMEOUT: 60000,
     SHORT_TIMEOUT: 30000,
@@ -18,8 +17,6 @@ export const constants = {
     SATS_TO_BTC: Math.pow(10, 8),
     BTC_MAIN_GAP_LIMIT: 20,
     BTC_CHANGE_GAP_LIMIT: 1,
-    WALLET_ID_STORAGE_KEY: 'gridplus_web_wallet_id',
-    WALLET_PASSWORD_STORAGE_KEY: 'gridplus_web_wallet_password',
     BTC_ADDR_BLOCK_LEN: 10,
     BTC_CHANGE_ADDR_BLOCK_LEN: 1,
     BTC_DEFAULT_FEE_RATE: process.env.REACT_APP_BTC_DEFAULT_FEE_RATE || 10, // 10 sat/byte

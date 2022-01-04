@@ -108,8 +108,7 @@ class Main extends React.Component {
       this.setState({ hwCheck })
     } else {
       // Lookup deviceID and pw from storage
-      const deviceID = localStorage.getWalletId()
-      const password = localStorage.getWalletPassword()
+      const { deviceID, password } = localStorage.getLogin()
       if (deviceID && password)
         this.connect(deviceID, password, () => this.connectSession())
     }
@@ -244,8 +243,7 @@ class Main extends React.Component {
     this.unwait();
     this.state.session.disconnect();
     this.setState({ session: null });
-    localStorage.removeWalletId()
-    localStorage.removeWalletPassword()
+    localStorage.removeLogin()
     if (err && err === constants.LOST_PAIRING_MSG)
       this.setError({ err })
   }
@@ -299,8 +297,7 @@ class Main extends React.Component {
           // We connected!
           // 1. Save these credentials to localStorage if this is NOT a keyring
           if (!this.state.openedByKeyring) {
-            localStorage.setWalletId(deviceID);
-            localStorage.setWalletPassword(password);
+            localStorage.setLogin({ deviceID, password })
           }
           // 2. Clear errors and alerts
           this.setError();
