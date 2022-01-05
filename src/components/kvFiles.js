@@ -3,6 +3,7 @@ import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Checkbox, Col, Input, Row, Spin, Table } from 'antd'
 import { allChecks } from '../util/sendChecks';
 import { LoadingOutlined } from '@ant-design/icons';
+import uniqBy from "lodash/uniqBy"
 import { PageContent } from './index'
 const ADDRESS_RECORD_TYPE = 0
 const RECORDS_PER_PAGE = 10;
@@ -80,9 +81,9 @@ class KVFiles extends React.Component {
     return selected;
   }
 
-  fetchRecords(retries=1) {
+  fetchRecords (page = 0, retries = 1) {
     const opts = {
-      start: this.state.page * RECORDS_PER_PAGE, 
+      start: page * RECORDS_PER_PAGE,
       n: RECORDS_PER_PAGE
     }
     // Sanity check to make sure we didn't overrun the current page
@@ -94,37 +95,23 @@ class KVFiles extends React.Component {
     this.props.session.client.getKvRecords(opts, (err, res) => {
       if (err) {
         if (retries === 0) {
-          this.setState({ error: err, retryFunc: this.fetchRecords, loading: false })
-          return;
-        } else {
-          return this.fetchRecords(retries-1)
+          return this.setState({ error: err, retryFunc: this.fetchRecords, loading: false })
         }
-      } else if (!res || !res.records) {
-        this.setState({ loading: false, error: 'Failed to fetch tags' });
-        return;
+        else {
+          return this.fetchRecords(page, retries - 1)
+        }
+      } else if (res) {
+        // Combines new records with current records and de-duplicates them by record id
+        this.setState({ records: uniqBy([...this.state.records, ...res.records], (r) => r.id) })
+        const recordsToFetch = res.total - this.state.records.length
+        if (recordsToFetch > 0) {
+          return this.fetchRecords(page + 1)
+        }
+        else {
+          return this.setState({ loading: false, error: null })
+        }
       }
-      // Update state with the new records. Swap existing records if needed
-      // or add new records if the current state doesn't include their indices.
-      const _stateRecords = this.state && this.state.records ? this.state.records : [];
-      const stateRecords = JSON.parse(JSON.stringify(_stateRecords))
-      res.records.forEach((record, idx) => {
-        if (idx + opts.start > stateRecords.length) {
-          stateRecords.push(record)
-        } else {
-          stateRecords[idx + opts.start] = record
-        }
-      })
-      const possiblePages = Math.ceil(res.total / RECORDS_PER_PAGE);
-      const page =  this.state.page >= possiblePages ? 
-                    Math.max(0, possiblePages - 1) :
-                    this.state.page;
-      this.setState({
-        page,
-        totalRecords: res.total,
-        records: stateRecords,
-        loading: false,
-        error: null,
-      })
+      return this.setState({ loading: false, error: 'Failed to fetch tags' })
     })
   }
 
@@ -264,11 +251,6 @@ class KVFiles extends React.Component {
 
   renderDisplayCard() {
     const displayPage = this.state.page + 1;
-    const totalPages = Math.max(1, Math.ceil(this.state.totalRecords / RECORDS_PER_PAGE));
-    const fetchedPages = Math.max(1, Math.ceil(this.state.records.length / RECORDS_PER_PAGE));
-    const start = this.state.page * RECORDS_PER_PAGE;
-    const end = (1 + this.state.page) * RECORDS_PER_PAGE;
-    const data = this.state.records.slice(start, end)
     const extraLink = (
       <Button type="link" onClick={() => { this.setState({ isAdding: true })}}>Add Addresses</Button>
     )
@@ -277,15 +259,12 @@ class KVFiles extends React.Component {
         {this.state.loading ? this.renderLoading() : (
           <div>
              <Table
-              dataSource={data}
+              dataSource={this.state.records}
               pagination={{
                 position: ["bottomCenter"],
                 pageSize: RECORDS_PER_PAGE,
                 defaultCurrent: displayPage,
                 showQuickJumper: true,
-                onChange: () => {
-                  if (fetchedPages < totalPages) this.fetchRecords(); 
-                }
               }}
             >
               <Table.Column title="Name" dataIndex="val" key="val"
