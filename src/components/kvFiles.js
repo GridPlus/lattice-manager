@@ -260,7 +260,6 @@ class KVFiles extends React.Component {
                 position: ["bottomCenter"],
                 pageSize: RECORDS_PER_PAGE,
                 defaultCurrent: displayPage,
-                showQuickJumper: true,
               }}
             >
               <Table.Column title="Name" dataIndex="val" key="val"
