@@ -4,13 +4,20 @@ import chunk from "lodash/chunk";
 import React, { useCallback, useEffect, useState } from "react";
 import { constants } from "../util/helpers";
 import { ContractCard } from "./ContractCard";
+import { SelectNetwork } from "./SelectNetwork";
+const pageSize = constants.CONTRACT_PAGE_SIZE;
 
 export function ContractCardList({ session }) {
   const [packs, setPacks] = useState([]);
   const [filteredPacks, setFilteredPacks] = useState([]);
   const [paginatedPacks, setPaginatedPacks] = useState([]);
   const [page, setPage] = useState(1);
-  const pageSize = constants.CONTRACT_PAGE_SIZE;
+  const [network, setNetwork] = useState(constants.DEFAULT_CONTRACT_NETWORK);
+
+  const filterPacksByNetwork = useCallback(
+    (packs) => packs.filter((pack) => pack?.network === network),
+    [network]
+  );
 
   const loadPackIndex = useCallback(() => {
     fetch(`${constants.ABI_PACK_URL}/`)
@@ -29,14 +36,14 @@ export function ContractCardList({ session }) {
   }, [filteredPacks]);
 
   useEffect(() => {
-    setFilteredPacks(packs);
-  }, [packs]);
+    setFilteredPacks(filterPacksByNetwork(packs));
+  }, [packs, network, filterPacksByNetwork]);
 
   useEffect(() => {
     const pageZeroIndexed = page - 1;
     const chunkedList = chunk(filteredPacks, pageSize)[pageZeroIndexed] ?? [];
     setPaginatedPacks(chunkedList);
-  }, [page, filteredPacks, pageSize]);
+  }, [page, filteredPacks]);
 
   const fuzzyFilterPacksByName = (value) =>
     fuzzysort
@@ -47,8 +54,8 @@ export function ContractCardList({ session }) {
 
   const onInput = ({ target: { value } }) => {
     setPage(1);
-    const filteredPacks = value ? fuzzyFilterPacksByName(value) : packs;
-    setFilteredPacks(filteredPacks);
+    const fuzzyFilteredPacks = value ? fuzzyFilterPacksByName(value) : packs;
+    setFilteredPacks(filterPacksByNetwork(fuzzyFilteredPacks));
   };
 
   return (
@@ -63,12 +70,21 @@ export function ContractCardList({ session }) {
           Submit a pull request.
         </a>
       </p>
-      <Space direction="vertical">
-        <Space size={"large"} wrap align="center">
-          <Input.Group compact>
-            <Input placeholder="Filter" onInput={onInput} />
-          </Input.Group>
+      <Space
+        direction="vertical"
+        style={{
+          width: "100%",
+        }}
+      >
+        <Input.Group compact>
+          <SelectNetwork setNetwork={setNetwork} />
+          <Input
+            placeholder="Filter"
+            onInput={onInput}
+            style={{ maxWidth: "50%" }}
+          />
           <Pagination
+            style={{ marginLeft: "10px" }}
             current={page}
             defaultCurrent={1}
             pageSize={pageSize}
@@ -76,8 +92,16 @@ export function ContractCardList({ session }) {
             onChange={setPage}
             total={filteredPacks?.length}
           />
-        </Space>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        </Input.Group>
+
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "10px",
+            width: "100%",
+          }}
+        >
           {paginatedPacks.map((pack) => (
             <ContractCard pack={pack} session={session} key={pack.name} />
           ))}
