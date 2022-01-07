@@ -6,7 +6,14 @@ const ROOT_STORE = process.env.REACT_APP_ROOT_STORE || "gridplus";
 
 // #region -- Generic Local Storage Functions
 
-const getItem = (key) => JSON.parse(window.localStorage.getItem(key));
+const getItem = (key) => {
+  const value = window.localStorage.getItem(key);
+  try {
+    return JSON.parse(value)
+  } catch (e) {
+    return JSON.parse(JSON.stringify(value))
+  }
+};
 const setItem = (key, value) =>
   window.localStorage.setItem(key, JSON.stringify(value));
 const removeItem = (key) => window.localStorage.removeItem(key);
