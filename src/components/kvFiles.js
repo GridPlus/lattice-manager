@@ -2,7 +2,9 @@ import React from 'react'
 import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Checkbox, Col, Input, Row, Spin, Table } from 'antd'
 import { allChecks } from '../util/sendChecks';
-import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined, SyncOutlined, PlusOutlined } from '@ant-design/icons';
+import unionBy from "lodash/unionBy"
+import differenceBy from "lodash/differenceBy"
 import { PageContent } from './index'
 const ADDRESS_RECORD_TYPE = 0
 const RECORDS_PER_PAGE = 10;
@@ -80,51 +82,45 @@ class KVFiles extends React.Component {
     return selected;
   }
 
-  fetchRecords(retries=1) {
+  addToRecordsInState (recordsToAdd) {
+    // Combines passed in array of records and records in state by comparing ids
+    this.setState({ records: unionBy(this.state.records, recordsToAdd, "id") });
+  }
+
+  removeFromRecordsInState (recordsToRemove) {
+    // Removes passed in array of records from records in state by comparing ids
+    this.setState({ records: differenceBy(this.state.records, recordsToRemove, "id") });
+  }
+
+  fetchRecords (page = 0, retries = 1) {
     const opts = {
-      start: this.state.page * RECORDS_PER_PAGE, 
+      start: page * RECORDS_PER_PAGE,
       n: RECORDS_PER_PAGE
     }
     // Sanity check to make sure we didn't overrun the current page
     if (opts.start > this.state.records.length) {
-      this.setState({ error: 'Mismatch fetching records.' })
-      return;
+      return this.setState({ error: 'Mismatch fetching records.' })
     }
     this.setState({ loading: true })
     this.props.session.client.getKvRecords(opts, (err, res) => {
       if (err) {
         if (retries === 0) {
-          this.setState({ error: err, retryFunc: this.fetchRecords, loading: false })
-          return;
-        } else {
-          return this.fetchRecords(retries-1)
+          return this.setState({ error: err, retryFunc: this.fetchRecords, loading: false })
         }
-      } else if (!res || !res.records) {
-        this.setState({ loading: false, error: 'Failed to fetch tags' });
-        return;
+        else {
+          return this.fetchRecords(page, retries - 1)
+        }
+      } else if (res) {
+        this.addToRecordsInState(res.records)
+        const recordsToFetch = res.total - this.state.records.length
+        if (recordsToFetch > 0) {
+          return this.fetchRecords(page + 1)
+        }
+        else {
+          return this.setState({ loading: false, error: null })
+        }
       }
-      // Update state with the new records. Swap existing records if needed
-      // or add new records if the current state doesn't include their indices.
-      const _stateRecords = this.state && this.state.records ? this.state.records : [];
-      const stateRecords = JSON.parse(JSON.stringify(_stateRecords))
-      res.records.forEach((record, idx) => {
-        if (idx + opts.start > stateRecords.length) {
-          stateRecords.push(record)
-        } else {
-          stateRecords[idx + opts.start] = record
-        }
-      })
-      const possiblePages = Math.ceil(res.total / RECORDS_PER_PAGE);
-      const page =  this.state.page >= possiblePages ? 
-                    Math.max(0, possiblePages - 1) :
-                    this.state.page;
-      this.setState({
-        page,
-        totalRecords: res.total,
-        records: stateRecords,
-        loading: false,
-        error: null,
-      })
+      return this.setState({ loading: false, error: 'Failed to fetch tags' })
     })
   }
 
@@ -153,38 +149,25 @@ class KVFiles extends React.Component {
     }
     this.setState({ loading: true })
     this.props.session.client.addKvRecords(opts, (err) => {
-      if (err) {
-        this.setState({ error: err, loading: false })
-        return
-      }
+      if (err) return this.setState({ error: err, loading: false })
+      this.addToRecordsInState([this.state.recordToAdd])
       this.setState({ 
-        recordToAdd: { key: '' , val: '' }
+        recordToAdd: { key: '', val: '' },
+        error: null,
+        loading: false
       })
-      this.fetchRecords()
     })
   }
 
-  removeSelected() {
-    const ids = [];
-    const remainingRecords = [];
-    this.state.records.forEach((record) => {
-      if (record.isChecked) {
-        ids.push(record.id)
-      } else {
-        remainingRecords.push(record);
-      }
-    })
-    if (ids.length === 0)
-      return;
+  removeSelected () {
+    const recordsToRemove = this.state.records.filter((r) => r.isChecked);
+    const ids = recordsToRemove.map((r) => r.id);
+    if (ids.length === 0) return
     this.setState({ loading: true })
     this.props.session.client.removeKvRecords({ ids }, (err) => {
-      if (err) {
-        this.setState({ error: err, loading: false})
-        return
-      }
-      this.setState({ records: remainingRecords}, () => {
-        this.fetchRecords();
-      })
+      if (err) return this.setState({ error: err, loading: false })
+      this.removeFromRecordsInState(recordsToRemove)
+      this.setState({ error: null, loading: false })
     })
   }
 
@@ -233,7 +216,7 @@ class KVFiles extends React.Component {
 
   renderAddCard() {
     const extraLink = (
-      <Button type="link" onClick={() => { this.setState({ isAdding: false })}}>View Addresses</Button>
+      <Button type="ghost" onClick={() => { this.setState({ isAdding: false }) }}>View Addresses</Button>
     )
     return (
       <Card title={'Save Address Tag'} extra={extraLink} bordered={true}>
@@ -264,28 +247,19 @@ class KVFiles extends React.Component {
 
   renderDisplayCard() {
     const displayPage = this.state.page + 1;
-    const totalPages = Math.max(1, Math.ceil(this.state.totalRecords / RECORDS_PER_PAGE));
-    const fetchedPages = Math.max(1, Math.ceil(this.state.records.length / RECORDS_PER_PAGE));
-    const start = this.state.page * RECORDS_PER_PAGE;
-    const end = (1 + this.state.page) * RECORDS_PER_PAGE;
-    const data = this.state.records.slice(start, end)
-    const extraLink = (
-      <Button type="link" onClick={() => { this.setState({ isAdding: true })}}>Add Addresses</Button>
-    )
+    const extra = [
+      <Button type="link" icon={<SyncOutlined />} disabled={this.state.loading} onClick={() => { this.fetchRecords() }}>Sync</Button>,
+      <Button type="ghost" icon={<PlusOutlined />} disabled={this.state.loading} onClick={() => { this.setState({ isAdding: true }) }}>Add</Button>];
     return (
-      <Card title={'Saved Addresses'} extra={extraLink} bordered={true}>
+      <Card title={'Saved Addresses'} extra={extra} bordered={true}>
         {this.state.loading ? this.renderLoading() : (
           <div>
              <Table
-              dataSource={data}
+              dataSource={this.state.records}
               pagination={{
                 position: ["bottomCenter"],
                 pageSize: RECORDS_PER_PAGE,
                 defaultCurrent: displayPage,
-                showQuickJumper: true,
-                onChange: () => {
-                  if (fetchedPages < totalPages) this.fetchRecords(); 
-                }
               }}
             >
               <Table.Column title="Name" dataIndex="val" key="val"
