@@ -41,7 +41,7 @@ class KVFiles extends React.Component {
 
     this.updateAddKey = this.updateAddKey.bind(this);
     this.updateAddVal = this.updateAddVal.bind(this);
-    this.addRecord = this.addRecord.bind(this);
+    this.addToRecordsInState = this.addToRecordsInState.bind(this);
     this.fetchRecords = this.fetchRecords.bind(this);
   }
 
@@ -134,43 +134,6 @@ class KVFiles extends React.Component {
         }
       }
       return this.setState({ loading: false, error: "Failed to fetch tags" });
-    });
-  }
-
-  addRecord() {
-    let isDupKey = false;
-    let isDupVal = false;
-    this.state.records.forEach((record) => {
-      if (record.key === this.state.recordToAdd.key) isDupKey = true;
-      if (record.val === this.state.recordToAdd.val) isDupVal = true;
-    });
-    if (isDupKey) {
-      this.setState({
-        error: "You already have a tag with this address on your device.",
-      });
-      return;
-    } else if (isDupVal) {
-      this.setState({
-        error: "You already have a tag with this name on your device.",
-      });
-      return;
-    }
-    const opts = {
-      caseSensitive: false,
-      type: ADDRESS_RECORD_TYPE,
-      records: {
-        [this.state.recordToAdd.key]: this.state.recordToAdd.val,
-      },
-    };
-    this.setState({ loading: true });
-    this.props.session.client.addKvRecords(opts, (err) => {
-      if (err) return this.setState({ error: err, loading: false });
-      this.addToRecordsInState([this.state.recordToAdd]);
-      this.setState({
-        recordToAdd: { key: "", val: "" },
-        error: null,
-        loading: false,
-      });
     });
   }
 
@@ -300,7 +263,7 @@ class KVFiles extends React.Component {
       </Button>,
       <AddAddressesButton
         records={this.state.records}
-        session={this.state.session}
+        session={this.props.session}
         addToRecordsInState={this.addToRecordsInState}
       />,
     ];
