@@ -90,10 +90,15 @@ export const AddAddressesButton = ({
         onOk={form.submit}
         onCancel={handleCancel}
         footer={[
-          <Button type="link" onClick={handleCancel}>
+          <Button type="link" onClick={handleCancel} key="cancel">
             Cancel
           </Button>,
-          <Button type="primary" loading={isLoading} onClick={form.submit}>
+          <Button
+            type="primary"
+            loading={isLoading}
+            onClick={form.submit}
+            key="add"
+          >
             Add
           </Button>,
         ]}
@@ -120,6 +125,7 @@ export const AddAddressesButton = ({
                 <>
                   {fields.map(({ key, name, ...restField }) => (
                     <div
+                      key={`${name}-inputs`}
                       style={{
                         display: "flex",
                         flexDirection: "row",
@@ -157,7 +163,10 @@ export const AddAddressesButton = ({
                             },
                           ]}
                         >
-                          <Input addonBefore={"Address"} />
+                          <Input
+                            addonBefore={"Address"}
+                            data-testid={`${name}-address-input`}
+                          />
                         </Form.Item>
                         <Form.Item
                           {...restField}
@@ -177,7 +186,10 @@ export const AddAddressesButton = ({
                             },
                           ]}
                         >
-                          <Input addonBefore={"Name"} />
+                          <Input
+                            addonBefore={"Name"}
+                            data-testid={`${name}-name-input`}
+                          />
                         </Form.Item>
                       </div>
                       {name > 0 ? (
