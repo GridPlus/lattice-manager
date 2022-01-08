@@ -28,7 +28,7 @@ describe("AddAddressesButton", () => {
     );
   });
 
-  it("shows the modal", () => {
+  it("shows and hides the modal", () => {
     render(
       <AddAddressesButton
         records={mockRecords}
@@ -36,9 +36,15 @@ describe("AddAddressesButton", () => {
         addToRecordsInState={() => {}}
       />
     );
+    // shows modal
     const addButton = screen.getByRole("button");
     fireEvent.click(addButton);
     expect(screen.getByText("Add Address Tags")).toBeInTheDocument();
+
+    // hides modal
+    const closeButton = screen.getByRole("button", { name: "Close" });
+    fireEvent.click(closeButton);
+    expect(screen.queryByText("Add Address Tags")).not.toBeVisible();
   });
 
   it("adds an address", async () => {
@@ -56,6 +62,7 @@ describe("AddAddressesButton", () => {
     const addAddressesButton = screen.getByRole("button", { name: "Add" });
     const nameInput = screen.getByTestId("0-name-input");
 
+    // updates form fields
     fireEvent.change(addressInput, { target: { value: newAddress } });
     fireEvent.change(nameInput, { target: { value: newName } });
     fireEvent.click(addAddressesButton);
@@ -63,7 +70,7 @@ describe("AddAddressesButton", () => {
     await waitFor(() => expect(mockAddRecordFunc).toHaveBeenCalledTimes(1));
   });
 
-  it("adds multiple input field groups", async () => {
+  it("cancels adding an address", async () => {
     render(
       <AddAddressesButton
         records={mockRecords}
@@ -74,16 +81,57 @@ describe("AddAddressesButton", () => {
     const addButton = screen.getByRole("button");
     fireEvent.click(addButton);
 
+    const addressInput = screen.getByTestId("0-address-input");
+    const nameInput = screen.getByTestId("0-name-input");
+    const cancelButton = screen.getByRole("button", {
+      name: "Cancel",
+    });
+
+    fireEvent.change(addressInput, { target: { value: newAddress } });
+    fireEvent.change(nameInput, { target: { value: newName } });
+
+    // Modal should be cancelled and disappear
+    fireEvent.click(cancelButton);
+    expect(screen.queryByText("Add Address Tags")).not.toBeVisible();
+
+    // Input fields should be empty after closing modal
+    fireEvent.click(addButton);
+    const addressAfter = screen.getByTestId("0-address-input");
+    const nameInputAfter = screen.getByTestId("0-address-input");
+    expect(addressAfter).toHaveValue("");
+    expect(nameInputAfter).toHaveValue("");
+  });
+
+  it("adds and removes multiple input field groups", async () => {
+    render(
+      <AddAddressesButton
+        records={mockRecords}
+        session={mockSession}
+        addToRecordsInState={() => {}}
+      />
+    );
+    const addButton = screen.getByRole("button");
+    fireEvent.click(addButton);
+
+    // Adds a new input field group
     const addAddressButton = screen.getByRole("button", {
       name: "plus Add Another Address Tag",
     });
     fireEvent.click(addAddressButton);
 
-    const addressInput = screen.getByTestId("1-address-input");
-    const nameInput = screen.getByTestId("1-name-input");
+    const oneAddressInput = screen.getByTestId("1-address-input");
+    const oneNameInput = screen.getByTestId("1-name-input");
 
-    expect(addressInput).toBeInTheDocument();
-    expect(nameInput).toBeInTheDocument();
+    expect(oneAddressInput).toBeInTheDocument();
+    expect(oneNameInput).toBeInTheDocument();
+
+    // Removes an input field group and removes input fields from DOM
+    const removeAddressButton = screen.getByRole("button", {
+      name: "minus-square",
+    });
+    fireEvent.click(removeAddressButton);
+    expect(screen.queryByTestId("1-address-input")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("1-name-input")).not.toBeInTheDocument();
   });
 
   it("validates addresses", async () => {
@@ -103,10 +151,9 @@ describe("AddAddressesButton", () => {
     const nameInput = screen.getByTestId("0-name-input");
     fireEvent.change(nameInput, { target: { value: "test" } });
 
-    // Address Exists
+    // Address exists at all
     fireEvent.click(addAddressesButton);
     await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
-    expect(mockAddRecordFunc).toHaveBeenCalledTimes(1);
 
     // Address is in a viable address format
     fireEvent.change(addressInput, { target: { value: "test" } });
@@ -118,7 +165,7 @@ describe("AddAddressesButton", () => {
     fireEvent.click(addAddressesButton);
     await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
 
-    // Address is valid
+    // Address has no errors
     fireEvent.change(addressInput, { target: { value: newAddress } });
     fireEvent.click(addAddressesButton);
     await waitFor(() =>
@@ -143,7 +190,7 @@ describe("AddAddressesButton", () => {
     const nameInput = screen.getByTestId("0-name-input");
     fireEvent.change(addressInput, { target: { value: newAddress } });
 
-    // Validate repeated names
+    // Name matches an name that already exists in the system
     fireEvent.change(nameInput, { target: { value: existingName } });
     fireEvent.click(addAddressesButton);
     await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
