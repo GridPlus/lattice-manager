@@ -30,6 +30,7 @@ export const AddAddressesButton = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const resetState = () => {
+    form.resetFields();
     setIsModalVisible(false);
     setError(null);
     setIsLoading(false);
