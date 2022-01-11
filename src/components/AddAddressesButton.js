@@ -1,7 +1,7 @@
 import { MinusSquareFilled, PlusOutlined } from "@ant-design/icons";
 import { Alert, Button, Form, Input, Modal, Space } from "antd";
 import _ from "lodash";
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 
 const ADDRESS_RECORD_TYPE = 0;
 const keyIsDuplicatedErrorMessage =

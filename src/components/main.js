@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { 
-  Connect, Error, Landing, Loading, Pair, Permissions, Send, 
+  Connect, Error, Landing, Loading, Pair, Send, 
   Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
 } from './index'
 import { constants, getBtcPurpose } from '../util/helpers'

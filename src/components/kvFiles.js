@@ -17,7 +17,7 @@ import React from "react";
 import { allChecks } from "../util/sendChecks";
 import { AddAddressesButton } from "./AddAddressesButton";
 import { PageContent } from "./index";
-const ADDRESS_RECORD_TYPE = 0;
+
 const RECORDS_PER_PAGE = 10;
 const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
 
