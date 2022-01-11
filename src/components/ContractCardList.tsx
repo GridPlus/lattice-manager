@@ -52,7 +52,7 @@ export function ContractCardList({ session }) {
       })
       .map((x) => x.obj);
 
-  const onInput = ({ target: { value } }) => {
+  const onChange = ({ target: { value } }) => {
     setPage(1);
     const fuzzyFilteredPacks = value ? fuzzyFilterPacksByName(value) : packs;
     setFilteredPacks(filterPacksByNetwork(fuzzyFilteredPacks));
@@ -80,7 +80,7 @@ export function ContractCardList({ session }) {
           <SelectNetwork setNetwork={setNetwork} />
           <Input
             placeholder="Filter"
-            onInput={onInput}
+            onChange={onChange}
             style={{ maxWidth: "50%" }}
           />
           <Pagination

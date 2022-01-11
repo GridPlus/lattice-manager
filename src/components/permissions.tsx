@@ -28,7 +28,7 @@ const assets = {
   }
 }
 
-class Permissions extends React.Component {
+class Permissions extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
@@ -62,6 +62,7 @@ class Permissions extends React.Component {
     if (!isNaN(parseFloat(x))) {
       let s = parseFloat(x);
       if (x[x.length-1] === '.')
+      //@ts-expect-error
         s += '.';
       this.setState({ window: s })
     }
@@ -95,6 +96,7 @@ class Permissions extends React.Component {
     let limitStr = value.multipliedBy(power).toString(16)
     if (limitStr.length % 2 > 0)
       limitStr = `0${limitStr}`;
+    //@ts-expect-error
     req.limit = `0x${limitStr}`;
     this.props.session.addPermissionV0(req, (err) => {
       if (err) {

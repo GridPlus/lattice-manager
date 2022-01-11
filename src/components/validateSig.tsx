@@ -10,7 +10,7 @@ const PREIMAGE_LEN = 32;
 const SIG_TEMPLATE_LEN =  74; // Struct containing DER sig
 const CERT_TEMPLATE_LEN = 147;  // Struct containing pubkey, permissions, and signature on it
 
-class ValidateSig extends React.Component {
+class ValidateSig extends React.Component<any, any> {
   // Validate a signature for a message from a known signer on a known curve
   // * msg - Expected ASCII string
   // * signer - Expected buffer containing 65-byte public key
@@ -79,6 +79,7 @@ class ValidateSig extends React.Component {
     }
     return (
       <Result
+        //@ts-expect-error
         status={result.status}
         title={result.title}
         subTitle={result.subTitle}

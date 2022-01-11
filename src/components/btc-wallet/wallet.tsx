@@ -9,20 +9,15 @@ import {
 import { PageContent } from '../index'
 import { constants } from '../../util/helpers'
 
-class Wallet extends React.Component {
+class Wallet extends React.Component<any, any> {
   componentDidMount() {
     if (this.props.session) {
       this.props.session.getBtcWalletData()
     }
-    window.addEventListener('resize', this.updateWidth);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('resize', this.updateWidth);
   }
 
   getInnerWidth() {
-    return document.getElementById('main-content-inner').offsetWidth;
+    return document.getElementById('main-content-inner')?.offsetWidth;
   }
 
   // Make sure text doesn't overflow on smaller screens. We need to trim larger strings
@@ -37,6 +32,7 @@ class Wallet extends React.Component {
   renderListItem(item) {
     // Label to view transaction on explorer
     const label = (
+      //@ts-expect-error
       <div align={this.props.isMobile() ? "left" : "right"}>
         {item.confirmed ? (
           <p>
@@ -119,6 +115,7 @@ class Wallet extends React.Component {
         <Tag color={'red'}>Never</Tag>
       )
     }
+    //@ts-expect-error
     const elapsedSec = Math.floor((new Date() - lastUpdated) / 1000);
     let elapsed, timeType, color;
     if (elapsedSec < 60) {
@@ -289,6 +286,7 @@ function getDateDiffStr(ts) {
   const month = week * 4;
   const year = month * 12;
 
+  //@ts-expect-error
   const diff = now - then;
 
   if (diff / min < 1) {

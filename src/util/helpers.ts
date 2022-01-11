@@ -1,5 +1,5 @@
 
-import localStorage from "./localStorage"
+import localStorage from "./localStorage";
 
 const bs58check = require('bs58check');
 const bech32 = require('bech32').bech32;
@@ -166,6 +166,7 @@ function _fetchBtcUtxos(addresses, cb, utxos=[], offset=0) {
 // address individually.
 function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
     const address = addresses.pop()
+    //@ts-expect-error
     const url = `${constants.BTC_DEV_DATA_API}/address/${address}/utxo`;
     fetchJSON(url, null, (err, data) => {
         if (err)
@@ -196,6 +197,7 @@ export function fetchBtcUtxos(addresses, cb) {
     else if (addresses.length < 1)
         return cb(null, []);
     const addrsCopy = JSON.parse(JSON.stringify(addresses));
+    //@ts-expect-error
     const f = constants.BTC_DEV_DATA_API ? _fetchBtcUtxosTestnet : _fetchBtcUtxos;
     f(addrsCopy, cb);
 }
@@ -244,7 +246,7 @@ function _fetchBtcTxs(addresses, cb, txs=[], offset=0, isFirstCall=true) {
         if (err)
             return cb(err);
         // Add the new txs
-        const formattedTxs = [];
+        const formattedTxs: any[] = [];
         data.txs.forEach((t) => {
             const ftx = {
                 timestamp: t.time * 1000,
@@ -290,6 +292,7 @@ function _fetchBtcTxs(addresses, cb, txs=[], offset=0, isFirstCall=true) {
 // address individually.
 function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
     const address = addresses.pop()
+    //@ts-expect-error
     let url = `${constants.BTC_DEV_DATA_API}/address/${address}/txs`;
     if (lastSeenId) {
         url = `${url}/chain/${lastSeenId}`
@@ -297,7 +300,7 @@ function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
     fetchJSON(url, null, (err, data) => {
         if (err)
             return cb(err)
-        const formattedTxs = [];
+        const formattedTxs: any[] = [];
         let confirmedCount = 0;
         data.forEach((t) => {
             const ftx = {
@@ -352,6 +355,7 @@ export function fetchBtcTxs(addresses, cb) {
     else if (addresses.length < 1)
         return cb(null, []);
     const addrsCopy = JSON.parse(JSON.stringify(addresses));
+    //@ts-expect-error
     const f = constants.BTC_DEV_DATA_API ? _fetchBtcTxsTestnet : _fetchBtcTxs;
     f(addrsCopy, cb);
 }
@@ -487,10 +491,11 @@ export function buildBtcTxReq (   recipient,
         return { error: 'Failed to build transaction.' }
     }
     const bytesUsed = getBtcNumTxBytes(numInputs);
+    //@ts-expect-error
     const fee = Math.floor(bytesUsed * feeRate);
     // Build the request inputs
     const BASE_SIGNER_PATH = [getBtcPurpose(), constants.BTC_COIN, constants.HARDENED_OFFSET];
-    const prevOuts = [];
+    const prevOuts: any[] = [];
     for (let i = 0; i < numInputs; i++) {
         const utxo = utxos[i];
         let signerPath = null;
@@ -544,7 +549,7 @@ export function toHexStr(bn) {
 
 // Filter out any duplicate objects based on `keys`
 export function filterUniqueObjects(objs, keys) {
-    const filtered = [];
+    const filtered: any[] = [];
     // Copy the objects in reversed order so that newer instances
     // are applied first
     const objsCopy = JSON.parse(JSON.stringify(objs)).reverse()

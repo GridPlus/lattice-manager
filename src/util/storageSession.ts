@@ -1,6 +1,9 @@
 import localStorage from './localStorage';
 
 class StorageSession {
+  data: any;
+  store: any;
+  
   constructor(device_id, pass) {
     this.data = null;
     this.store = localStorage.getRootStore();

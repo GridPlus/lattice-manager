@@ -1,15 +1,29 @@
 import { Client } from 'gridplus-sdk';
-import { 
-  harden, constants, getBtcPurpose, fetchBtcPrice, 
-  fetchBtcTxs, fetchBtcUtxos, filterUniqueObjects,
-  broadcastBtcTx,
+import { SDKAddresses } from '../types/SDKAddresses';
+import {
+  broadcastBtcTx, constants, fetchBtcPrice,
+  fetchBtcTxs, fetchBtcUtxos, filterUniqueObjects, getBtcPurpose, harden
 } from '../util/helpers';
 import { default as StorageSession } from '../util/storageSession';
 const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
 
 class SDKSession {
-  constructor(deviceID, stateUpdateHandler, name=null, opts={}) {
+  client: any;
+  crypto: any;
+  name: any;
+  storageSession: any;
+  deviceID: any;
+  stateUpdateHandler: any;
+  page: number;
+  baseUrl: any;
+  addresses: SDKAddresses;
+  btcTxs: any[];
+  btcUtxos: any[];
+  lastFetchedBtcData: number;
+  btcPrice: number;
+
+  constructor(deviceID, stateUpdateHandler, name=null, opts: any = {}) {
     this.client = null;
     this.crypto = null;
     this.name = name || constants.DEFAULT_APP_NAME; // app name
@@ -41,7 +55,7 @@ class SDKSession {
     this.client = null;
     this.saveBtcWalletData();
     this.storageSession = null;
-    this.deviceId = null;
+    this.deviceID = null;
   }
 
   isConnected() {
@@ -85,7 +99,7 @@ class SDKSession {
 
   // Prepare addresses for caching in localStorage
   dryAddresses() {
-    const driedAddrs = {};
+    const driedAddrs: SDKAddresses = {};
     const hasBTCAddrs = this.addresses.BTC && this.addresses.BTC.length > 0;
     const hasBTCChangeAddrs = this.addresses.BTC_CHANGE && this.addresses.BTC_CHANGE.length > 0;
     const BTC_PURPOSE = getBtcPurpose();
@@ -105,8 +119,8 @@ class SDKSession {
   }
 
   // Pull addresses out of cached localStorage data
-  rehydrateAddresses(allAddrs={}) {
-    const rehydratedAddrs = {};
+  rehydrateAddresses(allAddrs: SDKAddresses = {}) {
+    const rehydratedAddrs: SDKAddresses = {};
     const BTC_PURPOSE = getBtcPurpose();
     if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
       // We cannot continue if the wallet is hidden
@@ -157,6 +171,7 @@ class SDKSession {
     // Create a storage session only if we have a deviceID and don't
     // have a current storage session
     if (this.deviceID && !this.storageSession)
+      //@ts-expect-error
       this.storageSession = new StorageSession(this.deviceID);
     if (this.client) {
       // Make sure the btc wallet is enabled
@@ -326,7 +341,7 @@ class SDKSession {
   // Get a set of either pending or confirmed transactions from the full
   // set of known BTC txs
   getBtcTxs(confirmed=true) {
-    const txs = [];
+    const txs: any[] = [];
     this.btcTxs.forEach((t) => {
       if (confirmed && t.confirmed) {
         txs.push(t)
@@ -545,7 +560,7 @@ class SDKSession {
   // If the transaction is outbound, value is SUM(inputs) - SUM(outputs to our addresses)
   _processBtcTxs() {
     const allAddrs = this.addresses.BTC.concat(this.addresses.BTC_CHANGE);
-    const processedTxs = [];
+    const processedTxs: any[] = [];
     const txs = JSON.parse(JSON.stringify(this.btcTxs));
     txs.forEach((tx) => {
       tx.recipient = tx.outputs[0].addr;

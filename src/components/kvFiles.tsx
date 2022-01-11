@@ -21,7 +21,7 @@ import { PageContent } from "./index";
 const RECORDS_PER_PAGE = 10;
 const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
 
-class KVFiles extends React.Component {
+class KVFiles extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
@@ -159,6 +159,7 @@ class KVFiles extends React.Component {
             action={
               this.state.retryFunc ? (
                 <Button
+                  //@ts-expect-error
                   type="danger"
                   onClick={() => {
                     this.state.retryFunc();
@@ -234,6 +235,7 @@ class KVFiles extends React.Component {
             </Row>
             <br />
             {this.shouldDisplaySend() ? (
+              //@ts-expect-error
               <Button type="primary" onClick={this.addRecord}>
                 Save
               </Button>
@@ -327,6 +329,7 @@ class KVFiles extends React.Component {
             <Row justify="center">
               {this.getNumSelected() > 0 ? (
                 <Button
+                  //@ts-expect-error
                   type="danger"
                   onClick={this.removeSelected.bind(this)}
                   style={{ margin: "5px 0 0 0" }}

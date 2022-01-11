@@ -1,7 +1,7 @@
 const Buffer = require('buffer/').Buffer
 const { validateBtcAddr } = require('./helpers');
 
-exports.allChecks = {
+export const allChecks = {
   'ETH': {
     full: checkEth,
     recipient: checkEthRecipient,

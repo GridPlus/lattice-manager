@@ -5,7 +5,7 @@ import { PageContent } from './index'
 import { constants } from '../util/helpers';
 import { Card, Col, Divider, Row } from 'antd'
 
-class Landing extends React.Component {
+class Landing extends React.Component<any, any> {
   renderCard() {
     return (
       <Card bordered={true} style={{textAlign: "center"}}>

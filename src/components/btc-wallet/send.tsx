@@ -9,7 +9,7 @@ import '../styles.css'
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
 
-class Send extends React.Component {
+class Send extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
@@ -237,9 +237,9 @@ class Send extends React.Component {
     const name = `${id}Check`;
     const isValid = this.state[name];
     if (isValid === true) {
-      return (<CheckCircleOutlined theme="filled" style={{color: 'green'}}/>)
+      return (<CheckCircleOutlined style={{color: 'green'}}/>)
     } else if (isValid === false) {
-      return (<CloseCircleOutlined theme="filled" style={{color: 'red'}}/>)
+      return (<CloseCircleOutlined style={{color: 'red'}}/>)
     } else {
       return;
     }
@@ -302,6 +302,7 @@ class Send extends React.Component {
     // To spend all BTC, get the size of all UTXOs and calculate the fee required
     const txBytes = getBtcNumTxBytes(utxos.length);
     const feeSat = Math.floor(this.state.btcFeeRate * txBytes);
+    // @ts-expect-error
     return Math.max(((balance - feeSat) / constants.SATS_TO_BTC).toFixed(8), 0);
   }
 

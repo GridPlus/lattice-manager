@@ -18,7 +18,7 @@ const { Content, Footer, Sider } = Layout;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
 
-class Main extends React.Component {
+class Main extends React.Component<any, any> {
   constructor(props) {
     super(props)
     this.state = {
@@ -89,10 +89,12 @@ class Main extends React.Component {
     }
     
     if (keyringName) {
+      //@ts-expect-error
       window.onload = this.handleKeyringOpener();
       this.setState({ name: keyringName }, () => {
         // Check if this keyring has already logged in. This login should expire after a period of time.
         const prevKeyringLogin = localStorage.getKeyringItem(keyringName);
+        //@ts-expect-error
         const keyringTimeoutBoundary = new Date().getTime() - constants.KEYRING_LOGOUT_MS;
         if (!forceLogin && prevKeyringLogin && prevKeyringLogin.lastLogin > keyringTimeoutBoundary) {
           this.connect( prevKeyringLogin.deviceID, 
@@ -141,6 +143,7 @@ class Main extends React.Component {
     if (!this.state.session) {
       // Create a new session if we don't have one.
       const settings = localStorage.getSettings()
+      //@ts-expect-error
       updates.session = new SDKSession(deviceID, this.setError, this.state.name, settings);
     }
     this.setState(updates, cb);
@@ -235,6 +238,7 @@ class Main extends React.Component {
 
   handleMenuChange ({ key }) {
     const stateUpdate = { menuItem: key }
+    //@ts-expect-error
     if (this.isMobile()) stateUpdate.collapsed = true
     this.setState(stateUpdate)
   }
@@ -245,6 +249,7 @@ class Main extends React.Component {
     this.setState({ session: null });
     localStorage.removeLogin()
     if (err && err === constants.LOST_PAIRING_MSG)
+      //@ts-expect-error
       this.setError({ err })
   }
 
@@ -269,6 +274,7 @@ class Main extends React.Component {
     const { deviceID, password } = data;
       // Sanity check -- this should never get hit
     if (!deviceID || !password) {
+      //@ts-expect-error
       return this.setError({ 
         msg: 'You must provide a deviceID and password. Please refresh and log in again. '
       });
@@ -538,17 +544,18 @@ class Main extends React.Component {
   renderHeader() {
     if (this.state.name !== constants.DEFAULT_APP_NAME)
       return
-    let extra = [];
+    let extra: any[] = [];
     if (!this.isConnected())
       return;
 
     // Display a tag if there is a SafeCard inserted
     let walletTag = null;
-    const size = this.isMobile() ? 'small' : 'default';
+    const size = this.isMobile() ? 'small' : 'middle';
     const activeWallet = this.state.session.getActiveWallet();
 
     if (activeWallet === null) {
       walletTag = ( 
+        //@ts-expect-error
         <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet <ReloadOutlined/></Button>
       )
     } else {
