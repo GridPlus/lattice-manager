@@ -279,6 +279,7 @@ class KVFiles extends React.Component {
                 position: ["bottomCenter"],
                 pageSize: RECORDS_PER_PAGE,
                 defaultCurrent: displayPage,
+                showSizeChanger: false,
               }}
             >
               <Table.Column
