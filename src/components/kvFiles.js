@@ -275,6 +275,7 @@ class KVFiles extends React.Component {
           <div>
             <Table
               dataSource={this.state.records}
+              tableLayout="fixed"
               pagination={{
                 position: ["bottomCenter"],
                 pageSize: RECORDS_PER_PAGE,
@@ -286,6 +287,8 @@ class KVFiles extends React.Component {
                 title="Name"
                 dataIndex="val"
                 key="val"
+                defaultSortOrder="ascend"
+                sorter={(a, b) => a.val.localeCompare(b.val)}
                 render={(val) => (
                   <div>
                     <b>{val}</b>
@@ -314,6 +317,7 @@ class KVFiles extends React.Component {
                 title=""
                 dataIndex="id"
                 key="id"
+                width={50}
                 render={(id) => (
                   <Checkbox
                     checked={this.recordIsChecked(id)}
