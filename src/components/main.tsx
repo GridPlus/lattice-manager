@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { 
-  Connect, Error, Landing, Loading, Pair, Send, 
+  Connect, Error, Landing, Loading, PageContent, Pair, Send, 
   Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
 } from './index'
 import { constants, getBtcPurpose } from '../util/helpers'
@@ -583,11 +583,14 @@ class Main extends React.Component<any, any> {
   }
 
   renderErrorHeader() {
-    if (this.state.error.err) {
-      return (
-        <Error  msg={this.state.error.err} 
+    if (this.state.error.msg) {
+      const err = (
+        <Error  msg={this.state.error.msg} 
                 retryCb={this.state.error.cb}
         />
+      )
+      return (
+        <PageContent content={err} isMobile={() => this.isMobile()}/>
       )
     } else {
       return;
@@ -679,7 +682,8 @@ class Main extends React.Component<any, any> {
       // Automatically try to pair if we have a session but no pairing  
       return (
         <Pair submit={this.handlePair}
-              isMobile={() => this.isMobile()}/>
+              isMobile={() => this.isMobile()}
+              hide={!!this.state.error.msg} />
       );
     } else if (this.state.openedByKeyring) {
       // The window should close automatically, but just in case something goes wrong...

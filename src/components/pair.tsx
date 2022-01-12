@@ -49,6 +49,9 @@ class Pair extends React.Component<any, any> {
   }
 
   render() {
+    if (this.props.hide) {
+      return null;
+    }
     const size = this.props.isMobile() ? 'small' : 'large';
     const width = this.getBoxWidth();
     const fontSize = this.getBoxFontHeight();
