@@ -290,7 +290,7 @@ class KVFiles extends React.Component<any, any> {
                 dataIndex="val"
                 key="val"
                 defaultSortOrder="ascend"
-                sorter={(a, b) => a.val.localeCompare(b.val)}
+                sorter={(a: any, b: any) => a.val.localeCompare(b.val)}
                 render={(val) => (
                   <div>
                     <b>{val}</b>
