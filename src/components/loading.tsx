@@ -4,7 +4,7 @@ import { Button, Card, Spin } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 
-class Loading extends React.Component {
+class Loading extends React.Component<any, any> {
   render() {
     const content = (
       <center>

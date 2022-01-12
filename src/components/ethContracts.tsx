@@ -24,7 +24,7 @@ const TAB_KEYS = {
 const manualPlaceholder =
   '[{"inputs":[{"internalType":"address[]","name":"_components","type":"address[]"},{"internalType":"int256[]","name":"_units","type":"int256[]"},{"internalType":"address[]","name":"_modules","type":"address[]"},{"internalType":"contract IController","name":"_controller","type":"address"},{"internalType":"address","name":"_manager","type":"address"},{"internalType":"string","name":"_name","type":"string"},';
 
-class EthContracts extends React.Component {
+class EthContracts extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
@@ -34,6 +34,7 @@ class EthContracts extends React.Component {
       defs: [],
       success: false,
       loading: false,
+      //@ts-expect-error
       tab: TAB_KEYS.PATH,
       selectedPackKey: "AAVE",
     };
@@ -183,7 +184,7 @@ class EthContracts extends React.Component {
   // TEMPORARY FUNCTION TO REMOVE FUNCTIONS WITH ZERO LENGTH PARAM NAMES
   // SEE: https://github.com/GridPlus/gridplus-sdk/issues/154
   TMP_REMOVE_ZERO_LEN_PARAMS(defs) {
-    const newDefs = [];
+    const newDefs: any[] = [];
     defs.forEach((def) => {
       let shouldAdd = true;
       if (def.name.length === 0) {

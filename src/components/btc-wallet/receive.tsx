@@ -8,13 +8,13 @@ const QRCode = require('qrcode.react');
 const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
 
-class Receive extends React.Component {
+class Receive extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
     this.state = {
       address: null,
-      windowWidth: document.getElementById('main-content-inner').offsetWidth,
+      windowWidth: document.getElementById('main-content-inner')?.offsetWidth,
     }
 
     this.updateWidth = this.updateWidth.bind(this);
@@ -33,7 +33,7 @@ class Receive extends React.Component {
   }
 
   updateWidth() {
-    this.setState({ windowWidth:  document.getElementById('main-content-inner').offsetWidth });
+    this.setState({ windowWidth:  document.getElementById('main-content-inner')?.offsetWidth });
   }
 
   updateDisplayAddress() {
@@ -43,6 +43,7 @@ class Receive extends React.Component {
 
   copyAddress() {
     const copy = document.getElementById(SEARCH_ID);
+    //@ts-expect-error
     copy.select();
     document.execCommand("copy")
   }
@@ -81,7 +82,7 @@ class Receive extends React.Component {
       // Sanity check on BTC address checksum
       if (!validateBtcAddr(this.state.address))
         return;
-      const cardW = document.getElementById("receive-card").offsetWidth;
+      const cardW = document.getElementById("receive-card")?.offsetWidth;
       const w = Math.min(300, 0.8 * cardW);
       return (
         <div>

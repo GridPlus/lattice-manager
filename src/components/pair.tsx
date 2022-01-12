@@ -4,7 +4,7 @@ import { PageContent } from './index'
 import 'antd/dist/antd.dark.css'
 const SUBMIT_LEN = 8; // 8 characters in a code
 
-class Pair extends React.Component {
+class Pair extends React.Component<any, any> {
   constructor(props) {
     super(props);
     this.state = {
@@ -14,6 +14,7 @@ class Pair extends React.Component {
 
   componentDidMount() {
     this.setState({ code: '' })
+    //@ts-expect-error
     this.input.focus()
   }
 
@@ -60,6 +61,7 @@ class Pair extends React.Component {
             className='lattice-pairing-box'
             size={size}
             id="secret"
+            //@ts-expect-error
             ref={i => {this.input = i}}
             onChange={this.handleUpdate.bind(this)}
             style={{width, fontSize}}

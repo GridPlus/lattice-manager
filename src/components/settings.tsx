@@ -8,7 +8,7 @@ import omit from "lodash/omit"
 import { constants, getBtcPurpose } from '../util/helpers';
 import localStorage from '../util/localStorage';
 
-class Settings extends React.Component {
+class Settings extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
@@ -174,7 +174,7 @@ class Settings extends React.Component {
         ) 
       }
     ]
-    const data = [];
+    const data: any[] = [];
     Object.keys(keyring)
       .sort((a, b) => { return a.toLowerCase() > b.toLowerCase() ? 1 : -1 })
       .forEach((name) => { data.push({ name }) })
@@ -187,6 +187,7 @@ class Settings extends React.Component {
               Manage connections to your Lattice. Third party apps should be listed here if they are connected to your device.
             </p>
             <Collapse>
+              {/* @ts-expect-error */}
               <Collapse.Panel header={`Connections List (${data.length})`}>
                 <Table dataSource={data} columns={cols}/>
               </Collapse.Panel>

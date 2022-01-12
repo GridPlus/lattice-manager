@@ -5,7 +5,7 @@ import { DesktopOutlined, LinkOutlined } from '@ant-design/icons';
 import { Settings } from './index'
 import { constants } from '../util/helpers'
 
-class Connect extends React.Component {
+class Connect extends React.Component<any, any> {
   constructor(props) {
     super(props)
     this.state = {
@@ -21,6 +21,7 @@ class Connect extends React.Component {
   }
 
   componentDidMount() {
+    //@ts-expect-error
     this.input.focus()
     this.setState({ isLoading: false });    
   }
@@ -36,8 +37,8 @@ class Connect extends React.Component {
   }
 
   handleSubmit() {
-    const deviceID = document.getElementById("deviceIdInput").value;
-    const password = document.getElementById("passwordInput").value;
+    const deviceID = (document.getElementById("deviceIdInput") as HTMLInputElement).value;
+    const password = (document.getElementById("passwordInput") as HTMLInputElement).value;
     if (password.length < 8) {
       this.setState({ isLoading: true, errMsg: "Your password must be at least 8 characters."})
     } else {
@@ -85,6 +86,7 @@ class Connect extends React.Component {
         <Row justify="center">
           <Input  placeholder="DeviceID" 
                   id="deviceIdInput" 
+                  //@ts-expect-error
                   ref={i => {this.input = i}}
                   style={{ margin: '10px 0 0 0', width: "70%"}} />
         </Row>
@@ -215,6 +217,7 @@ class Connect extends React.Component {
                 )}
               </a>
               {keyringName ? (<div><br/><i><h3>Connect to:</h3></i><h2>{keyringName}</h2></div>) : null}
+              {/* @ts-expect-error */}
               {tooLong ? (<p><b>Error: App name must be more than 4 characters.</b></p>) : this.renderForm()}
             </Card>
             <Button type="link" onClick={this.showModal.bind(this)} style={{margin: "20px 0 0 0"}}>
