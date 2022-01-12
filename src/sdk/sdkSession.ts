@@ -214,6 +214,9 @@ class SDKSession {
         if (purposeSpecificData.lastFetchedBtcData) {
           this.lastFetchedBtcData = purposeSpecificData.lastFetchedBtcData;
         }
+        console.log('Got BTC wallet data', {
+          addresses: this.addresses, utxos: this.btcUtxos, txs: this.btcTxs
+        })
       }
     }
   }
@@ -399,6 +402,7 @@ class SDKSession {
         n: nToFetch,
         skipCache: true,
       }
+      console.log('Fetching addresses', opts)
       this._getAddresses(opts, (err, addresses) => {
         if (err)
           return cb(err);
@@ -415,8 +419,8 @@ class SDKSession {
         } else {
           this.addresses.BTC = currentAddrs.concat(addresses);
         }
-        console.log('Fetched BTC', this.addresses.BTC)
-        console.log('Fetched BTC_CHANGE', this.addresses.BTC_CHANGE)
+        console.log('Addresses (BTC)', this.addresses.BTC)
+        console.log('Addresses (BTC_CHANGE)', this.addresses.BTC_CHANGE)
         // If we need to fetch more, recurse
         if (maxToFetch > nToFetch) {
           this.fetchBtcAddresses(cb, isChange, totalFetched);
@@ -466,21 +470,26 @@ class SDKSession {
       addrs = this.addresses.BTC_CHANGE.slice(-opts.change);
       opts.change = 0;
     }
+    console.log('Fetching State Data')
     fetchBtcPrice((err, btcPrice) => {
       if (err) {
         // Don't fail out if we can't get the price - just display 0
         console.error('Failed to fetch price:', err);
         btcPrice = 0;
       }
-      fetchBtcTxs(addrs, txs, (err, _txs) => {
-        if (err)
+      fetchBtcTxs(addrs, txs, (err, _txs) => {       
+        if (err) {
+          console.error('Failed to fetch BTC txs', err);
           return cb(err);
+        }
         else if (!_txs)
           return cb('Failed to fetch transactions');
         txs = txs.concat(_txs);
         fetchBtcUtxos(addrs, (err, _utxos) => {
-          if (err)
+          if (err) {
+            console.error('Failed to fetch BTC utxos', err);
             return cb(err);
+          }
           else if (!_utxos)
             return cb('Failed to fetch UTXOs');
           utxos = utxos.concat(_utxos);
@@ -500,6 +509,9 @@ class SDKSession {
             this.btcUtxos =   filterUniqueObjects(newUtxos, ['id', 'vout'])
                               .sort((a, b) => { return b.value - a.value });
             this.saveBtcWalletData();
+            console.log('Done fetching state data');
+            console.log('Txs:', this.btcTxs);
+            console.log('Utxos:', this.btcUtxos);
             cb(null);
           }
         })
