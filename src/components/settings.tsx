@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import 'antd/dist/antd.dark.css'
 import { Button, Card, Checkbox, Col, Collapse, Input, Radio, Row, Space, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons';
@@ -8,58 +8,56 @@ import omit from "lodash/omit"
 import { constants, getBtcPurpose } from '../util/helpers';
 import localStorage from '../util/localStorage';
 
-class Settings extends React.Component<any, any> {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      settings: localStorage.getSettings(),
-      keyring: localStorage.getKeyring(),
-    }
-    this.getBtcPurposeName = this.getBtcPurposeName.bind(this)
-  }
+const Settings = ({isMobile, inModal=false}) => {
+  const [settings, setSettings] = useState(localStorage.getSettings())
+  const [keyring, setKeyring] = useState(localStorage.getKeyring())
 
 
-  submit() {
+  useEffect(() => {
+    localStorage.setSettings(settings)
+  }, [settings])
+
+  function submit() {
     // Save the settings to localStorage
-    localStorage.setSettings(this.state.settings)
+    localStorage.setSettings(settings)
     // Reload the page for the changes to take effect
     window.location.reload();
   }
 
-  updateUseCustomEndpoint(value) {
-    const settings = this.state.settings;
-    if (value !== true) {
-      // Reset the custom endpoint if this value is false
-      settings.customEndpoint = '';
-    }
-    this.setState({ settings });
+  // function updateUseCustomEndpoint(value) {
+  //   const _settings = {...settings};
+  //   if (value !== true) {
+  //     // Reset the custom endpoint if this value is false
+  //     _settings.customEndpoint = '';
+  //   }
+  //   setSettings(_settings);
+  // }
+
+  function updateCustomEndpoint(evt) {
+    const _settings = {...settings};
+    _settings.customEndpoint = evt.target.value;
+    setSettings(_settings);
   }
 
-  updateCustomEndpoint(evt) {
-    const settings = this.state.settings;
-    settings.customEndpoint = evt.target.value;
-    this.setState({ settings });
+  function updateUseDevLattice(evt) {
+    const _settings = {...settings};
+    _settings.devLattice = evt.target.checked
+    setSettings(_settings);
+    submit()
   }
 
-  updateUseDevLattice(evt) {
-    const settings = this.state.settings;
-    settings.devLattice = evt.target.checked
-    this.setState({ settings }, this.submit)
-  }
-
-  removeKeyring ({ name }) {
+  function removeKeyring ({ name }) {
     localStorage.removeKeyringItem(name)
-    this.setState({ keyring: omit(this.state.keyring, name) })
+    setKeyring({ keyring: omit(keyring, name) })
   }
 
-  resetState() {
+  function resetState() {
     localStorage.removeRootStore()
     window.location.reload();
   }
 
-  renderCustomEndpointSetting() {
-    const { customEndpoint='' } = this.state.settings;
+  function renderCustomEndpointSetting() {
+    const { customEndpoint='' } = settings;
     return (
       <Card>
         <Row justify='center'>
@@ -78,7 +76,7 @@ class Settings extends React.Component<any, any> {
             <div>
               <Input  placeholder="host:port" 
                       defaultValue={customEndpoint} 
-                      onChange={this.updateCustomEndpoint.bind(this)}/>
+                      onChange={updateCustomEndpoint}/>
             </div>
           </Col>
         </Row>
@@ -86,37 +84,38 @@ class Settings extends React.Component<any, any> {
     )
   }
 
-  handleChangeBitcoinVersionSetting(evt) {
-    const settings = this.state.settings;
-    settings.btcPurpose = parseInt(evt.target.value);
-    this.setState({ settings }, this.submit)
+  function handleChangeBitcoinVersionSetting (evt) {
+    const _settings = {...settings};
+    _settings.btcPurpose = parseInt(evt.target.value);
+    setSettings(_settings);
+    submit()
   }
 
-  getBtcPurposeName() {
-    const purpose = this.state.settings.btcPurpose ?
-                    this.state.settings.btcPurpose :
-                    getBtcPurpose();
-    if (purpose === constants.BTC_PURPOSE_NONE) {
-      return constants.BTC_PURPOSE_NONE_STR;
-    } else if (purpose === constants.BTC_PURPOSE_LEGACY) {
-      return constants.BTC_PURPOSE_LEGACY_STR
-    } else if (purpose === constants.BTC_PURPOSE_WRAPPED_SEGWIT) {
-      return constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR
-    } else if (purpose === constants.BTC_PURPOSE_SEGWIT) {
-      return constants.BTC_PURPOSE_SEGWIT_STR;
-    } else {
-      return 'Error finding BTC version'
-    }
-  }
+  // function getBtcPurposeName() {
+  //   const purpose = settings.btcPurpose ?
+  //                   settings.btcPurpose :
+  //                   getBtcPurpose();
+  //   if (purpose === constants.BTC_PURPOSE_NONE) {
+  //     return constants.BTC_PURPOSE_NONE_STR;
+  //   } else if (purpose === constants.BTC_PURPOSE_LEGACY) {
+  //     return constants.BTC_PURPOSE_LEGACY_STR
+  //   } else if (purpose === constants.BTC_PURPOSE_WRAPPED_SEGWIT) {
+  //     return constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR
+  //   } else if (purpose === constants.BTC_PURPOSE_SEGWIT) {
+  //     return constants.BTC_PURPOSE_SEGWIT_STR;
+  //   } else {
+  //     return 'Error finding BTC version'
+  //   }
+  // }
 
-  renderBitcoinVersionSetting() {
+  function renderBitcoinVersionSetting() {
     // NOTE: Firmware does not yet support segwit addresses
     // TODO: Uncomment this when firmware is updated
     const purpose = getBtcPurpose() || constants.BTC_PURPOSE_NONE;
     return (
       <Card>
         <h4>Bitcoin Wallet Type</h4>
-        <Radio.Group  onChange={this.handleChangeBitcoinVersionSetting.bind(this)}
+        <Radio.Group  onChange={handleChangeBitcoinVersionSetting}
                       defaultValue={purpose}>
           <Space direction="vertical">
             <Radio value={constants.BTC_PURPOSE_NONE}>
@@ -138,18 +137,18 @@ class Settings extends React.Component<any, any> {
     )
   }
 
-  renderDevLatticeSetting() {
-    const { devLattice } = this.state.settings;
+  function renderDevLatticeSetting() {
+    const { devLattice } = settings;
     return (
       <Card>
         <h4>Debug Settings</h4>
         <Row justify='center' style={{ margin: '10px 0 0 0'}}>
-          <Button type="link" onClick={this.resetState} className='warning-a'>
+          <Button type="link" onClick={resetState} className='warning-a'>
           <WarningOutlined/>&nbsp;Reset App State
         </Button>
         </Row>
         <Row justify='center' style={{ margin: '20px 0 0 0'}}>
-          <Checkbox onChange={this.updateUseDevLattice.bind(this)} checked={devLattice}>
+          <Checkbox onChange={updateUseDevLattice} checked={devLattice}>
             Using Dev Lattice
           </Checkbox>
         </Row>
@@ -157,7 +156,7 @@ class Settings extends React.Component<any, any> {
     )
   }
 
-  renderKeyringsSetting() {
+  function renderKeyringsSetting() {
     const keyring = localStorage.getKeyring()
     const cols = [
       { 
@@ -170,7 +169,7 @@ class Settings extends React.Component<any, any> {
         dataIndex: 'action', 
         key: 'action',
         render: (text, record) => (
-          <Button type="link" onClick={() => {this.removeKeyring(record)}}>Forget</Button>
+          <Button type="link" onClick={() => {removeKeyring(record)}}>Forget</Button>
         ) 
       }
     ]
@@ -198,35 +197,34 @@ class Settings extends React.Component<any, any> {
     )
   }
 
-  renderCard() {
+  function renderCard() {
     return (
       <div>
-        {this.renderKeyringsSetting()}
-        {this.renderCustomEndpointSetting()}
-        {this.renderBitcoinVersionSetting()}
-        {this.renderDevLatticeSetting()}
+        {renderKeyringsSetting()}
+        {renderCustomEndpointSetting()}
+        {renderBitcoinVersionSetting()}
+        {renderDevLatticeSetting()}
         <br/>
-        <Button type="primary" onClick={this.submit.bind(this)}>
+        <Button type="primary" onClick={submit}>
           Update and Reload
         </Button>
       </div>
     )
   }
 
-  render() {
-    const content = (
-      <center>
-        <Card title={'Settings'} bordered={true}>
-          {this.renderCard()}
-        </Card>
-      </center>      
-    )
-    if (this.props.inModal)
-      return (<center>{this.renderCard()}</center>);
-    return (
-      <PageContent content={content} isMobile={this.props.isMobile}/>
-    )
-  }
+  const content = (
+    <center>
+      <Card title={'Settings'} bordered={true}>
+        {renderCard()}
+      </Card>
+    </center>
+  )
+  if (inModal)
+    return (<center>{renderCard()}</center>);
+  return (
+    <PageContent content={content} isMobile={isMobile} />
+  )
+
 }
 
 export default Settings
