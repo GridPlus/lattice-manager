@@ -57,7 +57,7 @@ const Settings = ({isMobile, inModal=false}) => {
     window.location.reload();
   }
 
-  function renderCustomEndpointSetting() {
+  const ConnectionSettings = () => {
     const { customEndpoint='' } = settings;
     return (
       <Card>
@@ -85,7 +85,7 @@ const Settings = ({isMobile, inModal=false}) => {
     )
   }
 
-  function renderBitcoinVersionSetting() {
+  const BitcoinSettings = () => {
     // NOTE: Firmware does not yet support segwit addresses
     // TODO: Uncomment this when firmware is updated
     const purpose = getBtcPurpose() || constants.BTC_PURPOSE_NONE;
@@ -114,7 +114,7 @@ const Settings = ({isMobile, inModal=false}) => {
     )
   }
 
-  function renderDevLatticeSetting() {
+  const DebugSettings = () => {
     const { devLattice } = settings;
     return (
       <Card>
@@ -133,7 +133,7 @@ const Settings = ({isMobile, inModal=false}) => {
     )
   }
 
-  function renderKeyringsSetting() {
+  const  KeyringSettings = () => {
     const keyring = localStorage.getKeyring()
     const cols = [
       { 
@@ -176,17 +176,16 @@ const Settings = ({isMobile, inModal=false}) => {
 
   function renderCard() {
     return (
-      <div>
-        {renderKeyringsSetting()}
-        {renderCustomEndpointSetting()}
-        {renderBitcoinVersionSetting()}
-        {renderDevLatticeSetting()}
-        <br/>
-        <Button type="primary" onClick={submit}>
+      <>
+        <KeyringSettings />
+        <ConnectionSettings />
+        <BitcoinSettings />
+        <DebugSettings />
+        <Button type="primary" style={{ marginTop: "2em" }} onClick={submit}>
           Update and Reload
         </Button>
-      </div>
-    )
+      </>
+    );
   }
 
   const content = (
