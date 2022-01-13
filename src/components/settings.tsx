@@ -24,25 +24,26 @@ const Settings = ({isMobile, inModal=false}) => {
     window.location.reload();
   }
 
-  // function updateUseCustomEndpoint(value) {
-  //   const _settings = {...settings};
-  //   if (value !== true) {
-  //     // Reset the custom endpoint if this value is false
-  //     _settings.customEndpoint = '';
-  //   }
-  //   setSettings(_settings);
-  // }
-
   function updateCustomEndpoint(evt) {
-    const _settings = {...settings};
-    _settings.customEndpoint = evt.target.value;
-    setSettings(_settings);
+    setSettings((_settings) => ({
+      ..._settings,
+      customEndpoint: evt.target?.value,
+    }));
   }
 
   function updateUseDevLattice(evt) {
-    const _settings = {...settings};
-    _settings.devLattice = evt.target.checked
-    setSettings(_settings);
+    setSettings((_settings) => ({
+      ..._settings,
+      devLattice: evt.target.checked,
+    }));
+    submit();
+  }
+
+  function updateBitcoinVersionSetting (evt) {
+    setSettings((_settings) => ({
+      ..._settings,
+      btcPurpose: parseInt(evt.target.value),
+    }));
     submit()
   }
 
@@ -84,30 +85,6 @@ const Settings = ({isMobile, inModal=false}) => {
     )
   }
 
-  function handleChangeBitcoinVersionSetting (evt) {
-    const _settings = {...settings};
-    _settings.btcPurpose = parseInt(evt.target.value);
-    setSettings(_settings);
-    submit()
-  }
-
-  // function getBtcPurposeName() {
-  //   const purpose = settings.btcPurpose ?
-  //                   settings.btcPurpose :
-  //                   getBtcPurpose();
-  //   if (purpose === constants.BTC_PURPOSE_NONE) {
-  //     return constants.BTC_PURPOSE_NONE_STR;
-  //   } else if (purpose === constants.BTC_PURPOSE_LEGACY) {
-  //     return constants.BTC_PURPOSE_LEGACY_STR
-  //   } else if (purpose === constants.BTC_PURPOSE_WRAPPED_SEGWIT) {
-  //     return constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR
-  //   } else if (purpose === constants.BTC_PURPOSE_SEGWIT) {
-  //     return constants.BTC_PURPOSE_SEGWIT_STR;
-  //   } else {
-  //     return 'Error finding BTC version'
-  //   }
-  // }
-
   function renderBitcoinVersionSetting() {
     // NOTE: Firmware does not yet support segwit addresses
     // TODO: Uncomment this when firmware is updated
@@ -115,7 +92,7 @@ const Settings = ({isMobile, inModal=false}) => {
     return (
       <Card>
         <h4>Bitcoin Wallet Type</h4>
-        <Radio.Group  onChange={handleChangeBitcoinVersionSetting}
+        <Radio.Group  onChange={updateBitcoinVersionSetting}
                       defaultValue={purpose}>
           <Space direction="vertical">
             <Radio value={constants.BTC_PURPOSE_NONE}>
