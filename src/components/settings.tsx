@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Checkbox, Col, Collapse, Input, Radio, Row, Space, Table } from 'antd'
+import { Button, Card, Checkbox, Col, Collapse, Form, Input, Radio, Row, Space, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import './styles.css'
@@ -17,9 +17,11 @@ const Settings = ({isMobile, inModal=false}) => {
     localStorage.setSettings(settings)
   }, [settings])
 
+  useEffect(() => {
+    localStorage.setKeyring(keyring)
+  }, [keyring])
+
   function submit() {
-    // Save the settings to localStorage
-    localStorage.setSettings(settings)
     // Reload the page for the changes to take effect
     window.location.reload();
   }
@@ -49,8 +51,7 @@ const Settings = ({isMobile, inModal=false}) => {
   }
 
   function removeKeyring ({ name }) {
-    localStorage.removeKeyringItem(name)
-    setKeyring({ keyring: omit(keyring, name) })
+    setKeyring({ ...omit(keyring, name) })
   }
 
   function resetState() {
@@ -133,13 +134,61 @@ const Settings = ({isMobile, inModal=false}) => {
     )
   }
 
-  const  KeyringSettings = () => {
-    const keyring = localStorage.getKeyring()
+  const KeyringNameCell = (text, record) => {
+    const [isEditing, setIsEditing] = useState(false)
+    const [form] = Form.useForm();
+
+    const onCancel = () => {
+        form.resetFields();
+        setIsEditing(false)
+    }
+
+    const onFinish = (value) => {
+      const newKey = value.key;
+      const oldKey = record.key;
+      if (oldKey !== newKey) {
+        const keyringItem = keyring[oldKey];
+        setKeyring((keyring) => (omit({
+          ...keyring,
+          [newKey]: keyringItem,
+        }, oldKey)));
+      }
+      setIsEditing(false);
+    };
+    
+
+    return isEditing
+      ? <Form
+        form={form}
+        name="formData"
+        layout="inline"
+        onFinish={onFinish}>
+        <Form.Item
+          name="key"
+          initialValue={text}
+          rules={[{ required: true, message: "Name is required." },]}>
+          <Input size='small' />
+        </Form.Item>
+        <Form.Item>
+          <Button type="text" onClick={onCancel} size='small'>Cancel</Button>
+          <Button type="ghost" htmlType='submit' size='small'>Save</Button>
+        </Form.Item>
+      </Form>
+      : <Button
+        type="text"
+        onClick={() => setIsEditing(true)}
+      >
+        {text}
+      </Button>
+  }
+
+  const KeyringSettings = () => {
     const cols = [
       { 
         title: 'App Name', 
         dataIndex: 'name', 
-        key: 'name'
+        key: 'name',
+        render: KeyringNameCell
       }, 
       { 
         title: 'Action', 
@@ -150,10 +199,11 @@ const Settings = ({isMobile, inModal=false}) => {
         ) 
       }
     ]
-    const data: any[] = [];
-    Object.keys(keyring)
-      .sort((a, b) => { return a.toLowerCase() > b.toLowerCase() ? 1 : -1 })
-      .forEach((name) => { data.push({ name }) })
+
+    const data = Object.keys(keyring)
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({ name, key: name }));
+
     return (
       <Card>
         <Row justify='center'>
@@ -163,9 +213,8 @@ const Settings = ({isMobile, inModal=false}) => {
               Manage connections to your Lattice. Third party apps should be listed here if they are connected to your device.
             </p>
             <Collapse>
-              {/* @ts-expect-error */}
-              <Collapse.Panel header={`Connections List (${data.length})`}>
-                <Table dataSource={data} columns={cols}/>
+              <Collapse.Panel header={`Connections List (${data.length})`} key="connections-list">
+                <Table dataSource={data} columns={cols} tableLayout="fixed" pagination={false} />
               </Collapse.Panel>
             </Collapse>
           </Col>

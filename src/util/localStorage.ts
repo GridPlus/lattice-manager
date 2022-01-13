@@ -50,12 +50,20 @@ const setSettings = (value) => setRootStoreItem("settings", value);
 // #region -- Keyring Functions
 
 const getKeyring = () => getRootStoreItem("keyring");
+const setKeyring = (value) => setRootStoreItem("keyring", value);
 
 const getKeyringItem = (key) => getRootStoreItem("keyring")?.[key] ?? {};
 const setKeyringItem = (key, value) =>
   setRootStoreItem("keyring", { [`${key}`]: value });
 const removeKeyringItem = (key) =>
   setRootStoreItem("keyring", omit(getKeyring(), key));
+const renameKeyringItem = (oldKey, newKey) => {
+    const item = { ...getKeyringItem(oldKey) };
+    setKeyringItem(newKey, item);
+    if (oldKey !== newKey) {
+      removeKeyringItem(oldKey);
+  }
+};
 
 // #endregion
 
@@ -103,9 +111,11 @@ export default {
   setLoginPassword,
   removeLoginPassword,
   getKeyring,
+  setKeyring,
   getKeyringItem,
   setKeyringItem,
   removeKeyringItem,
+  renameKeyringItem,
   getLogin,
   setLogin,
   removeLogin,
