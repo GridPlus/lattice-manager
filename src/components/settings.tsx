@@ -11,7 +11,7 @@ import localStorage from '../util/localStorage';
 const Settings = ({isMobile, inModal=false}) => {
   const [settings, setSettings] = useState(localStorage.getSettings())
   const [keyring, setKeyring] = useState(localStorage.getKeyring())
-
+  const [btcPurpose, setBtcPurpose] = useState(getBtcPurpose() || constants.BTC_PURPOSE_NONE)
 
   useEffect(() => {
     localStorage.setSettings(settings)
@@ -40,6 +40,7 @@ const Settings = ({isMobile, inModal=false}) => {
   }
 
   function updateBitcoinVersionSetting (evt) {
+    setBtcPurpose(parseInt(evt.target.value))
     setSettings((_settings) => ({
       ..._settings,
       btcPurpose: parseInt(evt.target.value),
@@ -87,17 +88,16 @@ const Settings = ({isMobile, inModal=false}) => {
 
   const BitcoinSettings = () => {
     // NOTE: Firmware does not yet support segwit addresses
-    // TODO: Uncomment this when firmware is updated
-    const purpose = getBtcPurpose() || constants.BTC_PURPOSE_NONE;
     return (
       <Card>
         <h4>Bitcoin Wallet Type</h4>
-        <Radio.Group  onChange={updateBitcoinVersionSetting}
-                      defaultValue={purpose}>
+        <Radio.Group
+          onChange={updateBitcoinVersionSetting}
+          defaultValue={btcPurpose}
+          value={btcPurpose}
+        >
           <Space direction="vertical">
-            <Radio value={constants.BTC_PURPOSE_NONE}>
-              Hide BTC Wallet
-            </Radio>
+            <Radio value={constants.BTC_PURPOSE_NONE}>Hide BTC Wallet</Radio>
             {/* <Radio value={constants.BTC_PURPOSE_SEGWIT}>
               {constants.BTC_PURPOSE_SEGWIT_STR}
             </Radio> */}
@@ -111,7 +111,7 @@ const Settings = ({isMobile, inModal=false}) => {
           </Space>
         </Radio.Group>
       </Card>
-    )
+    );
   }
 
   const DebugSettings = () => {
