@@ -167,15 +167,22 @@ const Settings = ({isMobile, inModal=false}) => {
           name="key"
           initialValue={text}
           rules={[{ required: true, message: "Name is required." },]}>
-          <Input size='small' />
+          <Input size='small'
+        data-testid={`${text}-input`}
+        />
         </Form.Item>
         <Form.Item>
-          <Button type="text" onClick={onCancel} size='small'>Cancel</Button>
-          <Button type="ghost" htmlType='submit' size='small'>Save</Button>
+          <Button type="text" onClick={onCancel} size='small'
+        data-testid={`${text}-cancel`}
+        >Cancel</Button>
+          <Button type="ghost" htmlType='submit' size='small'
+        data-testid={`${text}-save`}
+        >Save</Button>
         </Form.Item>
       </Form>
       : <Button
         type="text"
+        data-testid={`${text}-edit`}
         onClick={() => setIsEditing(true)}
       >
         {text}
@@ -213,7 +220,7 @@ const Settings = ({isMobile, inModal=false}) => {
               Manage connections to your Lattice. Third party apps should be listed here if they are connected to your device.
             </p>
             <Collapse>
-              <Collapse.Panel header={`Connections List (${data.length})`} key="connections-list">
+              <Collapse.Panel header={`Connections List (${data.length})`} key="connections-list" data-testid="connections-list">
                 <Table dataSource={data} columns={cols} tableLayout="fixed" pagination={false} />
               </Collapse.Panel>
             </Collapse>
