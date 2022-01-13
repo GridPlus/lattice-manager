@@ -58,10 +58,10 @@ const setKeyringItem = (key, value) =>
 const removeKeyringItem = (key) =>
   setRootStoreItem("keyring", omit(getKeyring(), key));
 const renameKeyringItem = (oldKey, newKey) => {
+  if (oldKey !== newKey) {
     const item = { ...getKeyringItem(oldKey) };
     setKeyringItem(newKey, item);
-    if (oldKey !== newKey) {
-      removeKeyringItem(oldKey);
+    removeKeyringItem(oldKey);
   }
 };
 
