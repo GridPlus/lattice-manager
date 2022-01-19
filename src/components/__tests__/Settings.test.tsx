@@ -41,44 +41,4 @@ describe("Settings", () => {
 
     expect(screen.getByText(testName)).toBeInTheDocument();
   });
-
-  it("updates keyring", async () => {
-    localStorage.setKeyring(testKeyring());
-    render(<Settings isMobile={false} />);
-
-    const openButton = screen.getByRole("button", { expanded: false });
-    fireEvent.click(openButton);
-
-    const editButton = screen.getByTestId("TestKeyRing-edit");
-    fireEvent.click(editButton);
-
-    const nameInput = screen.getByTestId("TestKeyRing-input");
-    fireEvent.change(nameInput, { target: { value: newTestName } });
-
-    const saveButton = screen.getByTestId("TestKeyRing-save")
-    fireEvent.click(saveButton);
-    await waitFor(() => expect(localStorage.getKeyringItem(newTestName)).toStrictEqual({ name: testName }))
-
-    fireEvent.click(screen.getByRole("button", { expanded: false }));
-    await waitFor(() => expect(screen.getByText(newTestName)).toBeInTheDocument());
-  });
-
-  it("cancels update of keyring", async () => {
-    localStorage.setKeyring(testKeyring());
-    render(<Settings isMobile={false} />);
-
-    const openButton = screen.getByRole("button", { expanded: false });
-    fireEvent.click(openButton);
-
-    const editButton = screen.getByTestId("TestKeyRing-edit");
-    fireEvent.click(editButton);
-
-    const nameInput = screen.getByTestId("TestKeyRing-input");
-    fireEvent.change(nameInput, { target: { value: newTestName } });
-
-    const cancelButton = screen.getByTestId("TestKeyRing-cancel");
-    fireEvent.click(cancelButton);
-
-    await waitFor(() => expect(screen.getByText(testName)).toBeInTheDocument());
-  });
 });

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Checkbox, Col, Collapse, Form, Input, Radio, Row, Space, Table } from 'antd'
+import { Button, Card, Checkbox, Col, Collapse, Input, Radio, Row, Space, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import './styles.css'
@@ -8,59 +8,58 @@ import omit from "lodash/omit"
 import { constants, getBtcPurpose } from '../util/helpers';
 import localStorage from '../util/localStorage';
 
-const Settings = ({isMobile, inModal=false}) => {
-  const [settings, setSettings] = useState(localStorage.getSettings())
-  const [keyring, setKeyring] = useState(localStorage.getKeyring())
-  const [btcPurpose, setBtcPurpose] = useState(getBtcPurpose() || constants.BTC_PURPOSE_NONE)
+class Settings extends React.Component<any, any> {
+  constructor(props) {
+    super(props);
 
-  useEffect(() => {
-    localStorage.setSettings(settings)
-  }, [settings])
+    this.state = {
+      settings: localStorage.getSettings(),
+      keyring: localStorage.getKeyring(),
+    }
+    this.getBtcPurposeName = this.getBtcPurposeName.bind(this)
+  }
 
-  useEffect(() => {
-    localStorage.setKeyring(keyring)
-  }, [keyring])
 
-  function submit() {
+  submit() {
+    // Save the settings to localStorage
+    localStorage.setSettings(this.state.settings)
     // Reload the page for the changes to take effect
     window.location.reload();
   }
 
-  function updateCustomEndpoint(evt) {
-    setSettings((_settings) => ({
-      ..._settings,
-      customEndpoint: evt.target?.value,
-    }));
+  updateUseCustomEndpoint(value) {
+    const settings = this.state.settings;
+    if (value !== true) {
+      // Reset the custom endpoint if this value is false
+      settings.customEndpoint = '';
+    }
+    this.setState({ settings });
   }
 
-  function updateUseDevLattice(evt) {
-    setSettings((_settings) => ({
-      ..._settings,
-      devLattice: evt.target.checked,
-    }));
-    submit();
+  updateCustomEndpoint(evt) {
+    const settings = this.state.settings;
+    settings.customEndpoint = evt.target.value;
+    this.setState({ settings });
   }
 
-  function updateBitcoinVersionSetting (evt) {
-    setBtcPurpose(parseInt(evt.target.value))
-    setSettings((_settings) => ({
-      ..._settings,
-      btcPurpose: parseInt(evt.target.value),
-    }));
-    submit()
+  updateUseDevLattice(evt) {
+    const settings = this.state.settings;
+    settings.devLattice = evt.target.checked
+    this.setState({ settings }, this.submit)
   }
 
-  function removeKeyring ({ name }) {
-    setKeyring({ ...omit(keyring, name) })
+  removeKeyring ({ name }) {
+    localStorage.removeKeyringItem(name)
+    this.setState({ keyring: omit(this.state.keyring, name) })
   }
 
-  function resetState() {
+  resetState() {
     localStorage.removeRootStore()
     window.location.reload();
   }
 
-  const ConnectionSettings = () => {
-    const { customEndpoint='' } = settings;
+  renderCustomEndpointSetting() {
+    const { customEndpoint='' } = this.state.settings;
     return (
       <Card>
         <Row justify='center'>
@@ -79,7 +78,7 @@ const Settings = ({isMobile, inModal=false}) => {
             <div>
               <Input  placeholder="host:port" 
                       defaultValue={customEndpoint} 
-                      onChange={updateCustomEndpoint}/>
+                      onChange={this.updateCustomEndpoint.bind(this)}/>
             </div>
           </Col>
         </Row>
@@ -87,18 +86,42 @@ const Settings = ({isMobile, inModal=false}) => {
     )
   }
 
-  const BitcoinSettings = () => {
+  handleChangeBitcoinVersionSetting(evt) {
+    const settings = this.state.settings;
+    settings.btcPurpose = parseInt(evt.target.value);
+    this.setState({ settings }, this.submit)
+  }
+
+  getBtcPurposeName() {
+    const purpose = this.state.settings.btcPurpose ?
+                    this.state.settings.btcPurpose :
+                    getBtcPurpose();
+    if (purpose === constants.BTC_PURPOSE_NONE) {
+      return constants.BTC_PURPOSE_NONE_STR;
+    } else if (purpose === constants.BTC_PURPOSE_LEGACY) {
+      return constants.BTC_PURPOSE_LEGACY_STR
+    } else if (purpose === constants.BTC_PURPOSE_WRAPPED_SEGWIT) {
+      return constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR
+    } else if (purpose === constants.BTC_PURPOSE_SEGWIT) {
+      return constants.BTC_PURPOSE_SEGWIT_STR;
+    } else {
+      return 'Error finding BTC version'
+    }
+  }
+
+  renderBitcoinVersionSetting() {
     // NOTE: Firmware does not yet support segwit addresses
+    // TODO: Uncomment this when firmware is updated
+    const purpose = getBtcPurpose() || constants.BTC_PURPOSE_NONE;
     return (
       <Card>
         <h4>Bitcoin Wallet Type</h4>
-        <Radio.Group
-          onChange={updateBitcoinVersionSetting}
-          defaultValue={btcPurpose}
-          value={btcPurpose}
-        >
+        <Radio.Group  onChange={this.handleChangeBitcoinVersionSetting.bind(this)}
+                      defaultValue={purpose}>
           <Space direction="vertical">
-            <Radio value={constants.BTC_PURPOSE_NONE}>Hide BTC Wallet</Radio>
+            <Radio value={constants.BTC_PURPOSE_NONE}>
+              Hide BTC Wallet
+            </Radio>
             {/* <Radio value={constants.BTC_PURPOSE_SEGWIT}>
               {constants.BTC_PURPOSE_SEGWIT_STR}
             </Radio> */}
@@ -112,21 +135,21 @@ const Settings = ({isMobile, inModal=false}) => {
           </Space>
         </Radio.Group>
       </Card>
-    );
+    )
   }
 
-  const DebugSettings = () => {
-    const { devLattice } = settings;
+  renderDevLatticeSetting() {
+    const { devLattice } = this.state.settings;
     return (
       <Card>
         <h4>Debug Settings</h4>
         <Row justify='center' style={{ margin: '10px 0 0 0'}}>
-          <Button type="link" onClick={resetState} className='warning-a'>
+          <Button type="link" onClick={this.resetState} className='warning-a'>
           <WarningOutlined/>&nbsp;Reset App State
         </Button>
         </Row>
         <Row justify='center' style={{ margin: '20px 0 0 0'}}>
-          <Checkbox onChange={updateUseDevLattice} checked={devLattice}>
+          <Checkbox onChange={this.updateUseDevLattice.bind(this)} checked={devLattice}>
             Using Dev Lattice
           </Checkbox>
         </Row>
@@ -134,83 +157,27 @@ const Settings = ({isMobile, inModal=false}) => {
     )
   }
 
-  const KeyringNameCell = (text, record) => {
-    const [isEditing, setIsEditing] = useState(false)
-    const [form] = Form.useForm();
-
-    const onCancel = () => {
-        form.resetFields();
-        setIsEditing(false)
-    }
-
-    const onFinish = (value) => {
-      const newKey = value.key;
-      const oldKey = record.key;
-      if (oldKey !== newKey) {
-        const keyringItem = keyring[oldKey];
-        setKeyring((keyring) => (omit({
-          ...keyring,
-          [newKey]: keyringItem,
-        }, oldKey)));
-      }
-      setIsEditing(false);
-    };
-    
-
-    return isEditing
-      ? <Form
-        form={form}
-        name="formData"
-        layout="inline"
-        onFinish={onFinish}>
-        <Form.Item
-          name="key"
-          initialValue={text}
-          rules={[{ required: true, message: "Name is required." },]}>
-          <Input size='small'
-        data-testid={`${text}-input`}
-        />
-        </Form.Item>
-        <Form.Item>
-          <Button type="text" onClick={onCancel} size='small'
-        data-testid={`${text}-cancel`}
-        >Cancel</Button>
-          <Button type="ghost" htmlType='submit' size='small'
-        data-testid={`${text}-save`}
-        >Save</Button>
-        </Form.Item>
-      </Form>
-      : <Button
-        type="text"
-        data-testid={`${text}-edit`}
-        onClick={() => setIsEditing(true)}
-      >
-        {text}
-      </Button>
-  }
-
-  const KeyringSettings = () => {
+  renderKeyringsSetting() {
+    const keyring = localStorage.getKeyring()
     const cols = [
       { 
         title: 'App Name', 
         dataIndex: 'name', 
-        key: 'name',
-        render: KeyringNameCell
+        key: 'name'
       }, 
       { 
         title: 'Action', 
         dataIndex: 'action', 
         key: 'action',
         render: (text, record) => (
-          <Button type="link" onClick={() => {removeKeyring(record)}}>Forget</Button>
+          <Button type="link" onClick={() => {this.removeKeyring(record)}}>Forget</Button>
         ) 
       }
     ]
-
-    const data = Object.keys(keyring)
-      .sort((a, b) => a.localeCompare(b))
-      .map((name) => ({ name, key: name }));
-
+    const data: any[] = [];
+    Object.keys(keyring)
+      .sort((a, b) => { return a.toLowerCase() > b.toLowerCase() ? 1 : -1 })
+      .forEach((name) => { data.push({ name }) })
     return (
       <Card>
         <Row justify='center'>
@@ -220,8 +187,9 @@ const Settings = ({isMobile, inModal=false}) => {
               Manage connections to your Lattice. Third party apps should be listed here if they are connected to your device.
             </p>
             <Collapse>
-              <Collapse.Panel header={`Connections List (${data.length})`} key="connections-list" data-testid="connections-list">
-                <Table dataSource={data} columns={cols} tableLayout="fixed" pagination={false} />
+              {/* @ts-expect-error */}
+              <Collapse.Panel header={`Connections List (${data.length})`}>
+                <Table dataSource={data} columns={cols}/>
               </Collapse.Panel>
             </Collapse>
           </Col>
@@ -230,33 +198,35 @@ const Settings = ({isMobile, inModal=false}) => {
     )
   }
 
-  function renderCard() {
+  renderCard() {
     return (
-      <>
-        <KeyringSettings />
-        <ConnectionSettings />
-        <BitcoinSettings />
-        <DebugSettings />
-        <Button type="primary" style={{ marginTop: "2em" }} onClick={submit}>
+      <div>
+        {this.renderKeyringsSetting()}
+        {this.renderCustomEndpointSetting()}
+        {this.renderBitcoinVersionSetting()}
+        {this.renderDevLatticeSetting()}
+        <br/>
+        <Button type="primary" onClick={this.submit.bind(this)}>
           Update and Reload
         </Button>
-      </>
-    );
+      </div>
+    )
   }
 
-  const content = (
-    <center>
-      <Card title={'Settings'} bordered={true}>
-        {renderCard()}
-      </Card>
-    </center>
-  )
-  if (inModal)
-    return (<center>{renderCard()}</center>);
-  return (
-    <PageContent content={content} isMobile={isMobile} />
-  )
-
+  render() {
+    const content = (
+      <center>
+        <Card title={'Settings'} bordered={true}>
+          {this.renderCard()}
+        </Card>
+      </center>      
+    )
+    if (this.props.inModal)
+      return (<center>{this.renderCard()}</center>);
+    return (
+      <PageContent content={content} isMobile={this.props.isMobile}/>
+    )
+  }
 }
 
 export default Settings
