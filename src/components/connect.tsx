@@ -4,8 +4,26 @@ import { Alert, Button, Card, Col, Input, Row, Modal } from 'antd'
 import { DesktopOutlined, LinkOutlined } from '@ant-design/icons';
 import { Settings } from './index'
 import { constants } from '../util/helpers'
+import { LoginData } from '../types/authentication';
 
-class Connect extends React.Component<any, any> {
+type ConnectProps = {
+  submitCb: (data: LoginData, showLoading: boolean) => void,
+  cancelConnect: () => void,
+  name: string,
+  keyringName: string,
+  setKeyringName: (name: string) => void,
+  isMobile: () => boolean,
+  errMsg: string
+}
+
+type ConnectState = {
+  errMsg: string,
+  isLoading: boolean,
+  modal: boolean,
+  showSettings: boolean
+}
+
+class Connect extends React.Component<ConnectProps, ConnectState> {
   constructor(props) {
     super(props)
     this.state = {
@@ -23,7 +41,7 @@ class Connect extends React.Component<any, any> {
   componentDidMount() {
     //@ts-expect-error
     this.input.focus()
-    this.setState({ isLoading: false });    
+    this.setState({ isLoading: false  })
   }
 
   componentDidUpdate() {
@@ -111,10 +129,6 @@ class Connect extends React.Component<any, any> {
     this.setState({ modal: false, showSettings: false });
   }
 
-  _isMobile() {
-    return this.state.windowWidth < 500;
-  }
-
   renderSetupInfo() {
     return (
       <div>
@@ -158,7 +172,7 @@ class Connect extends React.Component<any, any> {
           onOk={this.hideModal.bind(this)}
           onCancel={this.hideModal.bind(this)}
         >
-          <Settings isMobile={() => this._isMobile()} inModal={true} />
+          <Settings isMobile={this.props.isMobile} inModal={true} />
         </Modal>
       )
     }
