@@ -4,6 +4,7 @@ import { Alert, Button, Card, Col, Input, Row, Modal } from 'antd'
 import { DesktopOutlined, LinkOutlined } from '@ant-design/icons';
 import { Settings } from './index'
 import { constants } from '../util/helpers'
+import { NameEditor } from './NameEditor';
 import { LoginData } from '../types/authentication';
 
 type ConnectProps = {
@@ -210,8 +211,7 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
   render() {
     const spanWidth = this.props.isMobile() ? 24 : 10;
     const spanOffset = this.props.isMobile() ? 0 : 7;
-    const keyringName = this.props.name === constants.DEFAULT_APP_NAME ? null : this.props.name
-    const tooLong = keyringName !== null && keyringName.length < 5;
+    const tooLong = this.props.keyringName !== null && this.props.keyringName.length < 5;
     return (
       <Row>
         {this.renderModal()}
@@ -224,13 +224,21 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
                   target='_blank' 
                   rel='noopener noreferrer'
               >
-                {keyringName ? (
+                {this.props.keyringName ? (
                   <h2 style={{margin: "10px 0 0 0"}}>Lattice Connector <LinkOutlined/></h2>
                 ) : (
                   <h2 style={{margin: "10px 0 0 0"}}>Lattice Manager<br/><DesktopOutlined/></h2>
                 )}
               </a>
-              {keyringName ? (<div><br/><i><h3>Connect to:</h3></i><h2>{keyringName}</h2></div>) : null}
+              {this.props.keyringName ? (
+                <div style={{margin: "2em"}}>
+                  <br />
+                  <i><h3>Connect to:</h3></i>
+                  <NameEditor
+                    name={this.props.keyringName}
+                    setName={this.props.setKeyringName}
+                  />
+                </div>) : null}
               {/* @ts-expect-error */}
               {tooLong ? (<p><b>Error: App name must be more than 4 characters.</b></p>) : this.renderForm()}
             </Card>

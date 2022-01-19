@@ -18,9 +18,32 @@ const { Content, Footer, Sider } = Layout;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
 
-class Main extends React.Component<any, any> {
+type MainState = {
+  name: string,
+  menuItem: string,
+  session: any,
+  collapsed: boolean,
+  error: { msg: string, cb: Function },
+  loading: boolean,
+  pendingMsg: string,
+  waiting: boolean, 
+  onCancel: Function,
+  deviceID: string,
+  password: string,
+  lastUpdated: Date,
+  windowWidth: number,
+  walletIsExternal: boolean,
+  keyringName: string,
+  openedByKeyring: boolean,
+  hwCheck: string,
+}
+
+
+class Main extends React.Component<any, MainState> {
   constructor(props) {
     super(props)
+    const params = new URLSearchParams(window.location.search);
+    const keyringName = params.get('keyring')
     this.state = {
       name: constants.DEFAULT_APP_NAME,
       menuItem: DEFAULT_MENU_ITEM,
@@ -28,9 +51,11 @@ class Main extends React.Component<any, any> {
       session: null,
       collapsed: false,
       error: { msg: null, cb: null },
+      loading: false,
       pendingMsg: null,
       // Waiting on asynchronous data, usually from the Lattice
       waiting: false, 
+      onCancel: null,
       // Login info stored in localstorage. Can be cleared out at any time by the `logout` func
       deviceID: null,
       password: null,
@@ -41,7 +66,9 @@ class Main extends React.Component<any, any> {
       // Track changes in the active wallet so we can refresh addresses when we detect one
       walletIsExternal: null,
       // Window params
-      keyringName: null,
+      keyringName,
+      // Was the app opened with a keyring in the url parameters
+      openedByKeyring: !!keyringName,
       // Validation check on Lattice hardware. Should draw a separate component
       hwCheck: null,
     };
@@ -77,7 +104,7 @@ class Main extends React.Component<any, any> {
     // to utilize window.postMessage once we connect.
     // We can extend this pattern to other apps in the future.
     const params = new URLSearchParams(window.location.search);
-    const keyringName = params.get('keyring')
+    const keyringName = this.state.keyringName
     const hwCheck = params.get('hwCheck')
     const forceLogin = params.get('forceLogin')
     
@@ -91,7 +118,7 @@ class Main extends React.Component<any, any> {
     if (keyringName) {
       //@ts-expect-error
       window.onload = this.handleKeyringOpener();
-      this.setState({ name: keyringName }, () => {
+      this.setState({ keyringName }, () => {
         // Check if this keyring has already logged in. This login should expire after a period of time.
         const prevKeyringLogin = localStorage.getKeyringItem(keyringName);
         //@ts-expect-error
@@ -140,11 +167,12 @@ class Main extends React.Component<any, any> {
 
   connect(deviceID, password, cb) {
     const updates = { deviceID, password };
+    const name = this.state.keyringName ? this.state.keyringName : this.state.name
     if (!this.state.session) {
       // Create a new session if we don't have one.
       const settings = localStorage.getSettings()
       //@ts-expect-error
-      updates.session = new SDKSession(deviceID, this.setError, this.state.name, settings);
+      updates.session = new SDKSession(deviceID, this.setError, name, settings);
     }
     this.setState(updates, cb);
   }
@@ -179,7 +207,7 @@ class Main extends React.Component<any, any> {
     if (!this.state.openedByKeyring)
       return;
     // Save the login for later
-    localStorage.setKeyringItem(this.state.name, {
+    localStorage.setKeyringItem(this.state.keyringName, {
       deviceID: this.state.deviceID,
       password: this.state.password,
       lastLogin: new Date().getTime()
@@ -675,6 +703,8 @@ class Main extends React.Component<any, any> {
         <Connect  submitCb={this.connectSession}
                   cancelConnect={this.cancelConnect}
                   name={this.state.name}
+                  keyringName={this.state.keyringName}
+                  setKeyringName={(keyringName) => this.setState({ keyringName })}
                   isMobile={() => this.isMobile()}
                   errMsg={this.state.error.msg}/>
       );
