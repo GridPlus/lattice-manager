@@ -12,7 +12,7 @@ export const SelectNetwork = ({ setNetwork }) => {
       optionFilterProp="children"
       onChange={setNetwork}
       filterOption={(input, option) =>
-        //@ts-expect-error
+        //@ts-ignore
         option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
       }
     >
