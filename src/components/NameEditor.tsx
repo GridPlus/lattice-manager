@@ -12,6 +12,7 @@ export const NameEditor = ({ name, setName }: {
   setName: (name: string) => void;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [form] = Form.useForm();
 
   const onCancel = () => {
@@ -52,9 +53,12 @@ export const NameEditor = ({ name, setName }: {
     <Button
       type="text"
       size="large"
-      icon={<EditOutlined style={{ fontSize: "14px" }} />}
+      icon={isHovered ? <EditOutlined /> : null}
+      style={{ fontSize: "24px" }}
       data-testid={`${name}-edit`}
       onClick={() => setIsEditing(true)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {name}
     </Button>
