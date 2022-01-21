@@ -1,6 +1,7 @@
 import localStorage from "../localStorage";
 
 const key = "test";
+const newKey = "newKey"
 const value = 1;
 const obj = { [key]: value };
 
@@ -43,6 +44,18 @@ describe("localStorage", () => {
     expect(localStorage.getKeyringItem(key)).toStrictEqual(obj);
     localStorage.removeKeyringItem(key);
     expect(localStorage.getKeyringItem(key)).toStrictEqual({});
+  });
+
+  test("should rename keyring items", () => {
+    localStorage.setKeyringItem(key, obj);
+    expect(localStorage.getKeyringItem(key)).toStrictEqual(obj);
+    localStorage.renameKeyringItem(key, newKey)
+    expect(localStorage.getKeyringItem(newKey)).toStrictEqual(obj);
+    localStorage.renameKeyringItem(newKey, newKey)
+    expect(localStorage.getKeyringItem(newKey)).toStrictEqual(obj);
+    localStorage.renameKeyringItem(newKey, newKey.toLowerCase())
+    expect(localStorage.getKeyringItem(newKey)).toStrictEqual({});
+    expect(localStorage.getKeyringItem(newKey.toLowerCase())).toStrictEqual(obj);
   });
 
   test("should store loginId", () => {

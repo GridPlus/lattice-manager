@@ -4,8 +4,27 @@ import { Alert, Button, Card, Col, Input, Row, Modal } from 'antd'
 import { DesktopOutlined, LinkOutlined } from '@ant-design/icons';
 import { Settings } from './index'
 import { constants } from '../util/helpers'
+import { NameEditor } from './NameEditor';
+import { LoginData } from '../types/authentication';
 
-class Connect extends React.Component<any, any> {
+type ConnectProps = {
+  submitCb: (data: LoginData, showLoading: boolean) => void,
+  cancelConnect: () => void,
+  name: string,
+  keyringName: string,
+  setKeyringName: (name: string) => void,
+  isMobile: () => boolean,
+  errMsg: string
+}
+
+type ConnectState = {
+  errMsg: string,
+  isLoading: boolean,
+  modal: boolean,
+  showSettings: boolean
+}
+
+class Connect extends React.Component<ConnectProps, ConnectState> {
   constructor(props) {
     super(props)
     this.state = {
@@ -23,7 +42,7 @@ class Connect extends React.Component<any, any> {
   componentDidMount() {
     //@ts-expect-error
     this.input.focus()
-    this.setState({ isLoading: false });    
+    this.setState({ isLoading: false  })
   }
 
   componentDidUpdate() {
@@ -111,10 +130,6 @@ class Connect extends React.Component<any, any> {
     this.setState({ modal: false, showSettings: false });
   }
 
-  _isMobile() {
-    return this.state.windowWidth < 500;
-  }
-
   renderSetupInfo() {
     return (
       <div>
@@ -158,7 +173,7 @@ class Connect extends React.Component<any, any> {
           onOk={this.hideModal.bind(this)}
           onCancel={this.hideModal.bind(this)}
         >
-          <Settings isMobile={() => this._isMobile()} inModal={true} />
+          <Settings isMobile={this.props.isMobile} inModal={true} />
         </Modal>
       )
     }
@@ -196,8 +211,7 @@ class Connect extends React.Component<any, any> {
   render() {
     const spanWidth = this.props.isMobile() ? 24 : 10;
     const spanOffset = this.props.isMobile() ? 0 : 7;
-    const keyringName = this.props.name === constants.DEFAULT_APP_NAME ? null : this.props.name
-    const tooLong = keyringName !== null && keyringName.length < 5;
+    const tooLong = this.props.keyringName !== null && this.props.keyringName.length < 5;
     return (
       <Row>
         {this.renderModal()}
@@ -210,13 +224,21 @@ class Connect extends React.Component<any, any> {
                   target='_blank' 
                   rel='noopener noreferrer'
               >
-                {keyringName ? (
+                {this.props.keyringName ? (
                   <h2 style={{margin: "10px 0 0 0"}}>Lattice Connector <LinkOutlined/></h2>
                 ) : (
                   <h2 style={{margin: "10px 0 0 0"}}>Lattice Manager<br/><DesktopOutlined/></h2>
                 )}
               </a>
-              {keyringName ? (<div><br/><i><h3>Connect to:</h3></i><h2>{keyringName}</h2></div>) : null}
+              {this.props.keyringName ? (
+                <div style={{margin: "2em"}}>
+                  <br />
+                  <i><h3>Connect to:</h3></i>
+                  <NameEditor
+                    name={this.props.keyringName}
+                    setName={this.props.setKeyringName}
+                  />
+                </div>) : null}
               {/* @ts-expect-error */}
               {tooLong ? (<p><b>Error: App name must be more than 4 characters.</b></p>) : this.renderForm()}
             </Card>
