@@ -18,12 +18,12 @@ const validAddressRegex = /^0x[a-fA-F0-9]{40}$/;
  * @param {Object} props
  * @param {Record[]} props.records
  * @param {Object} props.session
- * @param {(records: Record[]) => void} props.addAddresses
+ * @param {() => void} props.onAddAddresses
  */
 export const AddAddressesButton = ({
   records,
   session,
-  addAddresses,
+  onAddAddresses,
 }) => {
   const [form] = Form.useForm();
   const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +65,7 @@ export const AddAddressesButton = ({
       session.client.addKvRecords(opts, (err) => {
         setIsLoading(false);
         if (err) return setError(err);
-        addAddresses(recordsToAdd);
+        onAddAddresses();
         resetState();
       });
     });

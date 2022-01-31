@@ -73,13 +73,15 @@ const AddressTagsPage = ({
         setIsLoading(false);
       })
       .catch((err) => {
-        if (err) {
-          setError(err);
-          setIsLoading(false);
-          setRetryFunction(removeSelected);
-        }
+        setError(err);
+        setIsLoading(false);
+        setRetryFunction(removeSelected);
       });
   };
+
+  const onAddAddresses = () => {
+    fetchRecords()
+  }
 
   const extra = [
     <Button
@@ -95,7 +97,7 @@ const AddressTagsPage = ({
       key="add-addresses-button"
       records={addresses}
       session={session}
-      addAddresses={addAddresses}
+      onAddAddresses={onAddAddresses}
     />,
   ];
 
