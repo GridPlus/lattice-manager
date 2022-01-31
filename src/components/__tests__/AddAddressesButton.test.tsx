@@ -23,7 +23,7 @@ describe("AddAddressesButton", () => {
       <AddAddressesButton
         records={mockRecords}
         session={mockSession}
-        addToRecordsInState={() => {}}
+        addAddresses={() => {}}
       />
     );
   });
@@ -33,7 +33,7 @@ describe("AddAddressesButton", () => {
       <AddAddressesButton
         records={mockRecords}
         session={mockSession}
-        addToRecordsInState={() => {}}
+        addAddresses={() => {}}
       />
     );
     // shows modal
@@ -52,7 +52,7 @@ describe("AddAddressesButton", () => {
       <AddAddressesButton
         records={mockRecords}
         session={mockSession}
-        addToRecordsInState={() => {}}
+        addAddresses={() => {}}
       />
     );
     const addButton = screen.getByRole("button");
@@ -75,7 +75,7 @@ describe("AddAddressesButton", () => {
       <AddAddressesButton
         records={mockRecords}
         session={mockSession}
-        addToRecordsInState={() => {}}
+        addAddresses={() => {}}
       />
     );
     const addButton = screen.getByRole("button");
@@ -107,7 +107,7 @@ describe("AddAddressesButton", () => {
       <AddAddressesButton
         records={mockRecords}
         session={mockSession}
-        addToRecordsInState={() => {}}
+        addAddresses={() => {}}
       />
     );
     const addButton = screen.getByRole("button");
@@ -140,7 +140,7 @@ describe("AddAddressesButton", () => {
       <AddAddressesButton
         records={records}
         session={mockSession}
-        addToRecordsInState={() => {}}
+        addAddresses={() => {}}
       />
     );
     const addButton = screen.getByRole("button");
@@ -179,7 +179,7 @@ describe("AddAddressesButton", () => {
       <AddAddressesButton
         records={records}
         session={mockSession}
-        addToRecordsInState={() => {}}
+        addAddresses={() => {}}
       />
     );
     const addButton = screen.getByRole("button");
