@@ -12,6 +12,7 @@ export const constants = {
     BTC_BROADCAST_ENDPOINT: 'https://blockstream.info/api/tx',
     HARDENED_OFFSET,
     ASYNC_SDK_TIMEOUT: 60000,
+    ADDRESSES_PER_PAGE: 10,
     SHORT_TIMEOUT: 30000,
     BTC_COIN: parseInt(process.env.REACT_APP_BTC_COIN) || HARDENED_OFFSET,
     SATS_TO_BTC: Math.pow(10, 8),
