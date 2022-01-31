@@ -8,7 +8,7 @@ import { constants } from "../util/helpers";
 import { AddAddressesButton } from "./AddAddressesButton";
 import { AddressTable } from "./AddressTable";
 import { PageContent } from "./index";
-import {Record} from "../types/records"
+import { Record } from "../types/records";
 const { ADDRESSES_PER_PAGE } = constants;
 
 const AddressTagsPage = ({
@@ -39,6 +39,7 @@ const AddressTagsPage = ({
             fetchRecords(fetched + res.fetched);
           } else {
             setError(null);
+            setIsLoading(false);
           }
         })
         .catch((err) => {
@@ -47,18 +48,16 @@ const AddressTagsPage = ({
             fetchRecords(fetched, retries - 1);
           } else {
             setError(err);
+            setIsLoading(false);
             setRetryFunction(fetchRecords);
           }
-        })
-        .finally(() => {
-          setIsLoading(false);
         });
     },
     [addAddresses, session]
   );
 
   useEffect(() => {
-    fetchRecords()
+    fetchRecords();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -66,17 +65,20 @@ const AddressTagsPage = ({
     const ids = selectedAddresses.map((r) => r.id);
     if (ids.length === 0) return;
     setIsLoading(true);
-    session.removeKvRecords({ ids }).then(() => {
-      removeAddresses(selectedAddresses);
-      setError(null);
-      setIsLoading(false);
-    }).catch((err) => {
-      if (err) {
-        setError(err);
+    session
+      .removeKvRecords({ ids })
+      .then(() => {
+        removeAddresses(selectedAddresses);
+        setError(null);
         setIsLoading(false);
-        setRetryFunction(removeSelected);
-      }
-    })
+      })
+      .catch((err) => {
+        if (err) {
+          setError(err);
+          setIsLoading(false);
+          setRetryFunction(removeSelected);
+        }
+      });
   };
 
   const extra = [
