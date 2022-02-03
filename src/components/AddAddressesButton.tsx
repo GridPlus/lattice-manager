@@ -3,6 +3,7 @@ import { Alert, Button, Form, Input, Modal, Space } from "antd";
 import _ from "lodash";
 import React, { useState } from "react";
 
+const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
 const ADDRESS_RECORD_TYPE = 0;
 const keyIsDuplicatedErrorMessage =
   "You already have a tag with this address on your device.";
@@ -17,12 +18,12 @@ const validAddressRegex = /^0x[a-fA-F0-9]{40}$/;
  * @param {Object} props
  * @param {Record[]} props.records
  * @param {Object} props.session
- * @param {(records: Record[]) => void} props.addToRecordsInState
+ * @param {() => void} props.onAddAddresses
  */
 export const AddAddressesButton = ({
   records,
   session,
-  addToRecordsInState,
+  onAddAddresses,
 }) => {
   const [form] = Form.useForm();
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +65,7 @@ export const AddAddressesButton = ({
       session.client.addKvRecords(opts, (err) => {
         setIsLoading(false);
         if (err) return setError(err);
-        addToRecordsInState(recordsToAdd);
+        onAddAddresses();
         resetState();
       });
     });
@@ -146,6 +147,7 @@ export const AddAddressesButton = ({
                           validateTrigger={["onChange", "onBlur"]}
                           rules={[
                             { required: true, message: "Address is required." },
+                            {max: MAX_RECORD_LEN, type: "string", message: `Must be shorter than ${MAX_RECORD_LEN} characters.`},
                             {
                               pattern: validAddressRegex,
                               message: "Must be a valid address.",
@@ -153,7 +155,7 @@ export const AddAddressesButton = ({
                             },
                             {
                               validator: (rule, key) => {
-                                return records.some((r) => r.key === key)
+                                return records?.some((r) => r.key === key)
                                   ? Promise.reject(
                                       new Error(keyIsDuplicatedErrorMessage)
                                     )
@@ -174,9 +176,10 @@ export const AddAddressesButton = ({
                           validateTrigger={["onChange", "onBlur"]}
                           rules={[
                             { required: true, message: "Name is required" },
+                            {max: MAX_RECORD_LEN, type: "string", message: `Must be shorter than ${MAX_RECORD_LEN} characters.`},
                             {
                               validator: (rule, val) => {
-                                return records.some((r) => r.val === val)
+                                return records?.some((r) => r.val === val)
                                   ? Promise.reject(
                                       new Error(valIsDuplicatedErrorMessage)
                                     )

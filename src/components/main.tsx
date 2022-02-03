@@ -10,7 +10,7 @@ import {
 import { default as SDKSession } from '../sdk/sdkSession';
 import { 
   Connect, Error, Landing, Loading, PageContent, Pair, Send, 
-  Receive, Wallet, EthContracts, Settings, ValidateSig, KvFiles 
+  Receive, Wallet, EthContracts, Settings, ValidateSig, AddressTagsPage 
 } from './index'
 import { constants, getBtcPurpose } from '../util/helpers'
 import localStorage from '../util/localStorage';
@@ -675,7 +675,7 @@ class Main extends React.Component<any, MainState> {
         )
       case 'menu-kv-records':
         return (
-          <KvFiles
+          <AddressTagsPage
             session={this.state.session}
             isMobile={() => this.isMobile()}
           />

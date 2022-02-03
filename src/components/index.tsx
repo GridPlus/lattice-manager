@@ -11,7 +11,7 @@ export { default as Pair } from './pair'
 export { default as EthContracts} from './ethContracts'
 export { default as Permissions } from './permissions'
 export { default as Settings } from './settings'
-export { default as KvFiles } from './kvFiles'
+export { default as AddressTagsPage } from './AddressTagsPage'
 
 // Stateless components
 export { default as Landing } from './landing'

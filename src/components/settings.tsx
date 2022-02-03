@@ -177,7 +177,7 @@ class Settings extends React.Component<any, any> {
     const data: any[] = [];
     Object.keys(keyring)
       .sort((a, b) => { return a.toLowerCase() > b.toLowerCase() ? 1 : -1 })
-      .forEach((name) => { data.push({ name }) })
+      .forEach((name) => { data.push({ name, key: name }) })
     return (
       <Card>
         <Row justify='center'>

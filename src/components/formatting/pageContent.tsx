@@ -5,16 +5,16 @@ const SPAN_WIDTH = 14; // Max 24 for 100% width
 
 class PageContent extends React.Component<any, any> {
   render () {
-    if (!this.props.content)
+    if (!this.props.children && !this.props.content)
       return; // Content must be passed in
     // Mobile content should be displayed without any padding
     if (this.props.isMobile && this.props.isMobile())
-      return this.props.content;
+      return this.props.children ?this.props.children : this.props.content
     // Desktop content has some padding
     return(
       <Row justify="center">
         <Col span={SPAN_WIDTH}>
-          {this.props.content}
+          {this.props.children || this.props.content}
         </Col>
       </Row>
     )

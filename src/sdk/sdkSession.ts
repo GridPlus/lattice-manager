@@ -1,4 +1,5 @@
 import { Client } from 'gridplus-sdk';
+import { Record } from "../types/records";
 import { SDKAddresses } from '../types/SDKAddresses';
 import {
   broadcastBtcTx, constants, fetchBtcPrice,
@@ -609,6 +610,30 @@ class SDKSession {
     const sortedTxs = processedTxs
                       .sort((a, b) => { return b.timestamp - a.timestamp })
     this.btcTxs = sortedTxs;
+  }
+
+  /**
+   * Wraps `client.getKvRecords` in a `Promise` for easier handling
+   * @param opts - Pagination options for where to start and how many to query for
+   */
+  async getKvRecords (opts: { start: number, n: number }): Promise<{ records: Record[]; fetched: number; total: number }> {
+    return new Promise((resolve, reject) =>
+      this.client.getKvRecords(opts, (err, res) =>
+        err ? reject(err) : resolve(res)
+      )
+    );
+  }
+
+  /**
+   * Wraps `client.removeKvRecords` in a `Promise` for easier handling
+   * @param records - list of records to remove
+   */
+  async removeKvRecords ({ ids }: { ids: string[] }): Promise<boolean> {
+    return new Promise((resolve, reject) =>
+      this.client.removeKvRecords({ ids }, (err) =>
+        err ? reject(err) : resolve(true)
+      )
+    );
   }
 }
 
