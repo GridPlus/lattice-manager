@@ -425,7 +425,8 @@ class Main extends React.Component<any, MainState> {
       if (err)
         return this.setError({ msg: err, cb: this.refreshWallets })
       this.setError();
-      this.fetchBtcData()
+      if (constants.BTC_PURPOSE_NONE !== getBtcPurpose())
+        this.fetchBtcData()
     })
   }
 
