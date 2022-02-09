@@ -278,12 +278,7 @@ function _fetchBtcTxs(addresses, txs, cb, offset=0, isFirstCall=true) {
             // Only add the transaction if its hash is not already in the array.
             // NOTE: There may be an edge case. I noticed in one case we got
             // a result saying `vout_sz=2` but which only had one output in its array...
-            let shouldInclude = true;
-            txs.forEach((_tx) => {
-                if (_tx.id === ftx.id) {
-                    shouldInclude = false;
-                }
-            })
+            let shouldInclude = txs.every(_tx => _tx.id !== ftx.id);
             if (shouldInclude) {
                 txs.push(ftx);
                 txsAdded += 1;

@@ -565,20 +565,14 @@ class SDKSession {
     const txs = JSON.parse(JSON.stringify(this.btcTxs));
     txs.forEach((tx) => {
       // Determine if this is an outgoing transaction or not based on inputs.
-      // If *any* input comes from one of our addresses, we consider the 
-      // transaction to be "outgoin".
-      let outgoing = false;
-      tx.inputs.forEach((input) => {
-        if (allAddrs.indexOf(input.addr) > -1) {
-          outgoing = true;
-        }
-      })
-      tx.incoming = !outgoing;
+      // We consider a transaction as "incoming" if *every* input was signed by
+      // an external address.
+      tx.incoming = tx.inputs.every(input => allAddrs.indexOf(input.addr) === -1);
 
       // Fill in the recipient. If this is an outgoing transaction, it will
       // always be the first output. Otherwise, we consider the recipient
       // to be the first address belonging to us that we can find in outputs.
-      if (outgoing) {
+      if (!tx.incoming) {
         tx.recipient = tx.outputs[0].addr;
       } else {
         tx.outputs.forEach((output) => {
@@ -596,7 +590,7 @@ class SDKSession {
 
       // Calculate the value of the transaction to display in our history
       tx.value = 0;
-      if (outgoing) {
+      if (!tx.incoming) {
         // Outgoing tx: sum(outputs to external addrs)
         let inputSum = 0;
         tx.inputs.forEach((input) => {
