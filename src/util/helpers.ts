@@ -44,6 +44,7 @@ export const constants = {
     BTC_PURPOSE_SEGWIT: HARDENED_OFFSET + 84,
     BTC_PURPOSE_SEGWIT_STR: 'Segwit (bc1)',
     BTC_SEGWIT_NATIVE_V0_PREFIX: 'bc',
+    BTC_LEGACY_VERSION: 0x00,
     BTC_WRAPPED_SEGWIT_VERSION: 0x05,
     RATE_LIMIT: 1000, // 1s between requests
     GET_ABI_URL: 'https://api.etherscan.io/api?module=contract&action=getabi&address=',
@@ -89,6 +90,7 @@ const devConstants = {
     BTC_TESTNET: 'Testnet3',
     LATTICE_CERT_SIGNER: '045cfdf77a00b4b6b4a5b8bb26b5497dbc7a4d01cbefd7aaeaf5f6f8f8865976e7941ab0ec1651209c444009fd48d925a17de5040ba47eaf3f5b51720dd40b2f9d',
     BTC_SEGWIT_NATIVE_V0_PREFIX: 'tb',
+    BTC_LEGACY_VERSION: 0x6F,
     BTC_WRAPPED_SEGWIT_VERSION: 0xC4,
 }
 
@@ -435,7 +437,7 @@ function _blockchainDotComScriptToAddr(_scriptStr) {
         return bs58check.encode(Buffer.concat([Buffer.from([version]), pubkeyhash]));
     } else if (purpose === constants.BTC_PURPOSE_LEGACY) {
         // Script: |OP_DUP|OP_HASH160|0x20|pubkeyhash|OP_EQUALVERIFY|OP_CHECKSIG|
-        const version = constants.BTC_WRAPPED_SEGWIT_VERSION;
+        const version = constants.BTC_LEGACY_VERSION;
         const pubkeyhash = Buffer.from(_scriptStr, 'hex').slice(3, 23);
         return bs58check.encode(Buffer.concat([Buffer.from([version]), pubkeyhash]));
     }

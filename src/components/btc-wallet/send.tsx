@@ -261,10 +261,10 @@ class Send extends React.Component<any, any> {
         <p>Transaction signed and broadcast successfully.&nbsp;
         <a className='lattice-a' target='_blank' rel='noopener noreferrer' href={this.getUrl()}>View</a></p>
       ) : (
-        <p>Your transaction was signed and broadcast successfully. 
-        Your hash is: <a className='lattice-a' target='_blank' rel='noopener noreferrer' href={this.getUrl()}>
-          {this.state.txHash}
-        </a></p>
+        <p>
+          Your transaction was signed and broadcast successfully. 
+          Please return to your History tab and refresh to see status.
+        </p>
       )
       return (
         <Alert
