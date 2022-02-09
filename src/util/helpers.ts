@@ -44,6 +44,7 @@ export const constants = {
     BTC_PURPOSE_SEGWIT: HARDENED_OFFSET + 84,
     BTC_PURPOSE_SEGWIT_STR: 'Segwit (bc1)',
     BTC_SEGWIT_NATIVE_V0_PREFIX: 'bc',
+    BTC_LEGACY_VERSION: 0x00,
     BTC_WRAPPED_SEGWIT_VERSION: 0x05,
     RATE_LIMIT: 1000, // 1s between requests
     GET_ABI_URL: 'https://api.etherscan.io/api?module=contract&action=getabi&address=',
@@ -89,6 +90,7 @@ const devConstants = {
     BTC_TESTNET: 'Testnet3',
     LATTICE_CERT_SIGNER: '045cfdf77a00b4b6b4a5b8bb26b5497dbc7a4d01cbefd7aaeaf5f6f8f8865976e7941ab0ec1651209c444009fd48d925a17de5040ba47eaf3f5b51720dd40b2f9d',
     BTC_SEGWIT_NATIVE_V0_PREFIX: 'tb',
+    BTC_LEGACY_VERSION: 0x6F,
     BTC_WRAPPED_SEGWIT_VERSION: 0xC4,
 }
 
@@ -206,7 +208,7 @@ export function fetchBtcUtxos(addresses, cb) {
 
 //====== TXS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
-function _fetchBtcTxs(addresses, cb, txs=[], offset=0, isFirstCall=true) {
+function _fetchBtcTxs(addresses, txs, cb, offset=0, isFirstCall=true) {
     if (addresses.length === 0) {
         // No more addresses left to check. We are done.
         return cb(null, txs);
@@ -247,7 +249,7 @@ function _fetchBtcTxs(addresses, cb, txs=[], offset=0, isFirstCall=true) {
         if (err)
             return cb(err);
         // Add the new txs
-        const formattedTxs: any[] = [];
+        let txsAdded = 0;
         data.txs.forEach((t) => {
             const ftx = {
                 timestamp: t.time * 1000,
@@ -272,26 +274,33 @@ function _fetchBtcTxs(addresses, cb, txs=[], offset=0, isFirstCall=true) {
             if (!ftx.confirmed) {
                 ftx.timestamp = -1;
             }
-            formattedTxs.push(ftx);
+
+            // Only add the transaction if its hash is not already in the array.
+            // NOTE: There may be an edge case. I noticed in one case we got
+            // a result saying `vout_sz=2` but which only had one output in its array...
+            let shouldInclude = txs.every(_tx => _tx.id !== ftx.id);
+            if (shouldInclude) {
+                txs.push(ftx);
+                txsAdded += 1;
+            }
         })
-        txs = txs.concat(formattedTxs)
         // Determine if we need to recurse on this set of addresses
-        if (formattedTxs.length >= MAX_TXS_RET) {
+        if (txsAdded >= MAX_TXS_RET) {
             return setTimeout(() => {
-                _fetchBtcTxs(addresses, cb, txs, offset+MAX_TXS_RET, false);
+                _fetchBtcTxs(addresses, txs, cb, offset+MAX_TXS_RET, false);
             }, constants.RATE_LIMIT);
         }
         // Otherwise we are done with these addresses. Clip them and recurse.
         addresses = addresses.slice(ADDRS_PER_CALL);
         setTimeout(() => {
-            _fetchBtcTxs(addresses, cb, txs, 0, false);
+            _fetchBtcTxs(addresses, txs, cb, 0, false);
         }, constants.RATE_LIMIT);
     })
 }
 
 // For testnet we cannot use blockchain.com - we have to request stuff from each
 // address individually.
-function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
+function _fetchBtcTxsTestnet(addresses, txs, cb, lastSeenId=null) {
     const address = addresses.pop()
     //@ts-expect-error
     let url = `${constants.BTC_DEV_DATA_API}/address/${address}/txs`;
@@ -339,18 +348,18 @@ function _fetchBtcTxsTestnet(addresses, cb, txs=[], lastSeenId=null) {
             // https://github.com/Blockstream/esplora/blob/master/API.md#get-addressaddresstxs
             // We need to re-request with the last tx
             addresses.push(address)
-            return _fetchBtcTxsTestnet(addresses, cb, txs, txs[confirmedCount-1].id)
+            return _fetchBtcTxsTestnet(addresses, txs, cb, txs[confirmedCount-1].id)
         }
         if (addresses.length === 0) {
             return cb(null, txs);
         }
         setTimeout(() => {
-            _fetchBtcTxsTestnet(addresses, cb, txs)
+            _fetchBtcTxsTestnet(addresses, txs, cb)
         }, constants.RATE_LIMIT)
     })
 }
 
-export function fetchBtcTxs(addresses, cb) {
+export function fetchBtcTxs(addresses, txs, cb) {
     if (!addresses)
         return cb('Cannot fetch transactions - bad input');
     else if (addresses.length < 1)
@@ -358,7 +367,7 @@ export function fetchBtcTxs(addresses, cb) {
     const addrsCopy = JSON.parse(JSON.stringify(addresses));
     //@ts-expect-error
     const f = constants.BTC_DEV_DATA_API ? _fetchBtcTxsTestnet : _fetchBtcTxs;
-    f(addrsCopy, cb);
+    f(addrsCopy, txs, cb);
 }
 //====== END TXS ==================
 
@@ -435,7 +444,7 @@ function _blockchainDotComScriptToAddr(_scriptStr) {
         return bs58check.encode(Buffer.concat([Buffer.from([version]), pubkeyhash]));
     } else if (purpose === constants.BTC_PURPOSE_LEGACY) {
         // Script: |OP_DUP|OP_HASH160|0x20|pubkeyhash|OP_EQUALVERIFY|OP_CHECKSIG|
-        const version = constants.BTC_WRAPPED_SEGWIT_VERSION;
+        const version = constants.BTC_LEGACY_VERSION;
         const pubkeyhash = Buffer.from(_scriptStr, 'hex').slice(3, 23);
         return bs58check.encode(Buffer.concat([Buffer.from([version]), pubkeyhash]));
     }

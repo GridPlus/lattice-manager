@@ -472,7 +472,7 @@ class SDKSession {
         console.error('Failed to fetch price:', err);
         btcPrice = 0;
       }
-      fetchBtcTxs(addrs, (err, _txs) => {
+      fetchBtcTxs(addrs, txs, (err, _txs) => {
         if (err)
           return cb(err);
         else if (!_txs)
@@ -564,46 +564,60 @@ class SDKSession {
     const processedTxs: any[] = [];
     const txs = JSON.parse(JSON.stringify(this.btcTxs));
     txs.forEach((tx) => {
-      tx.recipient = tx.outputs[0].addr;
-      tx.incoming = allAddrs.indexOf(tx.recipient) > -1;
-      tx.value = 0;
-      if (allAddrs.indexOf(tx.recipient) === -1) {
-        // Outbound
-        tx.inputs.forEach((input) => {
-          tx.value += input.value;
-        })
-        tx.value -= tx.fee;
-        tx.outputs.forEach((output) => {
-          if (allAddrs.indexOf(output.addr) > -1)
-            tx.value -= output.value;
-        })
+      // Determine if this is an outgoing transaction or not based on inputs.
+      // We consider a transaction as "incoming" if *every* input was signed by
+      // an external address.
+      tx.incoming = tx.inputs.every(input => allAddrs.indexOf(input.addr) === -1);
+
+      // Fill in the recipient. If this is an outgoing transaction, it will
+      // always be the first output. Otherwise, we consider the recipient
+      // to be the first address belonging to us that we can find in outputs.
+      if (!tx.incoming) {
+        tx.recipient = tx.outputs[0].addr;
       } else {
-        // Inbound
         tx.outputs.forEach((output) => {
-          if (allAddrs.indexOf(output.addr) > -1)
-            tx.value += output.value;
+          if (!tx.recipient && allAddrs.indexOf(output.addr) > -1) {
+            // Mark the recipient as the first of our addresses we find
+            tx.recipient = allAddrs[allAddrs.indexOf(output.addr)];
+          }
         })
-        // Handle edge case where this is an internal tx
-        let sentFromAddrs = 0;
-        let totalValue = 0;
+        if (!tx.recipient) {
+          // Fallback to the first output. This should not be possible after
+          // the loop above.
+          tx.recipient = tx.outputs[0].addr;
+        }
+      }
+
+      // Calculate the value of the transaction to display in our history
+      tx.value = 0;
+      if (!tx.incoming) {
+        // Outgoing tx: sum(outputs to external addrs)
+        let inputSum = 0;
         tx.inputs.forEach((input) => {
-          totalValue += input.value;
-          if (allAddrs.indexOf(input.addr) > -1)
-            sentFromAddrs += input.value;
+          inputSum += input.value;
         })
-        // If any of the inputs were from one of our addresses,
-        // subtract those inputs from the total display amount
-        if (sentFromAddrs > 0) {
-          tx.value -= sentFromAddrs;
-        }
-        // If ALL inputs were from our addresses, set value to 0.
-        // This is just for display purposes and this is an edge case
-        // so it's not super important, but I'm not sure what the
-        // standard way to handle this is. I think it makes most
-        // sense to show this as an internal tx with a 0 value
-        if (totalValue === sentFromAddrs) {
+        let internalOutputSum = 0;
+        let externalOutputSum = 0;
+        tx.outputs.forEach((output) => {
+          if (allAddrs.indexOf(output.addr) > -1) {
+            internalOutputSum += output.value;
+          } else {
+            externalOutputSum += output.value;
+          }
+        })
+        if (inputSum === internalOutputSum + tx.fee) {
+          // Edge case: sent to internal address, i.e. internal transaction
           tx.value = 0;
+        } else {
+          tx.value = externalOutputSum;
         }
+      } else {
+        // Incoming tx: sum(outputs to internal addrs)
+        tx.outputs.forEach((output) => {
+          if (allAddrs.indexOf(output.addr) > -1) {
+            tx.value += output.value;
+          }
+        })
       }
       processedTxs.push(tx);
     })

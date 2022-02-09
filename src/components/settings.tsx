@@ -122,16 +122,15 @@ class Settings extends React.Component<any, any> {
             <Radio value={constants.BTC_PURPOSE_NONE}>
               Hide BTC Wallet
             </Radio>
-            {/* <Radio value={constants.BTC_PURPOSE_SEGWIT}>
+            <Radio value={constants.BTC_PURPOSE_SEGWIT}>
               {constants.BTC_PURPOSE_SEGWIT_STR}
-            </Radio> */}
+            </Radio>
             <Radio value={constants.BTC_PURPOSE_WRAPPED_SEGWIT}>
               {constants.BTC_PURPOSE_WRAPPED_SEGWIT_STR}
             </Radio>
-            {/* Don't uncomment this until segwit support is released
             <Radio value={constants.BTC_PURPOSE_LEGACY}>
               {constants.BTC_PURPOSE_LEGACY_STR}
-            </Radio> */}
+            </Radio>
           </Space>
         </Radio.Group>
       </Card>
