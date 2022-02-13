@@ -4,7 +4,6 @@ import fuzzysort from "fuzzysort";
 import intersectionBy from "lodash/intersectionBy";
 import React, { useCallback, useEffect, useState } from "react";
 import { Record } from "../types/records";
-import { isValidEthAddress } from "../util/addresses";
 import { constants } from "../util/helpers";
 import { abbreviateHash } from "../util/addresses";
 const { ADDRESSES_PER_PAGE } = constants;
@@ -111,19 +110,7 @@ export const AddressTable = ({
           title="Address"
           dataIndex="key"
           key="key"
-          render={(key) =>
-            isValidEthAddress(key)
-              ? (
-                <a
-                  className="lattice-a"
-                  href={`https://etherscan.io/address/${key}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {abbreviateHash(key)}
-                </a>)
-              : abbreviateHash(key)
-          }
+          render={(key) => abbreviateHash(key)}
           sorter={(a: any, b: any) => a.key.localeCompare(b.key)}
         />
       </Table>
