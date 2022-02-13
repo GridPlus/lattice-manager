@@ -2,6 +2,7 @@ import { MinusSquareFilled, PlusOutlined } from "@ant-design/icons";
 import { Alert, Button, Form, Input, Modal, Space } from "antd";
 import _ from "lodash";
 import React, { useState } from "react";
+import { validAddressRegex } from "../util/addresses";
 
 const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
 const ADDRESS_RECORD_TYPE = 0;
@@ -9,7 +10,6 @@ const keyIsDuplicatedErrorMessage =
   "You already have a tag with this address on your device.";
 const valIsDuplicatedErrorMessage =
   "You already have a tag with this name on your device.";
-const validAddressRegex = /^0x[a-fA-F0-9]{40}$/;
 
 /** @typedef {{ key: string, val: string }} Record */
 
@@ -147,11 +147,12 @@ export const AddAddressesButton = ({
                           validateTrigger={["onChange", "onBlur"]}
                           rules={[
                             { required: true, message: "Address is required." },
-                            {max: MAX_RECORD_LEN, type: "string", message: `Must be shorter than ${MAX_RECORD_LEN} characters.`},
+                            { max: MAX_RECORD_LEN, type: "string", message: `Must be shorter than ${MAX_RECORD_LEN} characters.`},
                             {
                               pattern: validAddressRegex,
-                              message: "Must be a valid address.",
+                              message: "This is not a valid Ethereum address.",
                               validateTrigger: "onBlur",
+                              warningOnly: true,
                             },
                             {
                               validator: (rule, key) => {

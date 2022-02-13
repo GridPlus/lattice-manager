@@ -3,8 +3,8 @@ import React from "react";
 import { AddressTable } from "../AddressTable";
 
 const addresses = [
-  { key: "a", val: "a" },
-  { key: "b", val: "b" },
+  { key: "a", val: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+  { key: "b", val: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
 ];
 const removeSelected = jest.fn();
 const loading = false;
