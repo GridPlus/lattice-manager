@@ -137,6 +137,7 @@ function _fetchBtcUtxos(addresses, cb, utxos=[], offset=0) {
         // If this is a follow up, fetch txs after an offset
         url = `${url}&offset=${offset}`
     }
+    console.log('Fetching utxos', url)
     fetchJSON(url, null, (err, data) => {
         if (err)
             return cb(err);
@@ -245,6 +246,7 @@ function _fetchBtcTxs(addresses, txs, cb, offset=0, isFirstCall=true) {
         // If this is a follow up, fetch txs after an offset
         url = `${url}&offset=${offset}`
     }
+    console.log('Fetching txs', url)
     fetchJSON(url, null, (err, data) => {
         if (err)
             return cb(err);
