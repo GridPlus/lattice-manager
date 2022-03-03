@@ -4,6 +4,7 @@ import "antd/dist/antd.dark.css";
 import React from "react";
 import { constants } from "../util/helpers";
 import { ContractCardList } from "./ContractCardList";
+import { ContractTable } from "./ContractTable";
 import { PageContent } from "./index";
 import { SearchCard } from "./SearchCard";
 import "./styles.css";
@@ -20,6 +21,7 @@ const TAB_KEYS = {
   PACK: "1",
   SINGLE_ADDR: "2",
   CUSTOM: "3",
+  ADDED: "4",
 };
 const manualPlaceholder =
   '[{"inputs":[{"internalType":"address[]","name":"_components","type":"address[]"},{"internalType":"int256[]","name":"_units","type":"int256[]"},{"internalType":"address[]","name":"_modules","type":"address[]"},{"internalType":"contract IController","name":"_controller","type":"address"},{"internalType":"address","name":"_manager","type":"address"},{"internalType":"string","name":"_name","type":"string"},';
@@ -34,17 +36,14 @@ class EthContracts extends React.Component<any, any> {
       defs: [],
       success: false,
       loading: false,
-      //@ts-expect-error
-      tab: TAB_KEYS.PATH,
+      tab: TAB_KEYS.PACK,
       selectedPackKey: "AAVE",
     };
 
     this.addDefs = this.addDefs.bind(this);
     this.onSmartContractAddress = this.onSmartContractAddress.bind(this);
     this.renderSuccessAlert = this.renderSuccessAlert.bind(this);
-    this.renderPackCard = this.renderPackCard.bind(this);
     this.renderCustomCard = this.renderCustomCard.bind(this);
-    this.renderSearchCard = this.renderSearchCard.bind(this);
   }
 
   onTabChange(key) {
@@ -170,16 +169,14 @@ class EthContracts extends React.Component<any, any> {
     if (isLoadingDefs) return;
     return (
       <Tabs activeKey={this.state.tab} onChange={this.onTabChange.bind(this)}>
-        <Tabs.TabPane tab="Packs" key={TAB_KEYS.PACK} />
-        <Tabs.TabPane tab="Address" key={TAB_KEYS.SINGLE_ADDR} />
-        <Tabs.TabPane tab="Manual" key={TAB_KEYS.CUSTOM} />
+        <Tabs.TabPane tab="Add Packs" key={TAB_KEYS.PACK} />
+        <Tabs.TabPane tab="Add By Address" key={TAB_KEYS.SINGLE_ADDR} />
+        <Tabs.TabPane tab="Add Manually" key={TAB_KEYS.CUSTOM} />
+        <Tabs.TabPane tab="View Added" key={TAB_KEYS.ADDED} />
       </Tabs>
     );
   }
 
-  renderSearchCard() {
-    return <SearchCard session={this.props.session} />;
-  }
 
   // TEMPORARY FUNCTION TO REMOVE FUNCTIONS WITH ZERO LENGTH PARAM NAMES
   // SEE: https://github.com/GridPlus/gridplus-sdk/issues/154
@@ -291,23 +288,19 @@ class EthContracts extends React.Component<any, any> {
     );
   }
 
-  renderPackCard() {
-    return <ContractCardList session={this.props.session} />;
-  }
-
-  renderCard() {
-    let f;
-    switch (this.state.tab) {
-      case TAB_KEYS.CUSTOM:
-        f = this.renderCustomCard;
-        break;
-      case TAB_KEYS.SINGLE_ADDR:
-        f = this.renderSearchCard;
-        break;
-      case TAB_KEYS.PACK:
-      default:
-        f = this.renderPackCard;
-        break;
+  renderCard () {
+    const f = () => {
+      switch (this.state.tab) {
+        case TAB_KEYS.CUSTOM:
+          return this.renderCustomCard();
+        case TAB_KEYS.SINGLE_ADDR:
+          return <SearchCard session={this.props.session} />;
+        case TAB_KEYS.ADDED:
+          return <ContractTable session={this.props.session} />
+        case TAB_KEYS.PACK:
+        default:
+          return <ContractCardList session={this.props.session} />;
+      }
     }
     return (
       <div>
@@ -325,7 +318,7 @@ class EthContracts extends React.Component<any, any> {
           title={
             <div>
               <h3>
-                Load Contract Data&nbsp;&nbsp;
+                Contract Data&nbsp;&nbsp;
                 <a
                   className="lattice-a"
                   href={constants.CONTRACTS_HELP_LINK}

@@ -1,4 +1,5 @@
 import { Client } from 'gridplus-sdk';
+import { GetAbiRecordsData } from 'gridplus-sdk/dist/types/client';
 import { Record } from "../types/records";
 import { SDKAddresses } from '../types/SDKAddresses';
 import {
@@ -10,7 +11,7 @@ const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
 
 class SDKSession {
-  client: any;
+  client: Client;
   crypto: any;
   name: any;
   storageSession: any;
@@ -277,7 +278,7 @@ class SDKSession {
   refreshWallets(cb) {
     if (this.client) {
       const prevWallet = JSON.stringify(this.client.getActiveWallet());
-      this.client.connect(this.deviceID, (err) => {
+      this.client.connect(this.deviceID, (err, isPaired) => {
         // If we lost connection, the user most likely removed the pairing and will need to repair
         if (false === this.client.isPaired)
           return cb(constants.LOST_PAIRING_ERR);
@@ -291,7 +292,7 @@ class SDKSession {
         // Update storage. This will remap to a new localStorage key if the wallet UID
         // changed. If we didn't get an active wallet, it will just clear out the addresses
         this.getBtcWalletData();
-        return cb(null);
+        return cb(null, isPaired);
       })
     } else {
       return cb('Lost connection to Lattice. Please refresh.');
@@ -630,7 +631,7 @@ class SDKSession {
    * Wraps `client.getKvRecords` in a `Promise` for easier handling
    * @param opts - Pagination options for where to start and how many to query for
    */
-  async getKvRecords (opts: { start: number, n: number }): Promise<{ records: Record[]; fetched: number; total: number }> {
+  async getKvRecords (opts: { type?: number, start: number, n: number }): Promise<{ records: Record[]; fetched: number; total: number }> {
     return new Promise((resolve, reject) =>
       this.client.getKvRecords(opts, (err, res) =>
         err ? reject(err) : resolve(res)
@@ -643,8 +644,33 @@ class SDKSession {
    * @param records - list of records to remove
    */
   async removeKvRecords ({ ids }: { ids: string[] }): Promise<boolean> {
+    const numberIds = ids.map(id=>parseInt(id))
     return new Promise((resolve, reject) =>
-      this.client.removeKvRecords({ ids }, (err) =>
+      this.client.removeKvRecords({ ids: numberIds, type: 0 }, (err) =>
+        err ? reject(err) : resolve(true)
+      )
+    );
+  }
+
+  /**
+   * Wraps `client.getAbiRecords` in a `Promise` for easier handling
+   * @param opts - Pagination options for where to start and how many to query for
+   */
+   async getAbiRecords (opts: { n: number; startIdx: number; category: string; }): Promise<GetAbiRecordsData> {
+    return new Promise((resolve, reject) =>
+      this.client.getAbiRecords(opts, (err, res) =>
+        err ? reject(err) : resolve(res)
+      )
+    );
+   }
+  
+  /**
+   * Wraps `client.removeKvRecords` in a `Promise` for easier handling
+   * @param records - list of records to remove
+   */
+   async removeAbiRecords ({ sigs }: { sigs: string[] }): Promise<boolean> {
+    return new Promise((resolve, reject) =>
+      this.client.removeAbiRecords({ sigs }, (err) =>
         err ? reject(err) : resolve(true)
       )
     );
