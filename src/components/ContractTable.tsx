@@ -27,7 +27,7 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
     const res: any = await session
       .client
       .getAbiRecords({
-      n: CONTRACTS_PER_PAGE,
+      n: 10,
       startIdx: fetched,
       category: ""
     }).catch(err => {
