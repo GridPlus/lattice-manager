@@ -238,7 +238,6 @@ class SDKSession {
     try {
       client = new Client({ 
         name: this.name,
-        crypto: this.crypto,
         privKey: key,
         baseUrl,
         timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
@@ -271,7 +270,6 @@ class SDKSession {
   }
 
   connect(deviceID, pw, cb) {
-    // return this._tryConnect(deviceID, pw, cb);
     return this._tryConnect(deviceID, pw, cb, true); // temporarily disable local connect
   }
 
@@ -297,18 +295,6 @@ class SDKSession {
     } else {
       return cb('Lost connection to Lattice. Please refresh.');
     }
-  }
-
-  addAbiDefs(defs, cb) {
-    this.client.addAbiDefs(defs, cb);
-  }
-
-  addPermissionV0(req, cb) {
-    this.client.addPermissionV0(req, cb);
-  }
-
-  pair(secret, cb) {
-    this.client.pair(secret, cb);
   }
 
   sign(req, cb) {
@@ -625,55 +611,6 @@ class SDKSession {
     const sortedTxs = processedTxs
                       .sort((a, b) => { return b.timestamp - a.timestamp })
     this.btcTxs = sortedTxs;
-  }
-
-  /**
-   * Wraps `client.getKvRecords` in a `Promise` for easier handling
-   * @param opts - Pagination options for where to start and how many to query for
-   */
-  async getKvRecords (opts: { type?: number, start: number, n: number }): Promise<{ records: Record[]; fetched: number; total: number }> {
-    return new Promise((resolve, reject) =>
-      this.client.getKvRecords(opts, (err, res) =>
-        err ? reject(err) : resolve(res)
-      )
-    );
-  }
-
-  /**
-   * Wraps `client.removeKvRecords` in a `Promise` for easier handling
-   * @param records - list of records to remove
-   */
-  async removeKvRecords ({ ids }: { ids: string[] }): Promise<boolean> {
-    const numberIds = ids.map(id=>parseInt(id))
-    return new Promise((resolve, reject) =>
-      this.client.removeKvRecords({ ids: numberIds, type: 0 }, (err) =>
-        err ? reject(err) : resolve(true)
-      )
-    );
-  }
-
-  /**
-   * Wraps `client.getAbiRecords` in a `Promise` for easier handling
-   * @param opts - Pagination options for where to start and how many to query for
-   */
-   async getAbiRecords (opts: { n: number; startIdx: number; category: string; }): Promise<GetAbiRecordsData> {
-    return new Promise((resolve, reject) =>
-      this.client.getAbiRecords(opts, (err, res) =>
-        err ? reject(err) : resolve(res)
-      )
-    );
-   }
-  
-  /**
-   * Wraps `client.removeKvRecords` in a `Promise` for easier handling
-   * @param records - list of records to remove
-   */
-   async removeAbiRecords ({ sigs }: { sigs: string[] }): Promise<boolean> {
-    return new Promise((resolve, reject) =>
-      this.client.removeAbiRecords({ sigs }, (err) =>
-        err ? reject(err) : resolve(true)
-      )
-    );
   }
 }
 

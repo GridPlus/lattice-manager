@@ -183,7 +183,7 @@ class Main extends React.Component<any, MainState> {
     // the cancel button that triggers this function will not be displayed once the device
     // responds back that it is ready to pair.
     if (this.state.session && this.state.session.client) {
-      this.state.session.pair('', () => {});
+      this.state.session.client.pair('', () => {});
     }
     // Reset all SDK-related state variables so the user can re-connect to something else.
     this.setState({ deviceID: null, password: null, session: null })
@@ -406,7 +406,7 @@ class Main extends React.Component<any, MainState> {
     // TODO: This will still draw a pairing failure screen on the Lattice. There is
     //       currently no way around this, but it is something we should address
     //       in the future.
-    this.state.session.pair('x', () => {
+    this.state.session.client.pair('x', () => {
       this.handleLogout(constants.LOST_PAIRING_MSG);
     });
   }
@@ -468,7 +468,7 @@ class Main extends React.Component<any, MainState> {
 
     // If we didn't timeout, submit the secret and hope for success!
     this.wait("Establishing connection with your Lattice");
-    this.state.session.pair(data, (err) => {
+    this.state.session.client.pair(data, (err) => {
       this.unwait();
       if (err) {
         // If there was an error here, the user probably entered the wrong secret

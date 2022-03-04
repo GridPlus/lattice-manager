@@ -22,28 +22,28 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
   const [filteredContracts, setFilteredContracts] = useState([]);
   const [selectedContracts, setSelectedContracts] = useState([]);
 
-  const fetchRecords = useCallback((fetched = 0, retries = 1) => {
+  const fetchRecords = useCallback(async (fetched = 0, retries = 1) => {
     setIsLoading(true);
-    session.client.getAbiRecords({
+    const res: any = await session
+      .client
+      .getAbiRecords({
       n: CONTRACTS_PER_PAGE,
       startIdx: fetched,
       category: ""
-    })
-    .then(res => {
-      const _contracts = res.records.map(r => ({ id: r.header.name, ...r }))
-      addContracts(_contracts);
-      const totalFetched = res.numFetched + fetched;
-      const remainingToFetch = res.numRemaining;
-      if (remainingToFetch > 0) {
-        fetchRecords(totalFetched);
-      } else {
-        setIsLoading(false);
-      }
-    }
-    ).catch(err => {
+    }).catch(err => {
       setIsLoading(false);
       return console.error(err);
     })
+
+    const _contracts = res.records.map(r => ({ id: r.header.name, ...r }))
+    addContracts(_contracts);
+    const totalFetched = res.numFetched + fetched;
+    const remainingToFetch = res.numRemaining;
+    if (remainingToFetch > 0) {
+      fetchRecords(totalFetched);
+    } else {
+      setIsLoading(false);
+    }
   }, [session, addContracts]);
 
   useEffect(() => {

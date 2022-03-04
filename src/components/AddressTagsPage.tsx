@@ -24,23 +24,13 @@ const AddressTagsPage = ({
   const [addresses, addAddresses, removeAddresses] = useRecords([]);
 
   const fetchRecords = useCallback(
-    (fetched = 0, retries = 1) => {
+    async (fetched = 0, retries = 1) => {
       setIsLoading(true);
-      session
+      const res: any = await session
+        .client
         .getKvRecords({
           start: fetched,
           n: ADDRESSES_PER_PAGE,
-        })
-        .then((res) => {
-          addAddresses(res.records);
-          const totalFetched = res.fetched + fetched;
-          const remainingToFetch = res.total - totalFetched;
-          if (remainingToFetch > 0) {
-            fetchRecords(fetched + res.fetched);
-          } else {
-            setError(null);
-            setIsLoading(false);
-          }
         })
         .catch((err) => {
           if (retries > 0) {
@@ -52,8 +42,18 @@ const AddressTagsPage = ({
             setRetryFunction(fetchRecords);
           }
         });
+      
+      addAddresses(res.records);
+      const totalFetched = res.fetched + fetched;
+      const remainingToFetch = res.total - totalFetched;
+      if (remainingToFetch > 0) {
+        fetchRecords(fetched + res.fetched);
+      } else {
+        setError(null);
+        setIsLoading(false);
+      }
     },
-    [addAddresses, session]
+    [addAddresses, session.client]
   );
 
   useEffect(() => {
@@ -62,11 +62,12 @@ const AddressTagsPage = ({
   }, []);
 
   const removeSelected = (selectedAddresses: Record[]) => {
-    const ids = selectedAddresses.map((r) => r.id);
+    const ids = selectedAddresses.map((r) => parseInt(r.id));
     if (ids.length === 0) return;
     setIsLoading(true);
     session
-      .removeKvRecords({ ids })
+      .client
+      .removeKvRecords({ ids, type: undefined })
       .then(() => {
         removeAddresses(selectedAddresses);
         setError(null);

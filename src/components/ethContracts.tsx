@@ -106,7 +106,7 @@ class EthContracts extends React.Component<any, any> {
     const defs = this.state.customDefs
       ? this.state.customDefs
       : this.state.defs;
-    this.props.session.addAbiDefs(defs, (err) => {
+    this.props.session.client.addAbiDefs(defs, (err) => {
       // Reset timeout to default
       this.props.session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
       if (err) {
