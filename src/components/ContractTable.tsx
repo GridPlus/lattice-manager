@@ -10,10 +10,10 @@ import { constants } from "../util/helpers";
 const { CONTRACTS_PER_PAGE } = constants;
 
 /**
- * `ContractTable` is a table of key-value pairs of names and hashes with some management features to
+ * `ContractTable` is a table of ABI contract data with some management features to
  * make it easier to manage a large amount of contracts.
  *
- * @param `session` - the list of key-value records to display
+ * @param `session` - the active SDK session
  */
 export const ContractTable = ({ session }: { session: SDKSession }) => {
   const [input, setInput] = useState("");
@@ -22,29 +22,32 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
   const [filteredContracts, setFilteredContracts] = useState([]);
   const [selectedContracts, setSelectedContracts] = useState([]);
 
-  const fetchRecords = useCallback(async (fetched = 0, retries = 1) => {
-    setIsLoading(true);
-    const res: any = await session
-      .client
-      .getAbiRecords({
-      n: 10,
-      startIdx: fetched,
-      category: ""
-    }).catch(err => {
-      setIsLoading(false);
-      return console.error(err);
-    })
+  const fetchRecords = useCallback(
+    async (fetched = 0, retries = 1) => {
+      setIsLoading(true);
+      const res: any = await session.client
+        .getAbiRecords({
+          n: 10,
+          startIdx: fetched,
+          category: "",
+        })
+        .catch((err) => {
+          setIsLoading(false);
+          return console.error(err);
+        });
 
-    const _contracts = res.records.map(r => ({ id: r.header.name, ...r }))
-    addContracts(_contracts);
-    const totalFetched = res.numFetched + fetched;
-    const remainingToFetch = res.numRemaining;
-    if (remainingToFetch > 0) {
-      fetchRecords(totalFetched);
-    } else {
-      setIsLoading(false);
-    }
-  }, [session, addContracts]);
+      const _contracts = res.records.map((r) => ({ id: r.header.name, ...r }));
+      addContracts(_contracts);
+      const totalFetched = res.numFetched + fetched;
+      const remainingToFetch = res.numRemaining;
+      if (remainingToFetch > 0) {
+        fetchRecords(totalFetched);
+      } else {
+        setIsLoading(false);
+      }
+    },
+    [session, addContracts]
+  );
 
   useEffect(() => {
     fetchRecords();
@@ -77,9 +80,9 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
     const sigs = selectedContracts.map((contract) => contract.header.sig);
     session.client.removeAbiRecords({ sigs }, (err, val) => {
       setIsLoading(false);
-      if (err) return console.error(err)
-      removeContracts(selectedContracts)
-  });
+      if (err) return console.error(err);
+      removeContracts(selectedContracts);
+    });
   };
 
   const onChange = ({ target: { value } }) => {
@@ -87,22 +90,6 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
     const _contracts = value ? filter(value) : contracts;
     setFilteredContracts(_contracts);
     setSelectedContracts(intersectionBy(selectedContracts, _contracts, "key"));
-  };
-
-  const NestedTable = (record) => {
-    const columns = [
-      { title: "Name", dataIndex: "name", key: "name" },
-      { title: "Type", dataIndex: "typeName", key: "typeName" },
-    ];
-
-    return (
-      <Table
-        columns={columns}
-        dataSource={record.params}
-        pagination={false}
-        rowKey={(r) => r.name}
-      />
-    );
   };
 
   return (
@@ -154,10 +141,22 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
           type: "checkbox",
           onSelect: handleOnSelect,
           onSelectAll: handleOnSelectAll,
-          selectedRowKeys: selectedContracts.map((contract) => contract?.header?.name),
+          selectedRowKeys: selectedContracts.map(
+            (contract) => contract?.header?.name
+          ),
         }}
         expandable={{
-          expandedRowRender: (record) => NestedTable(record),
+          expandedRowRender: (record) => (
+            <Table
+              columns={[
+                { title: "Name", dataIndex: "name", key: "name" },
+                { title: "Type", dataIndex: "typeName", key: "typeName" },
+              ]}
+              dataSource={record.params}
+              pagination={false}
+              rowKey={(r) => r.name}
+            />
+          ),
           rowExpandable: (record) => record.params.length > 0,
         }}
       >

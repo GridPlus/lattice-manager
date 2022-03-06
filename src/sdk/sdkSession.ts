@@ -1,6 +1,4 @@
 import { Client } from 'gridplus-sdk';
-import { GetAbiRecordsData } from 'gridplus-sdk/dist/types/client';
-import { Record } from "../types/records";
 import { SDKAddresses } from '../types/SDKAddresses';
 import {
   broadcastBtcTx, constants, fetchBtcPrice,
