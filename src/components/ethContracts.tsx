@@ -1,7 +1,8 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { Alert, Button, Card, Input, Result, Tabs } from "antd";
 import "antd/dist/antd.dark.css";
-import React from "react";
+import React, { useState } from "react";
+import { useFeature } from "../hooks/useFeature";
 import { constants } from "../util/helpers";
 import { ContractCardList } from "./ContractCardList";
 import { ContractTable } from "./ContractTable";
@@ -9,14 +10,6 @@ import { PageContent } from "./index";
 import { SearchCard } from "./SearchCard";
 import "./styles.css";
 
-const defaultState = {
-  contract: null,
-  defs: [],
-  success: false,
-  loading: false,
-  customDefs: [],
-  customDefsStr: "",
-};
 const TAB_KEYS = {
   PACK: "1",
   SINGLE_ADDR: "2",
@@ -26,118 +19,69 @@ const TAB_KEYS = {
 const manualPlaceholder =
   '[{"inputs":[{"internalType":"address[]","name":"_components","type":"address[]"},{"internalType":"int256[]","name":"_units","type":"int256[]"},{"internalType":"address[]","name":"_modules","type":"address[]"},{"internalType":"contract IController","name":"_controller","type":"address"},{"internalType":"address","name":"_manager","type":"address"},{"internalType":"string","name":"_name","type":"string"},';
 
-class EthContracts extends React.Component<any, any> {
-  constructor(props) {
-    super(props);
+const EthContracts = ({ session, isMobile }) => {
+  const [error, setError] = useState(null);
+  const [defs, setDefs] = useState([]);
+  const [customDefs, setCustomDefs] = useState([]);
+  const [customDefsStr, setCustomDefsStr] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState(TAB_KEYS.PACK);
+  const { CAN_VIEW_CONTRACTS } = useFeature(session);
 
-    this.state = {
-      error: null,
-      contract: null,
-      defs: [],
-      success: false,
-      loading: false,
-      tab: TAB_KEYS.PACK,
-      selectedPackKey: "AAVE",
-    };
-
-    this.addDefs = this.addDefs.bind(this);
-    this.onSmartContractAddress = this.onSmartContractAddress.bind(this);
-    this.renderSuccessAlert = this.renderSuccessAlert.bind(this);
-    this.renderCustomCard = this.renderCustomCard.bind(this);
+  function setDefaultState() {
+    setDefs([]);
+    setSuccess(false);
+    setLoading(false);
+    setCustomDefs([]);
+    setCustomDefsStr("");
   }
 
-  onTabChange(key) {
-    this.setState({ tab: key, success: false, error: null, loading: false });
+  function onTabChange(key) {
+    setTab(key);
+    setSuccess(false);
+    setError(null);
+    setLoading(false);
   }
 
-  onSmartContractAddress(input) {
-    if (
-      input.slice(0, 2) !== "0x" ||
-      false === /^[0-9a-fA-F]+$/.test(input.slice(2)) ||
-      input.length !== 42
-    ) {
-      // Not a valid address
-      this.setState({
-        error: "Invalid Ethereum contract address",
-        ...defaultState,
-      });
-    } else {
-      this.setState({ loading: true });
-      setTimeout(() => {
-        fetch(`${constants.GET_ABI_URL}${input}`)
-          .then((response) => response.json())
-          .then((resp) => {
-            // Map confusing error strings to better descriptions
-            if (resp.err === "Contract source code not verified") {
-              resp.err =
-                "Contract source code not published to Etherscan or not verified. Cannot determine data.";
-            }
-            if (resp.err) {
-              this.setState({ error: resp.err.toString(), ...defaultState });
-            } else {
-              try {
-                const result = JSON.parse(resp.result);
-                const defs = this.TMP_REMOVE_ZERO_LEN_PARAMS(
-                  this.props.session.client.parseAbi("etherscan", result, true)
-                );
-                this.setState({
-                  defs,
-                  contract: input,
-                  error: null,
-                  success: false,
-                  loading: false,
-                });
-              } catch (err) {
-                this.setState({ error: err.toString(), ...defaultState });
-              }
-            }
-          })
-          .catch((err) => {
-            this.setState({ error: err.toString(), ...defaultState });
-          });
-      }, 5000); // 1 request per 5 seconds with no API key provided
-    }
-  }
-
-  addDefs(skipErrors = false, defsToAdd = null) {
-    this.setState({ loading: true, error: null });
-    // Longer timeout for loading these since requests may get dropped
-    this.props.session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
-    const defs = this.state.customDefs
-      ? this.state.customDefs
-      : this.state.defs;
-    this.props.session.client.addAbiDefs(defs, (err) => {
+  function addDefs(skipErrors = false, defsToAdd = null) {
+    setError(null);
+    setLoading(true); // Longer timeout for loading these since requests may get dropped
+    session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
+    const _defs = customDefs ? customDefs : defs;
+    session.client.addAbiDefs(_defs, (err) => {
       // Reset timeout to default
-      this.props.session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
+      session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
       if (err) {
-        this.setState({
-          error: err.toString(),
-          loading: false,
-          success: false,
-        });
+        setError(err.toString());
+        setLoading(false);
+        setSuccess(false);
       } else {
-        this.setState({ error: null, loading: false, success: true });
+        setError(null);
+        setLoading(false);
+        setSuccess(true);
       }
     });
   }
 
-  renderBanner() {
-    if (this.state.error) {
+  function renderBanner() {
+    if (error) {
       return (
         <Alert
           message="Error"
-          description={this.state.error}
+          description={error}
           type="error"
           closable
           onClose={() => {
-            this.setState({ error: null, ...defaultState });
+            setError(null);
+            setDefaultState();
           }}
         />
       );
     }
   }
 
-  renderSuccessAlert(buttonTxt = null) {
+  function renderSuccessAlert(buttonTxt = null) {
     return (
       <Result
         status="success"
@@ -152,7 +96,8 @@ class EthContracts extends React.Component<any, any> {
                   type="primary"
                   key="buttonTxt"
                   onClick={() => {
-                    this.setState({ loading: false, success: false });
+                    setSuccess(false);
+                    setLoading(false);
                   }}
                 >
                   {buttonTxt}
@@ -164,23 +109,24 @@ class EthContracts extends React.Component<any, any> {
     );
   }
 
-  renderTabs() {
-    const isLoadingDefs = this.state.success || this.state.loading;
+  function renderTabs() {
+    const isLoadingDefs = success || loading;
     if (isLoadingDefs) return;
     return (
-      <Tabs activeKey={this.state.tab} onChange={this.onTabChange.bind(this)}>
+      <Tabs activeKey={tab} onChange={onTabChange.bind(this)}>
         <Tabs.TabPane tab="Add Packs" key={TAB_KEYS.PACK} />
         <Tabs.TabPane tab="Add By Address" key={TAB_KEYS.SINGLE_ADDR} />
         <Tabs.TabPane tab="Add Manually" key={TAB_KEYS.CUSTOM} />
-        <Tabs.TabPane tab="View Added" key={TAB_KEYS.ADDED} />
+        {CAN_VIEW_CONTRACTS && (
+          <Tabs.TabPane tab="View Added" key={TAB_KEYS.ADDED} />
+        )}
       </Tabs>
     );
   }
 
-
   // TEMPORARY FUNCTION TO REMOVE FUNCTIONS WITH ZERO LENGTH PARAM NAMES
   // SEE: https://github.com/GridPlus/gridplus-sdk/issues/154
-  TMP_REMOVE_ZERO_LEN_PARAMS(defs) {
+  function TMP_REMOVE_ZERO_LEN_PARAMS(defs) {
     const newDefs: any[] = [];
     defs.forEach((def) => {
       let shouldAdd = true;
@@ -196,7 +142,7 @@ class EthContracts extends React.Component<any, any> {
     return newDefs;
   }
 
-  renderCustomCard() {
+  function renderCustomCard() {
     return (
       <div>
         <p>
@@ -216,39 +162,42 @@ class EthContracts extends React.Component<any, any> {
         <Input.TextArea
           placeholder={`${manualPlaceholder}...`}
           autoSize={{ minRows: 5, maxRows: 10 }}
-          value={this.state.customDefsStr}
+          value={customDefsStr}
           onChange={(x) => {
             const customDefsStr = x.target.value;
             try {
               const parsed = JSON.parse(customDefsStr);
-              const customDefs = this.TMP_REMOVE_ZERO_LEN_PARAMS(
-                this.props.session.client.parseAbi("etherscan", parsed, true)
+              const customDefs = TMP_REMOVE_ZERO_LEN_PARAMS(
+                session.client.parseAbi("etherscan", parsed, true)
               );
-              if (customDefs.length > 0)
-                this.setState({ customDefs, success: false, customDefsStr });
+              if (customDefs.length > 0) {
+                setCustomDefs(customDefs);
+                setSuccess(false);
+                setCustomDefsStr(customDefsStr);
+              }
             } catch (err) {
               console.warn(`Failed to scan for ABI definitions ${err.message}`);
-              this.setState({ customDefs: [], success: false, customDefsStr });
+              setCustomDefs([]);
+              setSuccess(false);
+              setCustomDefsStr(customDefsStr);
             }
           }}
         />
         <br />
         <br />
-        {this.state.customDefs && this.state.customDefs.length > 0 ? (
+        {customDefs && customDefs.length > 0 ? (
           <div>
-            {this.state.success ? (
+            {success ? (
               <div>
                 <center>
-                  {this.renderSuccessAlert()}
+                  {renderSuccessAlert()}
                   <Button
                     type="primary"
                     onClick={() => {
-                      this.setState({
-                        customDefs: [],
-                        customDefsStr: "",
-                        success: false,
-                        loading: false,
-                      });
+                      setCustomDefs([]);
+                      setCustomDefsStr("");
+                      setSuccess(false);
+                      setLoading(false);
                     }}
                   >
                     Add More
@@ -258,8 +207,7 @@ class EthContracts extends React.Component<any, any> {
             ) : (
               <div>
                 <p>
-                  Found <b>{this.state.customDefs.length}</b> functions that can
-                  be added.
+                  Found <b>{customDefs.length}</b> functions that can be added.
                   <br />
                   <i>
                     Note: functions with unsupported types are not included.
@@ -268,16 +216,16 @@ class EthContracts extends React.Component<any, any> {
                 <Button
                   type="primary"
                   onClick={() => {
-                    this.addDefs(true);
+                    addDefs(true);
                   }}
-                  loading={this.state.loading}
+                  loading={loading}
                 >
-                  {this.state.loading ? "Installing..." : "Install"}
+                  {loading ? "Installing..." : "Install"}
                 </Button>
-                {this.state.success ? (
+                {success ? (
                   <div>
                     <br />
-                    {this.renderSuccessAlert()}
+                    {renderSuccessAlert()}
                   </div>
                 ) : null}
               </div>
@@ -288,32 +236,32 @@ class EthContracts extends React.Component<any, any> {
     );
   }
 
-  renderCard () {
+  function renderCard() {
     const f = () => {
-      switch (this.state.tab) {
+      switch (tab) {
         case TAB_KEYS.CUSTOM:
-          return this.renderCustomCard();
+          return renderCustomCard();
         case TAB_KEYS.SINGLE_ADDR:
-          return <SearchCard session={this.props.session} />;
+          return <SearchCard session={session} />;
         case TAB_KEYS.ADDED:
-          return <ContractTable session={this.props.session} />
+          return <ContractTable session={session} />;
         case TAB_KEYS.PACK:
         default:
-          return <ContractCardList session={this.props.session} />;
+          return <ContractCardList session={session} />;
       }
-    }
+    };
     return (
       <div>
-        {this.renderTabs()}
+        {renderTabs()}
         {f()}
       </div>
     );
   }
 
-  render() {
+  function render() {
     const content = (
       <div>
-        {this.renderBanner()}
+        {renderBanner()}
         <Card
           title={
             <div>
@@ -332,12 +280,13 @@ class EthContracts extends React.Component<any, any> {
           }
           bordered={true}
         >
-          {this.renderCard()}
+          {renderCard()}
         </Card>
       </div>
     );
-    return <PageContent content={content} isMobile={this.props.isMobile} />;
+    return <PageContent content={content} isMobile={isMobile} />;
   }
-}
+  return render();
+};
 
 export default EthContracts;
