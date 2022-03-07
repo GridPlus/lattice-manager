@@ -34,7 +34,7 @@ export const SearchCard = ({ session }) => {
       input.length !== 42
     ) {
       // Not a valid address
-      setError("Invalid Ethereum contract address");
+      setError(`Invalid ${getNetwork().label} contract address`);
       resetData();
     } else {
       const { label, baseUrl, apiRoute } = getNetwork();

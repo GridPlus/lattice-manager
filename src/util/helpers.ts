@@ -56,12 +56,24 @@ export const constants = {
           baseUrl: "https://api.etherscan.io",
           apiRoute: "api?module=contract&action=getabi&address=",
         },
+        arbitrum: {
+            label: "Arbitrum",
+            url: "https://arbiscan.io",
+            baseUrl: "https://api.arbiscan.io",
+            apiRoute: "api?module=contract&action=getabi&address=",
+          },
         polygon: {
           label: "Polygon",
           url: "https://polygonscan.com",
           baseUrl: "https://api.polygonscan.com",
           apiRoute: "api?module=contract&action=getabi&address=",
         },
+        optimism: {
+            label: "Optimism",
+            url: "https://optimistic.etherscan.io",
+            baseUrl: "https://api-optimistic.etherscan.io",
+            apiRoute: "api?module=contract&action=getabi&address=",
+          },
         binance: {
           label: "Binance",
           url: "https://bscscan.com/",

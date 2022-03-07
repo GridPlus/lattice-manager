@@ -102,9 +102,20 @@ export function ContractCardList({ session }) {
             width: "100%",
           }}
         >
-          {paginatedPacks.map((pack) => (
-            <ContractCard pack={pack} session={session} key={pack.name} />
-          ))}
+          {paginatedPacks.length ? (
+            paginatedPacks.map((pack) => (
+              <ContractCard pack={pack} session={session} key={pack.name} />
+            ))
+          ) : (
+            <div style={{ marginTop: "20px" }}>
+              <p>
+                There are not any packs for this network yet.{" "}
+                <a href="https://github.com/GridPlus/abi-pack-framework">
+                  Submit a pull request.
+                </a>
+              </p>
+            </div>
+          )}
         </div>
       </Space>
     </div>
