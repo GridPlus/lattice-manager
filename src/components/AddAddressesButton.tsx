@@ -2,7 +2,6 @@ import { MinusSquareFilled, PlusOutlined } from "@ant-design/icons";
 import { Alert, Button, Form, Input, Modal, Space } from "antd";
 import _ from "lodash";
 import React, { useState } from "react";
-import { validAddressRegex } from "../util/addresses";
 
 const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
 const ADDRESS_RECORD_TYPE = 0;
@@ -148,12 +147,6 @@ export const AddAddressesButton = ({
                           rules={[
                             { required: true, message: "Address is required." },
                             { max: MAX_RECORD_LEN, type: "string", message: `Must be shorter than ${MAX_RECORD_LEN} characters.`},
-                            {
-                              pattern: validAddressRegex,
-                              message: "This is not a valid Ethereum address.",
-                              validateTrigger: "onBlur",
-                              warningOnly: true,
-                            },
                             {
                               validator: (rule, key) => {
                                 return records?.some((r) => r.key === key)
