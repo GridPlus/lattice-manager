@@ -42,16 +42,14 @@ const AddressTagsPage = ({
             setRetryFunction(fetchRecords);
           }
         });
-      if (res) {
-        addAddresses(res.records);
-        const totalFetched = res.fetched + fetched;
-        const remainingToFetch = res.total - totalFetched;
-        if (remainingToFetch > 0) {
-          fetchRecords(fetched + res.fetched);
-        } else {
-          setError(null);
-          setIsLoading(false);
-        }
+      addAddresses(res.records);
+      const totalFetched = res.fetched + fetched;
+      const remainingToFetch = res.total - totalFetched;
+      if (remainingToFetch > 0) {
+        fetchRecords(fetched + res.fetched);
+      } else {
+        setError(null);
+        setIsLoading(false);
       }
     },
     [addAddresses, session.client]
