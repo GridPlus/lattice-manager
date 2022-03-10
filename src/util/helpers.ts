@@ -87,6 +87,12 @@ export const constants = {
           baseUrl: "https://api.snowtrace.io",
           apiRoute: "api?module=contract&action=getabi&address=",
         },
+        gnosis: {
+          label: "Gnosis Chain",
+          url: "https://blockscout.com",
+          baseUrl: "https://blockscout.com/xdai/mainnet/",
+          apiRoute: "api?module=contract&action=getabi&address="
+        }
       },
 };
 
@@ -96,7 +102,7 @@ const devConstants = {
     BASE_SIGNING_URL: 'https://signing.staging-gridpl.us',
     // Deprecating because using two different stores was very tricky and we don't
     // need the second one anyway
-    // ROOT_STORE: 'gridplus-dev', 
+    // ROOT_STORE: 'gridplus-dev',
     BTC_COIN: HARDENED_OFFSET + 1,
     BTC_DEFAULT_FEE_RATE: 10,
     BTC_TX_BASE_URL: 'https://www.blockchain.com/btc-testnet/tx',
@@ -332,7 +338,7 @@ function _fetchBtcTxsTestnet(addresses, txs, cb, lastSeenId=null) {
                 id: t.txid,
                 fee: t.fee,
                 inputs: [],
-                outputs: [],                
+                outputs: [],
             }
             t.vin.forEach((input) => {
                 ftx.inputs.push({
@@ -465,8 +471,8 @@ function _blockchainDotComScriptToAddr(_scriptStr) {
 
 export function getBtcPurpose() {
     const localSettings = localStorage.getSettings();
-    return  localSettings.btcPurpose ? 
-            localSettings.btcPurpose : 
+    return  localSettings.btcPurpose ?
+            localSettings.btcPurpose :
             constants.BTC_PURPOSE_NONE;
 }
 
@@ -495,11 +501,11 @@ export function getBtcNumTxBytes(numInputs) {
   return (3 * vFactor) + txVBytes + inputWitnessSize * numInputs;
 }
 
-export function buildBtcTxReq (   recipient, 
-                                    btcValue, 
-                                    utxos, 
-                                    addrs, 
-                                    changeAddrs, 
+export function buildBtcTxReq (   recipient,
+                                    btcValue,
+                                    utxos,
+                                    addrs,
+                                    changeAddrs,
                                     feeRate=constants.BTC_DEFAULT_FEE_RATE,
                                     isFullSpend=false) {
     if (!addrs || !changeAddrs || addrs.length < 1 || changeAddrs.length < 1) {
@@ -567,7 +573,7 @@ export function validateBtcAddr(addr) {
 export function toHexStr(bn) {
     const s = bn.toString(16);
     const base = s.length % 2 === 0 ? s : `0${s}`;
-    return `0x${base}`; 
+    return `0x${base}`;
 }
 
 // Filter out any duplicate objects based on `keys`
