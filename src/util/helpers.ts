@@ -90,7 +90,7 @@ export const constants = {
         gnosis: {
           label: "Gnosis Chain",
           url: "https://blockscout.com",
-          baseUrl: "https://blockscout.com/xdai/mainnet/",
+          baseUrl: "https://blockscout.com/xdai/mainnet",
           apiRoute: "api?module=contract&action=getabi&address="
         }
       },
