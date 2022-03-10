@@ -13,7 +13,7 @@
     "gridplus-react-crypto": "0.0.5",
     "gridplus-sdk": "^1.1.0",
     "gulp": "^4.0.2",
-    "nanoid": "^2.1.11",
+    "nanoid": "^3.1.31",
     "qrcode.react": "^1.0.0",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
