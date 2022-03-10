@@ -1,11 +1,5 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
 import { AddAddressesButton } from "../AddAddressesButton";
 
 const mockRecords = [{ key: "", val: "" }];
@@ -152,11 +146,6 @@ describe("AddAddressesButton", () => {
     fireEvent.change(nameInput, { target: { value: "test" } });
 
     // Address exists at all
-    fireEvent.click(addAddressesButton);
-    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
-
-    // Address is in a viable address format
-    fireEvent.change(addressInput, { target: { value: "test" } });
     fireEvent.click(addAddressesButton);
     await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
 
