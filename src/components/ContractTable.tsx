@@ -149,7 +149,7 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
           expandedRowRender: (record) => (
             <Table
               columns={[
-                { title: "Name", dataIndex: "name", key: "name" },
+                { title: "Parameter Name", dataIndex: "name", key: "name" },
                 { title: "Type", dataIndex: "typeName", key: "typeName" },
               ]}
               dataSource={record.params}
@@ -161,13 +161,13 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
         }}
       >
         <Table.Column
-          title="Name"
+          title="Function Name"
           dataIndex={["header", "name"]}
           defaultSortOrder="ascend"
           sorter={(a: any, b: any) => a.header.name.localeCompare(b.val)}
         />
         <Table.Column
-          title="Sig"
+          title="Identifier"
           dataIndex={["header", "sig"]}
           defaultSortOrder="ascend"
           sorter={(a: any, b: any) => a.header.sig.localeCompare(b.val)}
