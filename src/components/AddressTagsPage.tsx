@@ -26,11 +26,22 @@ const AddressTagsPage = ({
   const fetchRecords = useCallback(
     async (fetched = 0, retries = 1) => {
       setIsLoading(true);
-      const res: any = await session
+      session
         .client
         .getKvRecords({
           start: fetched,
           n: ADDRESSES_PER_PAGE,
+        })
+        .then((res: any) => {
+          addAddresses(res.records);
+          const totalFetched = res.fetched + fetched;
+          const remainingToFetch = res.total - totalFetched;
+          if (remainingToFetch > 0) {
+            fetchRecords(fetched + res.fetched);
+          } else {
+            setError(null);
+            setIsLoading(false);
+          }
         })
         .catch((err) => {
           if (retries > 0) {
@@ -42,15 +53,6 @@ const AddressTagsPage = ({
             setRetryFunction(fetchRecords);
           }
         });
-      addAddresses(res.records);
-      const totalFetched = res.fetched + fetched;
-      const remainingToFetch = res.total - totalFetched;
-      if (remainingToFetch > 0) {
-        fetchRecords(fetched + res.fetched);
-      } else {
-        setError(null);
-        setIsLoading(false);
-      }
     },
     [addAddresses, session.client]
   );

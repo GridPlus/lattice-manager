@@ -191,8 +191,8 @@ describe("ContractTable", () => {
     );
     expect(screen.getByText("a")).toBeInTheDocument();
     expect(screen.getByText("b")).toBeInTheDocument();
-    const sortByName = screen.getByText("Name");
-    const sortBySig = screen.getByText("Sig");
+    const sortByName = screen.getByText("Function Name");
+    const sortBySig = screen.getByText("Identifier");
     const rowOne = () => screen.queryAllByRole("row")[1];
     const rowTwo = () => screen.queryAllByRole("row")[2];
     fireEvent.click(sortByName);
