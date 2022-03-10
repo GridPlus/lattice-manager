@@ -1,5 +1,4 @@
 import { Client } from 'gridplus-sdk';
-import { Record } from "../types/records";
 import { SDKAddresses } from '../types/SDKAddresses';
 import {
   broadcastBtcTx, constants, fetchBtcPrice,
@@ -10,7 +9,7 @@ const Buffer = require('buffer/').Buffer;
 const ReactCrypto = require('gridplus-react-crypto').default;
 
 class SDKSession {
-  client: any;
+  client: Client;
   crypto: any;
   name: any;
   storageSession: any;
@@ -237,7 +236,6 @@ class SDKSession {
     try {
       client = new Client({ 
         name: this.name,
-        crypto: this.crypto,
         privKey: key,
         baseUrl,
         timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
@@ -270,14 +268,13 @@ class SDKSession {
   }
 
   connect(deviceID, pw, cb) {
-    // return this._tryConnect(deviceID, pw, cb);
     return this._tryConnect(deviceID, pw, cb, true); // temporarily disable local connect
   }
 
   refreshWallets(cb) {
     if (this.client) {
       const prevWallet = JSON.stringify(this.client.getActiveWallet());
-      this.client.connect(this.deviceID, (err) => {
+      this.client.connect(this.deviceID, (err, isPaired) => {
         // If we lost connection, the user most likely removed the pairing and will need to repair
         if (false === this.client.isPaired)
           return cb(constants.LOST_PAIRING_ERR);
@@ -291,23 +288,11 @@ class SDKSession {
         // Update storage. This will remap to a new localStorage key if the wallet UID
         // changed. If we didn't get an active wallet, it will just clear out the addresses
         this.getBtcWalletData();
-        return cb(null);
+        return cb(null, isPaired);
       })
     } else {
       return cb('Lost connection to Lattice. Please refresh.');
     }
-  }
-
-  addAbiDefs(defs, cb) {
-    this.client.addAbiDefs(defs, cb);
-  }
-
-  addPermissionV0(req, cb) {
-    this.client.addPermissionV0(req, cb);
-  }
-
-  pair(secret, cb) {
-    this.client.pair(secret, cb);
   }
 
   sign(req, cb) {
@@ -624,30 +609,6 @@ class SDKSession {
     const sortedTxs = processedTxs
                       .sort((a, b) => { return b.timestamp - a.timestamp })
     this.btcTxs = sortedTxs;
-  }
-
-  /**
-   * Wraps `client.getKvRecords` in a `Promise` for easier handling
-   * @param opts - Pagination options for where to start and how many to query for
-   */
-  async getKvRecords (opts: { start: number, n: number }): Promise<{ records: Record[]; fetched: number; total: number }> {
-    return new Promise((resolve, reject) =>
-      this.client.getKvRecords(opts, (err, res) =>
-        err ? reject(err) : resolve(res)
-      )
-    );
-  }
-
-  /**
-   * Wraps `client.removeKvRecords` in a `Promise` for easier handling
-   * @param records - list of records to remove
-   */
-  async removeKvRecords ({ ids }: { ids: string[] }): Promise<boolean> {
-    return new Promise((resolve, reject) =>
-      this.client.removeKvRecords({ ids }, (err) =>
-        err ? reject(err) : resolve(true)
-      )
-    );
   }
 }
 

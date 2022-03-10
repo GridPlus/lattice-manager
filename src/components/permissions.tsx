@@ -98,7 +98,7 @@ class Permissions extends React.Component<any, any> {
       limitStr = `0${limitStr}`;
     //@ts-expect-error
     req.limit = `0x${limitStr}`;
-    this.props.session.addPermissionV0(req, (err) => {
+    this.props.session.client.addPermissionV0(req, (err) => {
       if (err) {
         this.setState({ error: err.toString(), success: false, loading: false })
       } else {

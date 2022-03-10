@@ -24,14 +24,15 @@ const AddressTagsPage = ({
   const [addresses, addAddresses, removeAddresses] = useRecords([]);
 
   const fetchRecords = useCallback(
-    (fetched = 0, retries = 1) => {
+    async (fetched = 0, retries = 1) => {
       setIsLoading(true);
       session
+        .client
         .getKvRecords({
           start: fetched,
           n: ADDRESSES_PER_PAGE,
         })
-        .then((res) => {
+        .then((res: any) => {
           addAddresses(res.records);
           const totalFetched = res.fetched + fetched;
           const remainingToFetch = res.total - totalFetched;
@@ -53,7 +54,7 @@ const AddressTagsPage = ({
           }
         });
     },
-    [addAddresses, session]
+    [addAddresses, session.client]
   );
 
   useEffect(() => {
@@ -62,11 +63,12 @@ const AddressTagsPage = ({
   }, []);
 
   const removeSelected = (selectedAddresses: Record[]) => {
-    const ids = selectedAddresses.map((r) => r.id);
+    const ids = selectedAddresses.map((r) => parseInt(r.id));
     if (ids.length === 0) return;
     setIsLoading(true);
     session
-      .removeKvRecords({ ids })
+      .client
+      .removeKvRecords({ ids, type: undefined })
       .then(() => {
         removeAddresses(selectedAddresses);
         setError(null);

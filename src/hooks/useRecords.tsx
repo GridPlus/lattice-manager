@@ -11,16 +11,16 @@ import { Record } from "../types/records";
  * @param defaultValue - any array to set the default value
  */
 export const useRecords = (
-  defaultValue: Record[]
+  defaultValue: Record[], id="id"
 ): [Record[], (toAdd: Record[]) => void, (toRemove: Record[]) => void] => {
   const [records, setRecords] = useState(defaultValue);
 
   const addRecords = (recordsToAdd: Record[]) =>
-    setRecords((recordsInState) => unionBy(recordsInState, recordsToAdd, "id"));
+    setRecords((recordsInState) => unionBy(recordsInState, recordsToAdd, id));
 
   const removeRecords = (recordsToRemove: Record[]) =>
     setRecords((recordsInState) =>
-      differenceBy(recordsInState, recordsToRemove, "id")
+      differenceBy(recordsInState, recordsToRemove, id)
     );
 
   return [records, addRecords, removeRecords];

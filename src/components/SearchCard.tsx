@@ -81,7 +81,7 @@ export const SearchCard = ({ session }) => {
     setError("");
     // Longer timeout for loading these since requests may get dropped
     session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
-    session.addAbiDefs(defs, (err) => {
+    session.client.addAbiDefs(defs, (err) => {
       // Reset timeout to default
       session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
       if (err) {
