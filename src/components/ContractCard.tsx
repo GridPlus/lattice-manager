@@ -29,7 +29,7 @@ export function ContractCard({ pack, session }) {
   const handleAddClick = () => {
     setIsAdding(true);
     session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
-    session.addAbiDefs(contract, (err) => {
+    session.client.addAbiDefs(contract, (err) => {
       // Reset timeout to default
       session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
       if (err) {

@@ -46,7 +46,8 @@ const EthContracts = ({ session, isMobile }) => {
 
   function addDefs(skipErrors = false, defsToAdd = null) {
     setError(null);
-    setLoading(true); // Longer timeout for loading these since requests may get dropped
+    setLoading(true);
+    // Longer timeout for loading these since requests may get dropped
     session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
     const _defs = customDefs ? customDefs : defs;
     session.client.addAbiDefs(_defs, (err) => {
