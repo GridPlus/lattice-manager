@@ -3,9 +3,7 @@ import { Button, Input, Table } from "antd";
 import fuzzysort from "fuzzysort";
 import intersectionBy from "lodash/intersectionBy";
 import React, { useCallback, useEffect, useState } from "react";
-import { useRecords } from "../hooks/useRecords";
-import SDKSession from "../sdk/sdkSession";
-// import { Record } from "../types/records";
+import { useContracts } from "../hooks/useContracts";
 import { constants } from "../util/helpers";
 const { CONTRACTS_PER_PAGE } = constants;
 
@@ -15,42 +13,15 @@ const { CONTRACTS_PER_PAGE } = constants;
  *
  * @param `session` - the active SDK session
  */
-export const ContractTable = ({ session }: { session: SDKSession }) => {
+export const ContractTable = () => {
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [contracts, addContracts, removeContracts] = useRecords([]);
+  const { isLoading, contracts, fetchContracts, removeContracts } =
+    useContracts();
   const [filteredContracts, setFilteredContracts] = useState([]);
   const [selectedContracts, setSelectedContracts] = useState([]);
 
-  const fetchRecords = useCallback(
-    async (fetched = 0, retries = 1) => {
-      setIsLoading(true);
-      const res: any = await session.client
-        .getAbiRecords({
-          n: 10,
-          startIdx: fetched,
-          category: "",
-        })
-        .catch((err) => {
-          setIsLoading(false);
-          return console.error(err);
-        });
-
-      const _contracts = res.records.map((r) => ({ id: r.header.name, ...r }));
-      addContracts(_contracts);
-      const totalFetched = res.numFetched + fetched;
-      const remainingToFetch = res.numRemaining;
-      if (remainingToFetch > 0) {
-        fetchRecords(totalFetched);
-      } else {
-        setIsLoading(false);
-      }
-    },
-    [session, addContracts]
-  );
-
   useEffect(() => {
-    fetchRecords();
+    if (contracts.length === 0) fetchContracts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -75,16 +46,6 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
     setSelectedContracts(_selectedContracts);
   };
 
-  const removeSelected = () => {
-    setIsLoading(true);
-    const sigs = selectedContracts.map((contract) => contract.header.sig);
-    session.client.removeAbiRecords({ sigs }, (err, val) => {
-      setIsLoading(false);
-      if (err) return console.error(err);
-      removeContracts(selectedContracts);
-    });
-  };
-
   const onChange = ({ target: { value } }) => {
     setInput(value);
     const _contracts = value ? filter(value) : contracts;
@@ -107,7 +68,7 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
           danger
           type="text"
           disabled={selectedContracts.length === 0}
-          onClick={removeSelected}
+          onClick={() => removeContracts(selectedContracts)}
           style={{ marginLeft: "1em" }}
         >
           Remove Selected
@@ -117,7 +78,7 @@ export const ContractTable = ({ session }: { session: SDKSession }) => {
           type="link"
           icon={<SyncOutlined />}
           disabled={isLoading}
-          onClick={fetchRecords}
+          onClick={fetchContracts}
         >
           Sync
         </Button>

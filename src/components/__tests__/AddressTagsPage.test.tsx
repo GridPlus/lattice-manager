@@ -1,84 +1,70 @@
-import { act,waitFor, screen, render,fireEvent } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { AddressTagsPage } from "..";
-import SDKSession from "../../sdk/sdkSession";
-import { Record } from "../../types/records"
+import { getMockSession, mockKvResponse } from "../../testUtils/getMockSession";
+import { renderMockProvider } from "../../testUtils/MockProvider";
 
-const isMobile = jest.fn();
-const addresses: Record[] = [
-  { id: "a", key: "a", val: "a" },
-  { id: "b", key: "b", val: "b" },
-];
-const response = {
-  records: addresses,
-  fetched: 5,
-  total: 5,
-};
-const session = new SDKSession("", jest.fn(), "", {});
-session.client = {
-  ...session.client,
-  getKvRecords: jest.fn(() => Promise.resolve(response)),
-  removeKvRecords: jest.fn(() => Promise.resolve(true))
-}
-
-const renderAddressTagsPage = async () =>
-  await act(async () => {
-    await render(
-      <AddressTagsPage
-        {...{
-          isMobile,
-          session,
-        }}
-      />
-    );
-  });
+const renderAddressTagsPage = (overrides?) =>
+  renderMockProvider({ children: <AddressTagsPage />, ...overrides });
 
 describe("AddressTagsPage", () => {
   it("renders", async () => {
-    await renderAddressTagsPage();
+     waitFor(() => renderAddressTagsPage());
   });
 
   it("fetches addresses on load", async () => {
-    session.client.getKvRecords = jest.fn(() => Promise.resolve(response));
-    await renderAddressTagsPage();
-    expect(session.client.getKvRecords).toHaveBeenCalledTimes(1);
+    const session = getMockSession();
+    waitFor(() => renderAddressTagsPage({ addresses: [], session }));
+     waitFor(() => expect(session.client.getKvRecords).toHaveBeenCalledTimes(1));
   });
 
-  it("fetches many addresses on load", async () => {
+  it("fetches many addresses on load",async () => {
+    const session = getMockSession();
     session.client.getKvRecords = jest.fn(() =>
       Promise.resolve({
-        ...response,
+        ...mockKvResponse,
         total: 50,
       })
     );
-    await renderAddressTagsPage();
-    expect(session.client.getKvRecords).toHaveBeenCalledTimes(10);
+    waitFor(()=> renderAddressTagsPage({ session }))
+    await waitFor(() =>
+      expect(session.client.getKvRecords).toHaveBeenCalledTimes(10)
+    );
   });
 
-  it("retries to fetch", async () => {
+  it("retries to fetch", () => {
+    const session = getMockSession();
     let retries = 2;
     session.client.getKvRecords = jest.fn(
       () =>
         new Promise((resolve, reject) => {
-          if (!retries) return resolve(response);
+          if (!retries) return resolve(mockKvResponse);
           reject("Error");
           --retries;
         })
-    )
-    await renderAddressTagsPage();
-    expect(session.client.getKvRecords).toHaveBeenCalledTimes(4);
+    );
+     waitFor(()=>renderAddressTagsPage({ session }))
+     waitFor(() =>
+      expect(session.client.getKvRecords).toHaveBeenCalledTimes(4)
+    );
   });
 
-  it("removes addresses", async () => {
-    await renderAddressTagsPage();
+  it("removes addresses", () => {
+    const session = getMockSession();
+    waitFor(()=> renderAddressTagsPage({ session }))
     const checkboxes = screen.getAllByRole("checkbox");
     const removeButton = screen.getByRole("button", {
       name: "Remove Selected",
     });
     expect(removeButton).toBeDisabled();
     const selectAll = checkboxes[0];
-    fireEvent.click(selectAll);
-    fireEvent.click(removeButton);
-    await waitFor(() => expect(session.client.removeKvRecords).toHaveBeenCalledTimes(1));
+
+    act(()=>{fireEvent.click(selectAll)})
+
+    act(()=>{fireEvent.click(removeButton)})
+
+     waitFor(() =>
+      expect(session.client.removeKvRecords).toHaveBeenCalledTimes(1)
+    );
   });
 });

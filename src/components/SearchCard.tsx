@@ -1,13 +1,15 @@
 import { DownloadOutlined } from "@ant-design/icons";
 import { Button, Card, Input, Result } from "antd";
 import throttle from "lodash/throttle";
-import React, { useMemo, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
+import { AppContext } from "../store/AppContext";
 import { constants } from "../util/helpers";
 import { SelectNetwork } from "./SelectNetwork";
 const defaultNetwork =
   constants.CONTRACT_NETWORKS[constants.DEFAULT_CONTRACT_NETWORK];
 
-export const SearchCard = ({ session }) => {
+export const SearchCard = () => {
+  const { session } = useContext(AppContext)
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [success, setSuccess] = useState(false);

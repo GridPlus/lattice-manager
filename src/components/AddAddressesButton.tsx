@@ -1,47 +1,28 @@
 import { MinusSquareFilled, PlusOutlined } from "@ant-design/icons";
-import { Alert, Button, Form, Input, Modal, Space } from "antd";
+import { Button, Form, Input, Modal, Space } from "antd";
 import _ from "lodash";
 import React, { useState } from "react";
+import { useAddresses } from "../hooks/useAddresses";
+import { ErrorAlert } from "./ErrorAlert";
 
 const MAX_RECORD_LEN = 63; // 63 characters max for both key and vlaue
-const ADDRESS_RECORD_TYPE = 0;
-const keyIsDuplicatedErrorMessage =
+export const keyIsDuplicatedErrorMessage =
   "You already have a tag with this address on your device.";
-const valIsDuplicatedErrorMessage =
+export const valIsDuplicatedErrorMessage =
   "You already have a tag with this name on your device.";
 
-/** @typedef {{ key: string, val: string }} Record */
-
-/**
- * @name AddAddressesButton
- * @param {Object} props
- * @param {Record[]} props.records
- * @param {Object} props.session
- * @param {() => void} props.onAddAddresses
- */
-export const AddAddressesButton = ({
-  records,
-  session,
-  onAddAddresses,
-}) => {
+export const AddAddressesButton = () => {
+  const { addresses, addAddresses, isLoading, error, setError, retryFunction } =
+    useAddresses();
   const [form] = Form.useForm();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-
-  const resetState = () => {
-    form.resetFields();
-    setIsModalVisible(false);
-    setError(null);
-    setIsLoading(false);
-  };
 
   const showModal = () => {
     setIsModalVisible(true);
   };
 
   const hideModal = () => {
-    resetState();
+    setIsModalVisible(false);
   };
 
   const handleCancel = () => {
@@ -50,23 +31,13 @@ export const AddAddressesButton = ({
 
   const onFinish = () => {
     form.validateFields().then(({ recordsToAdd }) => {
-      setIsLoading(true);
       // Transform recordsToAdd data into { key: val } for SDK
-      const records = _.chain(recordsToAdd)
+      const addresses = _.chain(recordsToAdd)
         .keyBy("key")
         .mapValues("val")
         .value();
-      const opts = {
-        caseSensitive: false,
-        type: ADDRESS_RECORD_TYPE,
-        records,
-      };
-      session.client.addKvRecords(opts, (err) => {
-        setIsLoading(false);
-        if (err) return setError(err);
-        onAddAddresses();
-        resetState();
-      });
+
+      addAddresses(addresses).then(hideModal);
     });
   };
 
@@ -89,6 +60,7 @@ export const AddAddressesButton = ({
         maskClosable={false}
         onOk={form.submit}
         onCancel={handleCancel}
+        destroyOnClose={true}
         footer={[
           <Button type="link" onClick={handleCancel} key="cancel">
             Cancel
@@ -104,9 +76,7 @@ export const AddAddressesButton = ({
         ]}
       >
         <Space direction="vertical" style={{ width: "100%" }}>
-          {error ? (
-            <Alert description={error} type="error" style={{ width: "100%" }} />
-          ) : null}
+          <ErrorAlert error={error} retryFunction={retryFunction} />
           <Form
             form={form}
             name="formData"
@@ -146,10 +116,14 @@ export const AddAddressesButton = ({
                           validateTrigger={["onChange", "onBlur"]}
                           rules={[
                             { required: true, message: "Address is required." },
-                            { max: MAX_RECORD_LEN, type: "string", message: `Must be shorter than ${MAX_RECORD_LEN} characters.`},
+                            {
+                              max: MAX_RECORD_LEN,
+                              type: "string",
+                              message: `Must be shorter than ${MAX_RECORD_LEN} characters.`,
+                            },
                             {
                               validator: (rule, key) => {
-                                return records?.some((r) => r.key === key)
+                                return addresses?.some((r) => r.key === key)
                                   ? Promise.reject(
                                       new Error(keyIsDuplicatedErrorMessage)
                                     )
@@ -170,10 +144,14 @@ export const AddAddressesButton = ({
                           validateTrigger={["onChange", "onBlur"]}
                           rules={[
                             { required: true, message: "Name is required" },
-                            {max: MAX_RECORD_LEN, type: "string", message: `Must be shorter than ${MAX_RECORD_LEN} characters.`},
+                            {
+                              max: MAX_RECORD_LEN,
+                              type: "string",
+                              message: `Must be shorter than ${MAX_RECORD_LEN} characters.`,
+                            },
                             {
                               validator: (rule, val) => {
-                                return records?.some((r) => r.val === val)
+                                return addresses?.some((r) => r.val === val)
                                   ? Promise.reject(
                                       new Error(valIsDuplicatedErrorMessage)
                                     )

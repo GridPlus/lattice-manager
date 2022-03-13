@@ -1,192 +1,236 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { AddAddressesButton } from "../AddAddressesButton";
-
-const mockRecords = [{ key: "", val: "" }];
-const mockSession = { client: { addKvRecords: jest.fn() } };
-const mockAddRecordFunc = mockSession.client.addKvRecords;
+import { getMockSession } from "../../testUtils/getMockSession";
+import { renderMockProvider } from "../../testUtils/MockProvider";
+import {
+  AddAddressesButton,
+  valIsDuplicatedErrorMessage,
+} from "../AddAddressesButton";
 
 const existingAddress = "0xc0c8f96C2fE011cc96770D2e37CfbfeAFB585F0a";
 const newAddress = "0xc0c8f96C2fE011cc96770D2e37CfbfeAFB585F0e";
 const existingName = "testName";
 const newName = "testName2";
 
+const renderAddAddressesButton = (overrides?) =>
+  renderMockProvider({ children: <AddAddressesButton />, ...overrides });
+
 describe("AddAddressesButton", () => {
   it("renders", () => {
-    render(
-      <AddAddressesButton
-        records={mockRecords}
-        session={mockSession}
-        addAddresses={() => {}}
-      />
-    );
+    renderAddAddressesButton();
   });
 
-  it("shows and hides the modal", () => {
-    render(
-      <AddAddressesButton
-        records={mockRecords}
-        session={mockSession}
-        addAddresses={() => {}}
-      />
-    );
+  it("shows and hides the modal", async () => {
+    renderAddAddressesButton();
+
     // shows modal
     const addButton = screen.getByRole("button");
-    fireEvent.click(addButton);
-    expect(screen.getByText("Add Address Tags")).toBeInTheDocument();
+    act(() => {
+      fireEvent.click(addButton);
+    });
+    await waitFor(() =>
+      expect(screen.queryByText("Add Address Tags")).toBeInTheDocument()
+    );
 
     // hides modal
     const closeButton = screen.getByRole("button", { name: "Close" });
-    fireEvent.click(closeButton);
-    expect(screen.queryByText("Add Address Tags")).not.toBeVisible();
+    act(() => {
+      fireEvent.click(closeButton);
+    });
+    await waitFor(() =>
+      expect(screen.queryByText("Add Address Tags")).not.toBeInTheDocument()
+    );
   });
 
   it("adds an address", async () => {
-    render(
-      <AddAddressesButton
-        records={mockRecords}
-        session={mockSession}
-        addAddresses={() => {}}
-      />
-    );
+    const session = getMockSession();
+    renderAddAddressesButton({ session });
     const addButton = screen.getByRole("button");
-    fireEvent.click(addButton);
+
+    act(() => {
+      fireEvent.click(addButton);
+    });
 
     const addressInput = screen.getByTestId("0-address-input");
-    const addAddressesButton = screen.getByRole("button", { name: "Add" });
+    act(() => {
+      fireEvent.change(addressInput, { target: { value: newAddress } });
+    });
+
     const nameInput = screen.getByTestId("0-name-input");
+    act(() => {
+      fireEvent.change(nameInput, { target: { value: newName } });
+    });
 
-    // updates form fields
-    fireEvent.change(addressInput, { target: { value: newAddress } });
-    fireEvent.change(nameInput, { target: { value: newName } });
-    fireEvent.click(addAddressesButton);
+    const addAddressesButton = screen.getByRole("button", { name: "Add" });
+    act(() => {
+      fireEvent.click(addAddressesButton);
+    });
 
-    await waitFor(() => expect(mockAddRecordFunc).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(session.client.addKvRecords).toHaveBeenCalledTimes(1)
+    );
   });
 
   it("cancels adding an address", async () => {
-    render(
-      <AddAddressesButton
-        records={mockRecords}
-        session={mockSession}
-        addAddresses={() => {}}
-      />
-    );
+    renderAddAddressesButton();
     const addButton = screen.getByRole("button");
-    fireEvent.click(addButton);
+    act(() => {
+      fireEvent.click(addButton);
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("0-address-input")).toBeInTheDocument()
+    );
 
     const addressInput = screen.getByTestId("0-address-input");
+    act(() => {
+      fireEvent.change(addressInput, { target: { value: newAddress } });
+    });
+
     const nameInput = screen.getByTestId("0-name-input");
+    act(() => {
+      fireEvent.change(nameInput, { target: { value: newName } });
+    });
+
     const cancelButton = screen.getByRole("button", {
       name: "Cancel",
     });
-
-    fireEvent.change(addressInput, { target: { value: newAddress } });
-    fireEvent.change(nameInput, { target: { value: newName } });
-
+    act(() => {
+      fireEvent.click(cancelButton);
+    });
     // Modal should be cancelled and disappear
-    fireEvent.click(cancelButton);
-    expect(screen.queryByText("Add Address Tags")).not.toBeVisible();
-
-    // Input fields should be empty after closing modal
-    fireEvent.click(addButton);
-    const addressAfter = screen.getByTestId("0-address-input");
-    const nameInputAfter = screen.getByTestId("0-address-input");
-    expect(addressAfter).toHaveValue("");
-    expect(nameInputAfter).toHaveValue("");
+    waitFor(() =>
+      expect(screen.queryByText("Add Address Tags")).not.toBeInTheDocument()
+    );
   });
 
   it("adds and removes multiple input field groups", async () => {
-    render(
-      <AddAddressesButton
-        records={mockRecords}
-        session={mockSession}
-        addAddresses={() => {}}
-      />
-    );
+    renderAddAddressesButton();
     const addButton = screen.getByRole("button");
-    fireEvent.click(addButton);
+    act(() => {
+      fireEvent.click(addButton);
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: "plus Add Another Address Tag",
+        })
+      ).toBeInTheDocument()
+    );
 
     // Adds a new input field group
     const addAddressButton = screen.getByRole("button", {
       name: "plus Add Another Address Tag",
     });
-    fireEvent.click(addAddressButton);
+    act(() => {
+      fireEvent.click(addAddressButton);
+    });
 
     const oneAddressInput = screen.getByTestId("1-address-input");
-    const oneNameInput = screen.getByTestId("1-name-input");
-
     expect(oneAddressInput).toBeInTheDocument();
+
+    const oneNameInput = screen.getByTestId("1-name-input");
     expect(oneNameInput).toBeInTheDocument();
 
     // Removes an input field group and removes input fields from DOM
     const removeAddressButton = screen.getByRole("button", {
       name: "minus-square",
     });
-    fireEvent.click(removeAddressButton);
+    act(() => {
+      fireEvent.click(removeAddressButton);
+    });
+
     expect(screen.queryByTestId("1-address-input")).not.toBeInTheDocument();
     expect(screen.queryByTestId("1-name-input")).not.toBeInTheDocument();
   });
 
   it("validates addresses", async () => {
-    const records = [{ key: existingAddress, val: existingName }];
-    render(
-      <AddAddressesButton
-        records={records}
-        session={mockSession}
-        addAddresses={() => {}}
-      />
-    );
+    const addresses = [{ key: existingAddress, val: existingName }];
+    renderAddAddressesButton({ addresses });
     const addButton = screen.getByRole("button");
-    fireEvent.click(addButton);
+    act(() => {
+      fireEvent.click(addButton);
+    });
 
-    const addressInput = screen.getByTestId("0-address-input");
-    const addAddressesButton = screen.getByRole("button", { name: "Add" });
+    await waitFor(() =>
+      expect(screen.getByTestId("0-address-input")).toBeInTheDocument()
+    );
+
     const nameInput = screen.getByTestId("0-name-input");
-    fireEvent.change(nameInput, { target: { value: "test" } });
+    act(() => {
+      fireEvent.change(nameInput, { target: { value: "test" } });
+    });
 
     // Address exists at all
-    fireEvent.click(addAddressesButton);
-    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+    const addAddressesButton = screen.getByRole("button", { name: "Add" });
+    act(() => {
+      fireEvent.click(addAddressesButton);
+    });
+    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
 
     // Address matches an address that already exists in the system
-    fireEvent.change(addressInput, { target: { value: existingAddress } });
-    fireEvent.click(addAddressesButton);
-    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+    const addressInput = screen.getByTestId("0-address-input");
+    act(() => {
+      fireEvent.change(addressInput, { target: { value: existingAddress } });
+    });
+
+    act(() => {
+      fireEvent.click(addAddressesButton);
+    });
+
+    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
 
     // Address has no errors
-    fireEvent.change(addressInput, { target: { value: newAddress } });
-    fireEvent.click(addAddressesButton);
+    act(() => {
+      fireEvent.change(addressInput, { target: { value: newAddress } });
+    });
+    act(() => {
+      fireEvent.click(addAddressesButton);
+    });
     await waitFor(() =>
       expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     );
   });
 
   it("validates names", async () => {
-    const records = [{ key: existingAddress, val: existingName }];
-    render(
-      <AddAddressesButton
-        records={records}
-        session={mockSession}
-        addAddresses={() => {}}
-      />
-    );
+    const addresses = [{ key: existingAddress, val: existingName }];
+    renderAddAddressesButton({ addresses });
     const addButton = screen.getByRole("button");
-    fireEvent.click(addButton);
+    act(() => {
+      fireEvent.click(addButton);
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("0-address-input")).toBeInTheDocument()
+    );
 
     const addressInput = screen.getByTestId("0-address-input");
-    const addAddressesButton = screen.getByRole("button", { name: "Add" });
-    const nameInput = screen.getByTestId("0-name-input");
-    fireEvent.change(addressInput, { target: { value: newAddress } });
+    act(() => {
+      fireEvent.change(addressInput, { target: { value: newAddress } });
+    });
 
     // Name matches an name that already exists in the system
-    fireEvent.change(nameInput, { target: { value: existingName } });
-    fireEvent.click(addAddressesButton);
-    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
+    const nameInput = screen.getByTestId("0-name-input");
+    act(() => {
+      fireEvent.change(nameInput, { target: { value: existingName } });
+    });
+
+    const addAddressesButton = screen.getByRole("button", { name: "Add" });
+    act(() => {
+      fireEvent.click(addAddressesButton);
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText(valIsDuplicatedErrorMessage)).toBeInTheDocument()
+    );
 
     // Validate name exists
-    fireEvent.change(nameInput, { target: { value: newName } });
-    fireEvent.click(addAddressesButton);
+    act(() => {
+      fireEvent.change(nameInput, { target: { value: newName } });
+    });
+    act(() => {
+      fireEvent.click(addAddressesButton);
+    });
     await waitFor(() =>
       expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     );

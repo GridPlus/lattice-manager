@@ -4,15 +4,17 @@ import {
   PlusCircleOutlined,
 } from "@ant-design/icons";
 import { Button, Card, Modal, Table, Tag } from "antd";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useContracts } from "../hooks/useContracts";
+import { abbreviateHash } from "../util/addresses";
 import { constants } from "../util/helpers";
 
-export function ContractCard({ pack, session }) {
-  const [contract, setContract] = useState({});
+export function ContractCard({ pack }) {
+  const { addContracts, isLoading } = useContracts();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
-  const { url } = constants.CONTRACT_NETWORKS[pack.network];
+  const { url } = constants.CONTRACT_NETWORKS[pack.metadata.network];
+  const { metadata, defs } = pack
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -27,31 +29,8 @@ export function ContractCard({ pack, session }) {
   };
 
   const handleAddClick = () => {
-    setIsAdding(true);
-    session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
-    session.client.addAbiDefs(contract, (err) => {
-      // Reset timeout to default
-      session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
-      if (err) {
-        setIsAdded(false);
-      } else {
-        setIsAdded(true);
-      }
-      setIsAdding(false);
-    });
+    addContracts(defs).then(() => setIsAdded(true));
   };
-
-  const loadContractData = useCallback(() => {
-    fetch(`${constants.ABI_PACK_URL}/${pack.fname}`)
-      .then((response) => response.json())
-      .then((resp) => {
-        setContract(resp.defs);
-      });
-  }, [pack]);
-
-  useEffect(() => {
-    loadContractData();
-  }, [pack, loadContractData]);
 
   const AddDefsButton = isAdded ? (
     <Button type="default" icon={<CheckCircleOutlined />} disabled={isAdded}>
@@ -63,21 +42,21 @@ export function ContractCard({ pack, session }) {
       ghost
       onClick={handleAddClick}
       icon={<PlusCircleOutlined />}
-      loading={isAdding}
+      loading={isLoading}
     >
-      {isAdding ? "Adding" : "Add to Lattice"}
+      {isLoading ? "Adding" : "Add to Lattice"}
     </Button>
   );
 
   return (
     <Card
       bordered={true}
-      title={pack.name}
+      title={metadata.name}
       style={{
         flex: "1 1 30%",
         maxWidth: "33%",
       }}
-      key={`card-${pack.name}`}
+      key={`card-${metadata.name}`}
       extra={AddDefsButton}
       actions={[
         <Button type="default" onClick={showModal}>
@@ -85,7 +64,7 @@ export function ContractCard({ pack, session }) {
         </Button>,
         <Button
           type="text"
-          href={pack.website}
+          href={metadata.website}
           target="_blank"
           icon={<LinkOutlined />}
         >
@@ -94,16 +73,16 @@ export function ContractCard({ pack, session }) {
       ]}
       bodyStyle={{ height: "7em" }}
     >
-      <p className="lattice-h3">{pack.desc}</p>
+      <p className="lattice-h3">{metadata.desc}</p>
 
       <Modal
-        title={pack.name}
+        title={metadata.name}
         visible={isModalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
         width={1000}
       >
-        <Table dataSource={pack.addresses}>
+        <Table dataSource={metadata.addresses} rowKey={(row) => row.address}>
           <Table.Column
             title="Address"
             dataIndex="address"
@@ -117,10 +96,7 @@ export function ContractCard({ pack, session }) {
                   rel={"noopener noreferrer"}
                   key={`a-${address}`}
                 >
-                  {`${address.slice(0, 10)}...${address.slice(
-                    address.length - 8,
-                    address.length
-                  )}`}
+                  {abbreviateHash(address)}
                 </a>
               </Tag>
             )}

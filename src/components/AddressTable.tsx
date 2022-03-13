@@ -14,16 +14,16 @@ const { ADDRESSES_PER_PAGE } = constants;
  *
  * @param `addresses` - the list of key-value records to display
  * @param `isLoading` - the table displays a loading spinner when true
- * @param `removeSelected` - callback that lets the parent component remove a selected record
+ * @param `removeAddresses` - callback that lets the parent component remove a selected record
  */
 export const AddressTable = ({
   addresses,
   isLoading,
-  removeSelected,
+  removeAddresses,
 }: {
   addresses: Record[];
   isLoading: boolean;
-  removeSelected: (selectedAddresses: Record[]) => void;
+  removeAddresses: (selectedAddresses: Record[]) => void;
 }) => {
   const [input, setInput] = useState("");
   const [filteredAddresses, setFilteredAddresses] = useState([]);
@@ -72,7 +72,7 @@ export const AddressTable = ({
           danger
           type="text"
           disabled={selectedAddresses.length === 0}
-          onClick={()=>removeSelected(selectedAddresses)}
+          onClick={() => removeAddresses(selectedAddresses)}
           style={{ marginLeft: "1em" }}
         >
           Remove Selected
