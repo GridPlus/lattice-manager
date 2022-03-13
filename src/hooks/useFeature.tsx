@@ -1,4 +1,5 @@
-import SDKSession from "../sdk/sdkSession";
+import { useContext } from "react";
+import { AppContext } from "../store/AppContext";
 
 /**
  * `useFeature` is a React hook for feature flags that makes it easy to know when a particular
@@ -6,7 +7,8 @@ import SDKSession from "../sdk/sdkSession";
  * 
  * To add a feature, add a SNAKE_CASE key to the `features` variable with a value of 
  */
- export const useFeature = ( session: SDKSession): { [feature: string]: boolean } => {
+export const useFeature = (): { [feature: string]: boolean } => {
+  const { session } = useContext(AppContext);
   const { fix, minor, major } = session.client.getFwVersion();
 
   const features = {
