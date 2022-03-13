@@ -2,9 +2,12 @@ import React from 'react';
 import { Card, Input } from 'antd'
 import { PageContent } from './index'
 import 'antd/dist/antd.dark.css'
+import { AppContext } from '../store/AppContext';
 const SUBMIT_LEN = 8; // 8 characters in a code
 
 class Pair extends React.Component<any, any> {
+  static contextType = AppContext;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -52,7 +55,7 @@ class Pair extends React.Component<any, any> {
     if (this.props.hide) {
       return null;
     }
-    const size = this.props.isMobile() ? 'small' : 'large';
+    const size = this.context.isMobile ? 'small' : 'large';
     const width = this.getBoxWidth();
     const fontSize = this.getBoxFontHeight();
     const content = (
@@ -74,7 +77,7 @@ class Pair extends React.Component<any, any> {
       </center>
     )
     return (
-      <PageContent content={content} isMobile={this.props.isMobile}/>
+      <PageContent content={content} />
     )
   }
 }

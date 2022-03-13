@@ -6,6 +6,7 @@ import { Settings } from './index'
 import { constants } from '../util/helpers'
 import { NameEditor } from './NameEditor';
 import { LoginData } from '../types/authentication';
+import { AppContext } from '../store/AppContext';
 
 type ConnectProps = {
   submitCb: (data: LoginData, showLoading: boolean) => void,
@@ -13,7 +14,6 @@ type ConnectProps = {
   name: string,
   keyringName: string,
   setKeyringName: (name: string) => void,
-  isMobile: () => boolean,
   errMsg: string
 }
 
@@ -25,6 +25,8 @@ type ConnectState = {
 }
 
 class Connect extends React.Component<ConnectProps, ConnectState> {
+  static contextType = AppContext;
+  
   constructor(props) {
     super(props)
     this.state = {
@@ -173,7 +175,7 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
           onOk={this.hideModal.bind(this)}
           onCancel={this.hideModal.bind(this)}
         >
-          <Settings isMobile={this.props.isMobile} inModal={true} />
+          <Settings inModal={true} />
         </Modal>
       )
     }
@@ -209,8 +211,8 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
   }
 
   render() {
-    const spanWidth = this.props.isMobile() ? 24 : 10;
-    const spanOffset = this.props.isMobile() ? 0 : 7;
+    const spanWidth = this.context.isMobile ? 24 : 10;
+    const spanOffset = this.context.isMobile ? 0 : 7;
     const tooLong = this.props.keyringName !== null && this.props.keyringName.length < 5;
     return (
       <Row>
