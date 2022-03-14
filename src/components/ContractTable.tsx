@@ -21,7 +21,9 @@ export const ContractTable = () => {
   const [selectedContracts, setSelectedContracts] = useState([]);
 
   useEffect(() => {
-    if (contracts.length === 0) fetchContracts();
+    if (contracts.length === 0) {
+      fetchContracts();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

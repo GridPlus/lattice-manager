@@ -2,6 +2,7 @@ import { DownloadOutlined } from "@ant-design/icons";
 import { Button, Card, Input, Result } from "antd";
 import throttle from "lodash/throttle";
 import React, { useContext, useMemo, useState } from "react";
+import { useContracts } from "../hooks/useContracts";
 import { AppContext } from "../store/AppContext";
 import { constants } from "../util/helpers";
 import { SelectNetwork } from "./SelectNetwork";
@@ -10,16 +11,16 @@ const defaultNetwork =
 
 export const SearchCard = () => {
   const { session } = useContext(AppContext)
-  const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [success, setSuccess] = useState(false);
   const [contract, setContract] = useState("");
-  const [error, setError] = useState("");
   const [defs, setDefs] = useState([]);
   const [network, setNetwork] = useState(constants.DEFAULT_CONTRACT_NETWORK);
+  const { error, setError, addContracts, isLoading, setIsLoading } =
+    useContracts();
 
   const resetData = () => {
-    setLoading(false);
+    setIsLoading(false);
     setSuccess(false);
     setInstalling(false);
     setContract("");
@@ -58,7 +59,7 @@ export const SearchCard = () => {
               setContract(input);
               setError("");
               setSuccess(false);
-              setLoading(false);
+              setIsLoading(false);
             } catch (err) {
               setError(err.toString());
               resetData();
@@ -78,24 +79,21 @@ export const SearchCard = () => {
     [network]
   );
 
-  function addDefs() {
-    setInstalling(true);
-    setError("");
-    // Longer timeout for loading these since requests may get dropped
-    session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
-    session.client.addAbiDefs(defs, (err) => {
-      // Reset timeout to default
-      session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
-      if (err) {
-        setError(err.toString());
-        resetData();
-      } else {
-        setSuccess(true);
-        setError("");
-        setInstalling(false);
-      }
-    });
-  }
+  function addDefs () {
+      setInstalling(true)
+      setError("")
+    
+      addContracts(defs)
+        .then(() => {
+          setError("")
+          setInstalling(false);
+          setSuccess(true);
+        })
+        .catch((err) => {
+          setError(err);
+          resetData();
+        })
+    }
 
   const SuccessAlert = () => (
     <Result
@@ -152,9 +150,9 @@ export const SearchCard = () => {
           placeholder="Contract address"
           allowClear
           enterButton
-          loading={loading}
+          loading={isLoading}
           onSearch={(val) => {
-            setLoading(true);
+            setIsLoading(true);
             throttledFetch(val);
           }}
         />

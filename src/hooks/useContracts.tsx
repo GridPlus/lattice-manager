@@ -38,11 +38,10 @@ export const useContracts = () => {
 
       return session.client
         .getAbiRecords({
-          n: CONTRACTS_PER_PAGE,
           startIdx: fetched,
-          category: "",
+          n: CONTRACTS_PER_PAGE,
         })
-        .then((res: any) => {
+        .then((res) => {
           const _contracts = res.records.map((r) => ({
             id: r.header.name,
             ...r,
@@ -163,6 +162,7 @@ export const useContracts = () => {
     fetchContractPack,
     fetchContractPackIndex,
     isLoading,
+    setIsLoading,
     contracts,
     addContracts,
     removeContracts,

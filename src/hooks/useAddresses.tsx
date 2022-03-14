@@ -37,7 +37,7 @@ export const useAddresses = () => {
           start: fetched,
           n: ADDRESSES_PER_PAGE,
         })
-        .then((res: any) => {
+        .then((res) => {
           addAddressesToState(res.records);
           const totalFetched = res.fetched + fetched;
           const remainingToFetch = res.total - totalFetched;
