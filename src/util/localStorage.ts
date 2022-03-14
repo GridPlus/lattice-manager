@@ -2,6 +2,9 @@ import omit from "lodash/omit";
 
 const LOGIN_ID_STORAGE_KEY = "gridplus_web_wallet_id";
 const LOGIN_PASSWORD_STORAGE_KEY = "gridplus_web_wallet_password";
+const ADDRESSES_STORAGE_KEY = "gridplus_addresses";
+const CONTRACTS_STORAGE_KEY = "gridplus_contracts";
+const CONTRACT_PACKS_STORAGE_KEY = "gridplus_contracts_packs";
 const ROOT_STORE = process.env.REACT_APP_ROOT_STORE || "gridplus";
 
 // #region -- Generic Local Storage Functions
@@ -92,6 +95,22 @@ const removeLogin = () => {
 
 // #endregion
 
+// #region -- Address & Contracts Functions
+
+const getAddresses = () => getItem(ADDRESSES_STORAGE_KEY) ?? [];
+const setAddresses = (value) => setItem(ADDRESSES_STORAGE_KEY, value);
+const removeAddresses = () => removeItem(ADDRESSES_STORAGE_KEY);
+
+const getContracts = () => getItem(CONTRACTS_STORAGE_KEY) ?? [];
+const setContracts = (value) => setItem(CONTRACTS_STORAGE_KEY, value);
+const removeContracts = () => removeItem(CONTRACTS_STORAGE_KEY);
+
+const getContractPacks = () => getItem(CONTRACT_PACKS_STORAGE_KEY) ?? [];
+const setContractPacks = (value) => setItem(CONTRACT_PACKS_STORAGE_KEY, value);
+const removeContractPacks = () => removeItem(CONTRACT_PACKS_STORAGE_KEY);
+
+// #endregion
+
 export default {
   getItem,
   setItem,
@@ -119,4 +138,13 @@ export default {
   getLogin,
   setLogin,
   removeLogin,
+  getAddresses,
+  setAddresses,
+  removeAddresses,
+  getContracts,
+  setContracts,
+  removeContracts,
+  getContractPacks,
+  setContractPacks,
+  removeContractPacks,
 };
