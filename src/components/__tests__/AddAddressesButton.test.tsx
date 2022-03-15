@@ -152,13 +152,13 @@ describe("AddAddressesButton", () => {
 
   describe("validation", () => {
     const addresses = [{ key: existingAddress, val: existingName }];
+    
     beforeEach(() => {
-      localStorage.setAddresses(addresses);
+    localStorage.setLogin({ deviceID: "id", password: "pass" });
+    localStorage.setAddresses(addresses);
     });
 
     it("validates addresses", async () => {
-      const addresses = [{ key: existingAddress, val: existingName }];
-      localStorage.setAddresses(addresses);
       renderAddAddressesButton();
       const addButton = screen.getByRole("button");
       act(() => {
@@ -206,8 +206,7 @@ describe("AddAddressesButton", () => {
     });
 
     it("validates names", async () => {
-      const addresses = [{ key: existingAddress, val: existingName }];
-      renderAddAddressesButton({ addresses });
+      renderAddAddressesButton();
       const addButton = screen.getByRole("button");
       act(() => {
         fireEvent.click(addButton);

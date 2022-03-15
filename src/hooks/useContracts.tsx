@@ -23,7 +23,7 @@ export const useContracts = () => {
     addContractsToState,
     removeContractsFromState,
     resetContractsInState,
-  ] = useRecords<ContractRecord>(localStorage.getContracts());
+  ] = useRecords<ContractRecord>(localStorage.getContracts() ?? []);
 
   const [contractPacks, setContractPacks] = useState(
     localStorage.getContractPacks()

@@ -12,9 +12,9 @@ const ROOT_STORE = process.env.REACT_APP_ROOT_STORE || "gridplus";
 const getItem = (key) => {
   const value = window.localStorage.getItem(key);
   try {
-    return JSON.parse(value)
+    return JSON.parse(value);
   } catch (e) {
-    return JSON.parse(JSON.stringify(value))
+    return JSON.parse(JSON.stringify(value));
   }
 };
 const setItem = (key, value) =>
@@ -95,15 +95,45 @@ const removeLogin = () => {
 
 // #endregion
 
+// #region -- Device Indexed Functions
+
+const getDeviceIndexedItem = (key) => {
+  const deviceId = getLoginId();
+  if (deviceId) {
+    return getRootStoreItem(deviceId)?.[key];
+  }
+};
+
+const setDeviceIndexedItem = (key, value) => {
+  const deviceId = getLoginId();
+  if (deviceId && value) {
+    return setRootStoreItem(deviceId, {
+      ...getRootStoreItem(deviceId),
+      [`${key}`]: value,
+    });
+  }
+};
+
+const removeDeviceIndexedItem = (key) => {
+  const deviceId = getLoginId();
+  if (deviceId) {
+    return setRootStoreItem(deviceId, omit(getRootStoreItem(deviceId), key));
+  }
+};
+
+// #endregion
+
 // #region -- Address & Contracts Functions
 
-const getAddresses = () => getItem(ADDRESSES_STORAGE_KEY) ?? [];
-const setAddresses = (value) => setItem(ADDRESSES_STORAGE_KEY, value);
-const removeAddresses = () => removeItem(ADDRESSES_STORAGE_KEY);
+const getAddresses = () => getDeviceIndexedItem(ADDRESSES_STORAGE_KEY);
+const setAddresses = (value) =>
+  setDeviceIndexedItem(ADDRESSES_STORAGE_KEY, value);
+const removeAddresses = () => removeDeviceIndexedItem(ADDRESSES_STORAGE_KEY);
 
-const getContracts = () => getItem(CONTRACTS_STORAGE_KEY) ?? [];
-const setContracts = (value) => setItem(CONTRACTS_STORAGE_KEY, value);
-const removeContracts = () => removeItem(CONTRACTS_STORAGE_KEY);
+const getContracts = () => getDeviceIndexedItem(CONTRACTS_STORAGE_KEY);
+const setContracts = (value) =>
+  setDeviceIndexedItem(CONTRACTS_STORAGE_KEY, value);
+const removeContracts = () => removeDeviceIndexedItem(CONTRACTS_STORAGE_KEY);
 
 const getContractPacks = () => getItem(CONTRACT_PACKS_STORAGE_KEY) ?? [];
 const setContractPacks = (value) => setItem(CONTRACT_PACKS_STORAGE_KEY, value);
@@ -138,6 +168,9 @@ export default {
   getLogin,
   setLogin,
   removeLogin,
+  getDeviceIndexedItem,
+  setDeviceIndexedItem,
+  removeDeviceIndexedItem,
   getAddresses,
   setAddresses,
   removeAddresses,

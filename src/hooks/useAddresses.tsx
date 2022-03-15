@@ -21,7 +21,7 @@ export const useAddresses = () => {
     addAddressesToState,
     removeAddressesFromState,
     resetAddressesInState,
-  ] = useRecords(localStorage.getAddresses());
+  ] = useRecords(localStorage.getAddresses() ?? []);
 
   const { error, setError, retryFunction, setRetryFunctionWithReset } =
     useRequestFailed();

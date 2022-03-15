@@ -279,8 +279,6 @@ class Main extends React.Component<any, MainState> {
     this.context.session.disconnect();
     this.setState({ session: null });
     localStorage.removeLogin()
-    localStorage.removeContracts();
-    localStorage.removeAddresses();
     if (err && err === constants.LOST_PAIRING_MSG)
       //@ts-expect-error
       this.setError({ err })

@@ -22,7 +22,7 @@ const AddressTagsPage = () => {
 
   // Fetch and Cache Addresses
   useEffect(() => {
-    if (isEmpty(addresses)) {
+    if (isEmpty(addresses) && !isLoading) {
       fetchAddresses();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
