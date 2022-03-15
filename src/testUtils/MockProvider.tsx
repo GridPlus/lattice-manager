@@ -4,10 +4,10 @@ import { AppContextProvider } from "../store/AppContext";
 import { getMockSession } from "./getMockSession";
 
 /**
- * Component that wraps children components with the `AppContextProvider` and
- * accepts an override object that can be used to mock any properties in the `AppContext`.
+ * Component that wraps children components with the `AppContextProvider` and accepts an override
+ * object that can be used to mock any properties in the `AppContext`.
  *
- * @param children The children of the component.
+ * @param children The React component(s) to render.
  */
 export const MockProvider = ({
   children,
@@ -22,8 +22,8 @@ export const MockProvider = ({
 );
 
 /**
- * Renders a React component wrapped by the `AppContext` with the given overrides
- * and a `Session` object that is pre-populated.
+ * Renders a React component wrapped by the `AppContext` with the given overrides and a `Session`
+ * object that is pre-populated.
  *
  * @param children The React component(s) to render.
  */
@@ -35,7 +35,7 @@ export const renderMockProvider = ({
   overrides?;
 }) => {
   const session = getMockSession();
-   act(() => {
+  act(() => {
     render(
       <MockProvider overrides={{ session, ...overrides }}>
         {children}

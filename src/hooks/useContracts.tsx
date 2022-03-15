@@ -1,31 +1,39 @@
 import isEmpty from "lodash/isEmpty";
 import { useCallback, useContext, useEffect, useState } from "react";
+import SDKSession from "../sdk/sdkSession";
 import { AppContext } from "../store/AppContext";
-import { Record } from "../types/records";
+import {
+  ContractRecord,
+  LatticeContract
+} from "../types/contracts";
+import { transformLatticeContractToContractRecord } from "../util/contracts";
 import { constants } from "../util/helpers";
+import localStorage from "../util/localStorage";
+import { useRecords } from "./useRecords";
 import { useRequestFailed } from "./useRequestFailed";
 const { CONTRACTS_PER_PAGE, ABI_PACK_URL } = constants;
 
 /**
  * The `useContracts` hook is used to manage the external calls for fetching, adding, and removing
- * contract data on the user's Lattice; as well as fetching the public contract pack data.
+ * contract data on the user's Lattice, as well as fetching the public contract pack data, and
+ * caching that data in `localStorage`.
  */
 export const useContracts = () => {
-  const {
-    session,
+  const { session }: { session: SDKSession } = useContext(AppContext);
+
+  const [
     contracts,
     addContractsToState,
     removeContractsFromState,
-    contractPacks,
-    setContractPacks,
-  } = useContext(AppContext);
+    resetContractsInState,
+  ] = useRecords<ContractRecord>(localStorage.getContracts());
 
-  const {
-    error,
-    setError,
-    retryFunction,
-    setRetryFunctionWithReset,
-  } = useRequestFailed();
+  const [contractPacks, setContractPacks] = useState(
+    localStorage.getContractPacks()
+  );
+
+  const { error, setError, retryFunction, setRetryFunctionWithReset } =
+    useRequestFailed();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,26 +43,31 @@ export const useContracts = () => {
   const fetchContracts = useCallback(
     async (fetched = 0, retries = 1) => {
       setIsLoading(true);
-
       return session.client
         .getAbiRecords({
           startIdx: fetched,
           n: CONTRACTS_PER_PAGE,
+          category: "",
         })
-        .then((res) => {
-          const _contracts = res.records.map((r) => ({
-            id: r.header.name,
-            ...r,
-          }));
-          addContractsToState(_contracts);
-          const totalFetched = res.numFetched + fetched;
-          const remainingToFetch = res.numRemaining;
-          if (remainingToFetch > 0) {
-            fetchContracts(totalFetched);
-          } else {
-            setIsLoading(false);
+        .then(
+          (res: {
+            records: LatticeContract[];
+            numFetched: number;
+            numRemaining: number;
+          }) => {
+            const _contracts = res.records.map(
+              transformLatticeContractToContractRecord
+            );
+            addContractsToState(_contracts);
+            const totalFetched = res.numFetched + fetched;
+            const remainingToFetch = res.numRemaining;
+            if (remainingToFetch > 0) {
+              fetchContracts(totalFetched);
+            } else {
+              setIsLoading(false);
+            }
           }
-        })
+        )
         .catch((err) => {
           if (retries > 0) {
             setError(null);
@@ -66,19 +79,13 @@ export const useContracts = () => {
           }
         });
     },
-    [
-      addContractsToState,
-      session.client,
-      setError,
-      setIsLoading,
-      setRetryFunctionWithReset,
-    ]
+    [addContractsToState, session.client, setError, setRetryFunctionWithReset]
   );
 
   /**
    * Removes installed ABI contracts from the user's Lattice.
    */
-  const removeContracts = (contractsToRemove: Record[]) => {
+  const removeContracts = (contractsToRemove: ContractRecord[]) => {
     setIsLoading(true);
     const sigs = contractsToRemove.map((c) => c.header.sig);
 
@@ -99,7 +106,7 @@ export const useContracts = () => {
   /**
    * Installs new ABI contracts to the user's Lattice.
    */
-  const addContracts = (contracts) => {
+  const addContracts = (contracts: ContractRecord[]) => {
     setIsLoading(true);
     session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
 
@@ -110,7 +117,7 @@ export const useContracts = () => {
       })
       .catch((err) => {
         setError(err);
-        setRetryFunctionWithReset(() => removeContracts(contracts));
+        setRetryFunctionWithReset(() => addContracts(contracts));
       })
       .finally(() => {
         setIsLoading(false);
@@ -156,6 +163,20 @@ export const useContracts = () => {
     setContractPacks,
   ]);
 
+  /**
+   * Whenever `contracts` data changes, it is persisted to `localStorage`
+   */
+  useEffect(() => {
+    localStorage.setContracts(contracts);
+  }, [contracts]);
+
+  /**
+   * Whenever `contractPacks` data changes, it is persisted to `localStorage`
+   */
+  useEffect(() => {
+    localStorage.setContractPacks(contractPacks);
+  }, [contractPacks]);
+
   return {
     contractPacks,
     fetchContracts,
@@ -168,6 +189,7 @@ export const useContracts = () => {
     removeContracts,
     addContractsToState,
     removeContractsFromState,
+    resetContractsInState,
     error,
     setError,
     retryFunction,

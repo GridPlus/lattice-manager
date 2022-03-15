@@ -4,21 +4,29 @@ import fuzzysort from "fuzzysort";
 import intersectionBy from "lodash/intersectionBy";
 import React, { useCallback, useEffect, useState } from "react";
 import { useContracts } from "../hooks/useContracts";
+import { ContractRecord } from "../types/contracts";
 import { constants } from "../util/helpers";
 const { CONTRACTS_PER_PAGE } = constants;
 
 /**
  * `ContractTable` is a table of ABI contract data with some management features to
  * make it easier to manage a large amount of contracts.
- *
- * @param `session` - the active SDK session
  */
 export const ContractTable = () => {
   const [input, setInput] = useState("");
-  const { isLoading, contracts, fetchContracts, removeContracts } =
-    useContracts();
-  const [filteredContracts, setFilteredContracts] = useState([]);
-  const [selectedContracts, setSelectedContracts] = useState([]);
+  const {
+    isLoading,
+    contracts,
+    fetchContracts,
+    removeContracts,
+    resetContractsInState,
+  } = useContracts();
+  const [filteredContracts, setFilteredContracts] = useState<ContractRecord[]>(
+    []
+  );
+  const [selectedContracts, setSelectedContracts] = useState<ContractRecord[]>(
+    []
+  );
 
   useEffect(() => {
     if (contracts.length === 0) {
@@ -80,7 +88,10 @@ export const ContractTable = () => {
           type="link"
           icon={<SyncOutlined />}
           disabled={isLoading}
-          onClick={fetchContracts}
+          onClick={() => {
+            resetContractsInState();
+            fetchContracts();
+          }}
         >
           Sync
         </Button>
@@ -88,7 +99,7 @@ export const ContractTable = () => {
       <Table
         dataSource={filteredContracts}
         tableLayout="fixed"
-        rowKey={(r) => r.header.name}
+        rowKey={(r) => r.id}
         loading={{
           spinning: isLoading,
           tip: "Loading...",
@@ -104,9 +115,7 @@ export const ContractTable = () => {
           type: "checkbox",
           onSelect: handleOnSelect,
           onSelectAll: handleOnSelectAll,
-          selectedRowKeys: selectedContracts.map(
-            (contract) => contract?.header?.name
-          ),
+          selectedRowKeys: selectedContracts.map((contract) => contract.id),
         }}
         expandable={{
           expandedRowRender: (record) => (
@@ -127,13 +136,17 @@ export const ContractTable = () => {
           title="Function Name"
           dataIndex={["header", "name"]}
           defaultSortOrder="ascend"
-          sorter={(a: any, b: any) => a.header.name.localeCompare(b.val)}
+          sorter={(a: ContractRecord, b: ContractRecord) =>
+            a.header.name.localeCompare(b.val)
+          }
         />
         <Table.Column
           title="Identifier"
           dataIndex={["header", "sig"]}
           defaultSortOrder="ascend"
-          sorter={(a: any, b: any) => a.header.sig.localeCompare(b.val)}
+          sorter={(a: ContractRecord, b: ContractRecord) =>
+            a.header.sig.localeCompare(b.val)
+          }
         />
       </Table>
     </div>

@@ -14,7 +14,7 @@ describe("ContractTable", () => {
 
   it("shows loading", () => {
     renderContractTable();
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    waitFor(()=>expect(screen.getByText("Loading...")).toBeInTheDocument())
   });
 
   it("selects and unselects contracts", async () => {
