@@ -15,6 +15,7 @@ const AddressTagsPage = () => {
     isLoading,
     addresses,
     removeAddresses,
+    resetAddressesInState,
     error,
     retryFunction,
   } = useAddresses();
@@ -24,7 +25,7 @@ const AddressTagsPage = () => {
     if (isEmpty(addresses)) {
       fetchAddresses();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchAddresses]);
 
   const extra = [
@@ -33,7 +34,10 @@ const AddressTagsPage = () => {
       type="link"
       icon={<SyncOutlined />}
       disabled={isLoading}
-      onClick={fetchAddresses}
+      onClick={() => {
+        resetAddressesInState();
+        fetchAddresses();
+      }}
     >
       Sync
     </Button>,
