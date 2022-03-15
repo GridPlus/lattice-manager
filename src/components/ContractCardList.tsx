@@ -1,4 +1,5 @@
-import { Input, Pagination, Space } from "antd";
+import { SyncOutlined } from "@ant-design/icons";
+import { Button, Input, Pagination, Space } from "antd";
 import fuzzysort from "fuzzysort";
 import chunk from "lodash/chunk";
 import React, { useCallback, useEffect, useState } from "react";
@@ -9,7 +10,12 @@ import { SelectNetwork } from "./SelectNetwork";
 const pageSize = constants.CONTRACT_PAGE_SIZE;
 
 export function ContractCardList() {
-  const { contractPacks } = useContracts();
+  const {
+    contractPacks,
+    isLoading,
+    fetchContractPacks,
+    resetContractPacksInState,
+  } = useContracts();
   const [filteredPacks, setFilteredPacks] = useState([]);
   const [paginatedPacks, setPaginatedPacks] = useState([]);
   const [page, setPage] = useState(1);
@@ -67,22 +73,33 @@ export function ContractCardList() {
           width: "100%",
         }}
       >
-        <Input.Group compact>
+        <Input.Group
+          compact
+          style={{
+            display: "flex",
+            justifyContent: "flex-start",
+            flexWrap: "wrap",
+            width: "100%",
+          }}
+        >
           <SelectNetwork setNetwork={setNetwork} />
           <Input
             placeholder="Filter"
             onChange={onChange}
-            style={{ maxWidth: "50%" }}
+            style={{ maxWidth: "80%" }}
           />
-          <Pagination
-            style={{ marginLeft: "10px" }}
-            current={page}
-            defaultCurrent={1}
-            pageSize={pageSize}
-            defaultPageSize={pageSize}
-            onChange={setPage}
-            total={filteredPacks?.length}
-          />
+          <Button
+            key="sync-button"
+            type="link"
+            icon={<SyncOutlined />}
+            disabled={isLoading}
+            onClick={() => {
+              resetContractPacksInState();
+              fetchContractPacks();
+            }}
+          >
+            Sync
+          </Button>
         </Input.Group>
 
         <div
@@ -107,6 +124,22 @@ export function ContractCardList() {
               </p>
             </div>
           )}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+          }}
+        >
+          <Pagination
+            style={{ margin: "20px auto 0 auto" }}
+            current={page}
+            defaultCurrent={1}
+            pageSize={pageSize}
+            defaultPageSize={pageSize}
+            onChange={setPage}
+            total={filteredPacks?.length}
+          />
         </div>
       </Space>
     </div>

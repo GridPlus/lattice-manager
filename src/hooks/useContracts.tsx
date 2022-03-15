@@ -2,10 +2,7 @@ import isEmpty from "lodash/isEmpty";
 import { useCallback, useContext, useEffect, useState } from "react";
 import SDKSession from "../sdk/sdkSession";
 import { AppContext } from "../store/AppContext";
-import {
-  ContractRecord,
-  LatticeContract
-} from "../types/contracts";
+import { ContractRecord, LatticeContract } from "../types/contracts";
 import { transformLatticeContractToContractRecord } from "../util/contracts";
 import { constants } from "../util/helpers";
 import localStorage from "../util/localStorage";
@@ -148,20 +145,34 @@ export const useContracts = () => {
   );
 
   /**
+   *  Fetches `ContractPacks` by fetching the index and then each pack.
+   */
+  const fetchContractPacks = useCallback(() => {
+    setIsLoading(true);
+    fetchContractPackIndex()
+      .then(async (packs) => {
+        setContractPacks(await Promise.all(packs.map(fetchContractPack)));
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [fetchContractPack, fetchContractPackIndex]);
+
+  /**
+   * Resets `ContractPacks` data to it's default.
+   */
+  const resetContractPacksInState = useCallback(() => {
+    localStorage.removeContractPacks();
+  }, []);
+
+  /**
    *  Fetch and save `ContractPacks` data.
    */
   useEffect(() => {
     if (isEmpty(contractPacks)) {
-      fetchContractPackIndex().then(async (packs) => {
-        setContractPacks(await Promise.all(packs.map(fetchContractPack)));
-      });
+      fetchContractPacks();
     }
-  }, [
-    contractPacks,
-    fetchContractPack,
-    fetchContractPackIndex,
-    setContractPacks,
-  ]);
+  }, [contractPacks, fetchContractPacks]);
 
   /**
    * Whenever `contracts` data changes, it is persisted to `localStorage`
@@ -180,8 +191,8 @@ export const useContracts = () => {
   return {
     contractPacks,
     fetchContracts,
-    fetchContractPack,
-    fetchContractPackIndex,
+    fetchContractPacks,
+    resetContractPacksInState,
     isLoading,
     setIsLoading,
     contracts,
