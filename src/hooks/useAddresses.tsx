@@ -1,29 +1,32 @@
 import isEmpty from "lodash/isEmpty";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { AppContext } from "../store/AppContext";
 import { Record } from "../types/records";
 import { constants } from "../util/helpers";
+import { useRecords } from "./useRecords";
 import { useRequestFailed } from "./useRequestFailed";
+import localStorage from "../util/localStorage";
 const { ADDRESSES_PER_PAGE } = constants;
 const ADDRESS_RECORD_TYPE = 0;
 
 /**
  * The `useAddresses` hook is used to manage the external calls for fetching, adding, and removing
- * key-value address data on the user's Lattice.
+ * key-value address data on the user's Lattice and caching that data in `localStorage`.
  */
 export const useAddresses = () => {
-  const { session, addresses, addAddressesToState, removeAddressesFromState } =
-    useContext(AppContext);
+  const { session } = useContext(AppContext);
 
-  const {
-    error,
-    setError,
-    retryFunction,
-    setRetryFunctionWithReset,
-  } = useRequestFailed();
+  const [
+    addresses,
+    addAddressesToState,
+    removeAddressesFromState,
+    resetAddressesInState,
+  ] = useRecords(localStorage.getAddresses());
+
+  const { error, setError, retryFunction, setRetryFunctionWithReset } =
+    useRequestFailed();
 
   const [isLoading, setIsLoading] = useState(false);
-
 
   /**
    * Fetches the installed addresses from the user's Lattice.
@@ -115,6 +118,13 @@ export const useAddresses = () => {
       });
   };
 
+  /**
+   * Whenever `addresses` data changes, it is persisted to `localStorage`
+   */
+  useEffect(() => {
+    localStorage.setAddresses(addresses);
+  }, [addresses]);
+
   return {
     fetchAddresses,
     addresses,
@@ -122,6 +132,7 @@ export const useAddresses = () => {
     addAddressesToState,
     removeAddresses,
     removeAddressesFromState,
+    resetAddressesInState,
     isLoading,
     error,
     setError,

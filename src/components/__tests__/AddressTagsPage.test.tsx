@@ -3,22 +3,27 @@ import React from "react";
 import { AddressTagsPage } from "..";
 import { getMockSession, mockKvResponse } from "../../testUtils/getMockSession";
 import { renderMockProvider } from "../../testUtils/MockProvider";
+import localStorage from "../../util/localStorage";
 
 const renderAddressTagsPage = (overrides?) =>
   renderMockProvider({ children: <AddressTagsPage />, ...overrides });
 
 describe("AddressTagsPage", () => {
+  beforeEach(() => {
+    localStorage.removeAddresses();
+  });
+
   it("renders", async () => {
-     waitFor(() => renderAddressTagsPage());
+    waitFor(() => renderAddressTagsPage());
   });
 
   it("fetches addresses on load", async () => {
     const session = getMockSession();
-    waitFor(() => renderAddressTagsPage({ addresses: [], session }));
-     waitFor(() => expect(session.client.getKvRecords).toHaveBeenCalledTimes(1));
+    renderAddressTagsPage({ addresses: [], session })
+    waitFor(() => expect(session.client.getKvRecords).toHaveBeenCalledTimes(1));
   });
 
-  it("fetches many addresses on load",async () => {
+  it("fetches many addresses on load", async () => {
     const session = getMockSession();
     session.client.getKvRecords = jest.fn(() =>
       Promise.resolve({
@@ -26,7 +31,7 @@ describe("AddressTagsPage", () => {
         total: 50,
       })
     );
-    waitFor(()=> renderAddressTagsPage({ session }))
+  renderAddressTagsPage({ session })
     await waitFor(() =>
       expect(session.client.getKvRecords).toHaveBeenCalledTimes(10)
     );
@@ -43,15 +48,13 @@ describe("AddressTagsPage", () => {
           --retries;
         })
     );
-     waitFor(()=>renderAddressTagsPage({ session }))
-     waitFor(() =>
-      expect(session.client.getKvRecords).toHaveBeenCalledTimes(4)
-    );
+    renderAddressTagsPage({ session })
+    waitFor(() => expect(session.client.getKvRecords).toHaveBeenCalledTimes(4));
   });
 
   it("removes addresses", () => {
     const session = getMockSession();
-    waitFor(()=> renderAddressTagsPage({ session }))
+    renderAddressTagsPage({ session });
     const checkboxes = screen.getAllByRole("checkbox");
     const removeButton = screen.getByRole("button", {
       name: "Remove Selected",
@@ -59,11 +62,10 @@ describe("AddressTagsPage", () => {
     expect(removeButton).toBeDisabled();
     const selectAll = checkboxes[0];
 
-    act(()=>{fireEvent.click(selectAll)})
+    fireEvent.click(selectAll);
+    fireEvent.click(removeButton);
 
-    act(()=>{fireEvent.click(removeButton)})
-
-     waitFor(() =>
+    waitFor(() =>
       expect(session.client.removeKvRecords).toHaveBeenCalledTimes(1)
     );
   });

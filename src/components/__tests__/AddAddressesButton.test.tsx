@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { getMockSession } from "../../testUtils/getMockSession";
 import { renderMockProvider } from "../../testUtils/MockProvider";
+import localStorage from "../../util/localStorage";
 import {
   AddAddressesButton,
   valIsDuplicatedErrorMessage,
@@ -16,6 +17,10 @@ const renderAddAddressesButton = (overrides?) =>
   renderMockProvider({ children: <AddAddressesButton />, ...overrides });
 
 describe("AddAddressesButton", () => {
+    beforeEach(() => {
+      localStorage.removeAddresses();
+    });
+  
   it("renders", () => {
     renderAddAddressesButton();
   });
@@ -145,94 +150,106 @@ describe("AddAddressesButton", () => {
     expect(screen.queryByTestId("1-name-input")).not.toBeInTheDocument();
   });
 
-  it("validates addresses", async () => {
+  describe("validation", () => {
     const addresses = [{ key: existingAddress, val: existingName }];
-    renderAddAddressesButton({ addresses });
-    const addButton = screen.getByRole("button");
-    act(() => {
-      fireEvent.click(addButton);
+    beforeEach(() => {
+      localStorage.setAddresses(addresses);
     });
 
-    await waitFor(() =>
-      expect(screen.getByTestId("0-address-input")).toBeInTheDocument()
-    );
+    it("validates addresses", async () => {
+      const addresses = [{ key: existingAddress, val: existingName }];
+      localStorage.setAddresses(addresses);
+      renderAddAddressesButton();
+      const addButton = screen.getByRole("button");
+      act(() => {
+        fireEvent.click(addButton);
+      });
 
-    const nameInput = screen.getByTestId("0-name-input");
-    act(() => {
-      fireEvent.change(nameInput, { target: { value: "test" } });
+      await waitFor(() =>
+        expect(screen.getByTestId("0-address-input")).toBeInTheDocument()
+      );
+
+      const nameInput = screen.getByTestId("0-name-input");
+      act(() => {
+        fireEvent.change(nameInput, { target: { value: "test" } });
+      });
+
+      // Address exists at all
+      const addAddressesButton = screen.getByRole("button", { name: "Add" });
+      act(() => {
+        fireEvent.click(addAddressesButton);
+      });
+      await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
+
+      // Address matches an address that already exists in the system
+      const addressInput = screen.getByTestId("0-address-input");
+      act(() => {
+        fireEvent.change(addressInput, { target: { value: existingAddress } });
+      });
+
+      act(() => {
+        fireEvent.click(addAddressesButton);
+      });
+
+      await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
+
+      // Address has no errors
+      act(() => {
+        fireEvent.change(addressInput, { target: { value: newAddress } });
+      });
+      act(() => {
+        fireEvent.click(addAddressesButton);
+      });
+      await waitFor(() =>
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+      );
     });
 
-    // Address exists at all
-    const addAddressesButton = screen.getByRole("button", { name: "Add" });
-    act(() => {
-      fireEvent.click(addAddressesButton);
-    });
-    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
+    it("validates names", async () => {
+      const addresses = [{ key: existingAddress, val: existingName }];
+      renderAddAddressesButton({ addresses });
+      const addButton = screen.getByRole("button");
+      act(() => {
+        fireEvent.click(addButton);
+      });
+      await waitFor(() =>
+        expect(screen.getByTestId("0-address-input")).toBeInTheDocument()
+      );
 
-    // Address matches an address that already exists in the system
-    const addressInput = screen.getByTestId("0-address-input");
-    act(() => {
-      fireEvent.change(addressInput, { target: { value: existingAddress } });
-    });
+      const addressInput = screen.getByTestId("0-address-input");
+      act(() => {
+        fireEvent.change(addressInput, { target: { value: newAddress } });
+      });
 
-    act(() => {
-      fireEvent.click(addAddressesButton);
-    });
+      // Name matches an name that already exists in the system
+      const nameInput = screen.getByTestId("0-name-input");
+      act(() => {
+        fireEvent.change(nameInput, { target: { value: existingName } });
+      });
 
-    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
+      const addAddressesButton = screen.getByRole("button", { name: "Add" });
+      act(() => {
+        fireEvent.click(addAddressesButton);
+      });
 
-    // Address has no errors
-    act(() => {
-      fireEvent.change(addressInput, { target: { value: newAddress } });
-    });
-    act(() => {
-      fireEvent.click(addAddressesButton);
-    });
-    await waitFor(() =>
-      expect(screen.queryByRole("alert")).not.toBeInTheDocument()
-    );
-  });
+      await waitFor(() =>
+        expect(
+          screen.getByText(valIsDuplicatedErrorMessage)
+        ).toBeInTheDocument()
+      );
 
-  it("validates names", async () => {
-    const addresses = [{ key: existingAddress, val: existingName }];
-    renderAddAddressesButton({ addresses });
-    const addButton = screen.getByRole("button");
-    act(() => {
-      fireEvent.click(addButton);
+      // Validate name exists
+      act(() => {
+        fireEvent.change(nameInput, { target: { value: newName } });
+      });
+      act(() => {
+        fireEvent.click(addAddressesButton);
+      });
+      await waitFor(() =>
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+      );
     });
-    await waitFor(() =>
-      expect(screen.getByTestId("0-address-input")).toBeInTheDocument()
-    );
+  })
 
-    const addressInput = screen.getByTestId("0-address-input");
-    act(() => {
-      fireEvent.change(addressInput, { target: { value: newAddress } });
-    });
-
-    // Name matches an name that already exists in the system
-    const nameInput = screen.getByTestId("0-name-input");
-    act(() => {
-      fireEvent.change(nameInput, { target: { value: existingName } });
-    });
-
-    const addAddressesButton = screen.getByRole("button", { name: "Add" });
-    act(() => {
-      fireEvent.click(addAddressesButton);
-    });
-
-    await waitFor(() =>
-      expect(screen.getByText(valIsDuplicatedErrorMessage)).toBeInTheDocument()
-    );
-
-    // Validate name exists
-    act(() => {
-      fireEvent.change(nameInput, { target: { value: newName } });
-    });
-    act(() => {
-      fireEvent.click(addAddressesButton);
-    });
-    await waitFor(() =>
-      expect(screen.queryByRole("alert")).not.toBeInTheDocument()
-    );
-  });
+  
 });

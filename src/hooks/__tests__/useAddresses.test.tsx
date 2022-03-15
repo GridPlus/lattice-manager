@@ -1,62 +1,60 @@
-import { act, waitFor } from "@testing-library/react";
+import { act } from "@testing-library/react";
 import { renderHook } from "@testing-library/react-hooks";
 import React from "react";
 import { getMockSession, mockAddresses } from "../../testUtils/getMockSession";
 import { MockProvider } from "../../testUtils/MockProvider";
+import localStorage from "../../util/localStorage";
 import { useAddresses } from "../useAddresses";
 
 const renderUseAddresses = (overrides?) => {
   const session = getMockSession();
-  const {
-    result: { current },
-  } = renderHook(() => useAddresses(), {
+  const { result } = renderHook(() => useAddresses(), {
     wrapper: ({ children }) => (
       <MockProvider overrides={{ session, ...overrides }}>
         {children}
       </MockProvider>
     ),
   });
-  return { ...current, session };
+  return { result, session };
 };
 
 describe("useAddresses", () => {
+  beforeEach(() => {
+    localStorage.removeAddresses();
+  });
+
   test("should fetch addresses", async () => {
-    const { fetchAddresses, addresses, session } = renderUseAddresses();
-    await act(() => fetchAddresses());
-    expect(session.client.getKvRecords).toHaveBeenCalledTimes(1);
-    waitFor(() => expect(addresses).toStrictEqual(mockAddresses));
+    const { result } = renderUseAddresses();
+    expect(result.current.addresses).toStrictEqual([]);
+    await act(() => result.current.fetchAddresses());
+    expect(result.current.addresses).toStrictEqual(mockAddresses);
   });
 
-  test("should add addresses", () => {
-    const { addAddresses, addresses } = renderUseAddresses();
-    expect(addresses).toStrictEqual([]);
-    addAddresses(mockAddresses);
-    waitFor(() => expect(addresses).toStrictEqual(mockAddresses));
+  test("should add addresses", async () => {
+    const { result } = renderUseAddresses();
+    await act(() => result.current.addAddresses(mockAddresses));
+    expect(result.current.addresses).toStrictEqual(mockAddresses);
   });
 
-  test("should add addresses to state", () => {
-    const { addAddressesToState, addresses } = renderUseAddresses();
-    expect(addresses).toStrictEqual([]);
-    addAddressesToState(mockAddresses);
-    waitFor(() => expect(addresses).toStrictEqual(mockAddresses));
+  test("should add addresses to state", async () => {
+    const { result } = renderUseAddresses();
+    act(() => result.current.addAddressesToState(mockAddresses));
+    expect(result.current.addresses).toStrictEqual(mockAddresses);
   });
 
-  test("should remove addresses", () => {
-    const { fetchAddresses, removeAddresses, addresses } = renderUseAddresses();
-    expect(addresses).toStrictEqual([]);
-    fetchAddresses();
-    waitFor(() => expect(addresses).toStrictEqual(mockAddresses));
-    removeAddresses(mockAddresses);
-    waitFor(() => expect(addresses).toStrictEqual([]));
+  test("should remove addresses", async () => {
+    const { result } = renderUseAddresses();
+    act(() => result.current.addAddressesToState(mockAddresses));
+    expect(result.current.addresses).toStrictEqual(mockAddresses);
+    await act(() => result.current.removeAddresses(mockAddresses));
+    expect(result.current.addresses).toStrictEqual([]);
   });
 
-  test("should remove addresses from state", () => {
-    const { fetchAddresses, removeAddressesFromState, addresses } =
-      renderUseAddresses();
-    expect(addresses).toStrictEqual([]);
-    fetchAddresses();
-    waitFor(() => expect(addresses).toStrictEqual(mockAddresses));
-    removeAddressesFromState(mockAddresses);
-    waitFor(() => expect(addresses).toStrictEqual([]));
+  test("should remove addresses from state", async () => {
+    const { result } = renderUseAddresses();
+    act(() => result.current.addAddressesToState(mockAddresses));
+    expect(result.current.addresses).toStrictEqual(mockAddresses);
+    act(() => result.current.removeAddressesFromState(mockAddresses));
+    expect(result.current.addresses).toStrictEqual([]);
   });
 });
