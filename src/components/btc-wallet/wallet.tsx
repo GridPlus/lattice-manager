@@ -8,8 +8,11 @@ import {
 } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { constants } from '../../util/helpers'
+import { AppContext } from '../../store/AppContext';
 
 class Wallet extends React.Component<any, any> {
+  static contextType = AppContext;
+
   componentDidMount() {
     if (this.props.session) {
       this.props.session.getBtcWalletData()
@@ -22,7 +25,7 @@ class Wallet extends React.Component<any, any> {
 
   // Make sure text doesn't overflow on smaller screens. We need to trim larger strings
   ensureTrimmedText(text) {
-    if (!this.props.isMobile()) return text;
+    if (!this.context.isMobile) return text;
     const maxChars = this.getInnerWidth() / 22;
     if (text.length > maxChars) return `${text.slice(0, maxChars)}...`
     return text;
@@ -33,7 +36,7 @@ class Wallet extends React.Component<any, any> {
     // Label to view transaction on explorer
     const label = (
       //@ts-expect-error
-      <div align={this.props.isMobile() ? "left" : "right"}>
+      <div align={this.context.isMobile ? "left" : "right"}>
         {item.confirmed ? (
           <p>
             {item.incoming ? 'Received ' : 'Sent '}
@@ -89,7 +92,7 @@ class Wallet extends React.Component<any, any> {
                       )}
       />
     )
-    if (this.props.isMobile()) {
+    if (this.context.isMobile) {
       return (
         <List.Item key={item.hash}>
           <Row justify='center'>{itemMeta}</Row>
@@ -267,7 +270,7 @@ class Wallet extends React.Component<any, any> {
       </center>      
     )
     return (
-      <PageContent content={content} isMobile={this.props.isMobile}/>
+      <PageContent content={content} />
     )
   }
 }

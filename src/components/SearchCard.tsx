@@ -1,23 +1,28 @@
 import { DownloadOutlined } from "@ant-design/icons";
 import { Button, Card, Input, Result } from "antd";
 import throttle from "lodash/throttle";
-import React, { useMemo, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
+import { useContracts } from "../hooks/useContracts";
+import { AppContext } from "../store/AppContext";
+import { ContractDefinition } from "../types/contracts";
+import { transformContractDefinitionToContractRecord } from "../util/contracts";
 import { constants } from "../util/helpers";
 import { SelectNetwork } from "./SelectNetwork";
 const defaultNetwork =
   constants.CONTRACT_NETWORKS[constants.DEFAULT_CONTRACT_NETWORK];
 
-export const SearchCard = ({ session }) => {
-  const [loading, setLoading] = useState(false);
+export const SearchCard = () => {
+  const { session } = useContext(AppContext);
   const [installing, setInstalling] = useState(false);
   const [success, setSuccess] = useState(false);
   const [contract, setContract] = useState("");
-  const [error, setError] = useState("");
-  const [defs, setDefs] = useState([]);
+  const [defs, setDefs] = useState<ContractDefinition[]>([]);
   const [network, setNetwork] = useState(constants.DEFAULT_CONTRACT_NETWORK);
+  const { error, setError, addContracts, isLoading, setIsLoading } =
+    useContracts();
 
   const resetData = () => {
-    setLoading(false);
+    setIsLoading(false);
     setSuccess(false);
     setInstalling(false);
     setContract("");
@@ -39,24 +44,24 @@ export const SearchCard = ({ session }) => {
     } else {
       const { label, baseUrl, apiRoute } = getNetwork();
       fetch(`${baseUrl}/${apiRoute}${input}`)
-        .then((response) => response.json())
-        .then((resp) => {
+        .then((res) => res.json())
+        .then((res) => {
           // Map confusing error strings to better descriptions
-          if (resp.result === "Contract source code not verified") {
-            resp.result = `Contract source code not published to ${label} or not verified. Cannot determine data.`;
+          if (res.result === "Contract source code not verified") {
+            res.result = `Contract source code not published to ${label} or not verified. Cannot determine data.`;
           }
-          if (resp.status === "0") {
-            setError(resp.result);
+          if (res.status === "0") {
+            setError(res.result);
             resetData();
           } else {
             try {
-              const result = JSON.parse(resp.result);
+              const result = JSON.parse(res.result);
               const defs = session.client.parseAbi("etherscan", result, true);
               setDefs(defs);
               setContract(input);
               setError("");
               setSuccess(false);
-              setLoading(false);
+              setIsLoading(false);
             } catch (err) {
               setError(err.toString());
               resetData();
@@ -79,20 +84,19 @@ export const SearchCard = ({ session }) => {
   function addDefs() {
     setInstalling(true);
     setError("");
-    // Longer timeout for loading these since requests may get dropped
-    session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
-    session.client.addAbiDefs(defs, (err) => {
-      // Reset timeout to default
-      session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
-      if (err) {
-        setError(err.toString());
-        resetData();
-      } else {
-        setSuccess(true);
+
+    const contracts = defs.map(transformContractDefinitionToContractRecord);
+
+    addContracts(contracts)
+      .then(() => {
         setError("");
         setInstalling(false);
-      }
-    });
+        setSuccess(true);
+      })
+      .catch((err) => {
+        setError(err);
+        resetData();
+      });
   }
 
   const SuccessAlert = () => (
@@ -150,9 +154,9 @@ export const SearchCard = ({ session }) => {
           placeholder="Contract address"
           allowClear
           enterButton
-          loading={loading}
+          loading={isLoading}
           onSearch={(val) => {
-            setLoading(true);
+            setIsLoading(true);
             throttledFetch(val);
           }}
         />

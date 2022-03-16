@@ -1,36 +1,41 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import React from "react";
+import { renderMockProvider } from "../../testUtils/MockProvider";
 import { AddressTable } from "../AddressTable";
 
 const addresses = [
   { key: "a", val: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
   { key: "b", val: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
 ];
-const removeSelected = jest.fn();
+const removeAddresses = jest.fn();
 const loading = false;
-const mockAddressTable = (overwrites?) => (
-  <AddressTable
-    {...{
-      addresses,
-      loading,
-      removeSelected,
-      ...overwrites,
-    }}
-  />
-);
+
+const renderAddressTable = (overrides?) =>
+  renderMockProvider({
+    children: (
+      <AddressTable
+        {...{
+          addresses,
+          loading,
+          removeAddresses,
+          ...overrides,
+        }}
+      />
+    ),
+  });
 
 describe("AddressTable", () => {
   it("renders", () => {
-    render(mockAddressTable());
+    renderAddressTable();
   });
 
   it("shows loading", () => {
-    render(mockAddressTable({ loading: true }));
+    renderAddressTable({ loading: true });
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
   it("selects and unselects addresses", () => {
-    render(mockAddressTable());
+    renderAddressTable();
     const checkboxes = screen.getAllByRole("checkbox");
     const removeButton = screen.getByRole("button", {
       name: "Remove Selected",
@@ -45,7 +50,7 @@ describe("AddressTable", () => {
   });
 
   it("handles removing addresses", () => {
-    render(mockAddressTable());
+    renderAddressTable();
     const checkboxes = screen.getAllByRole("checkbox");
     const removeButton = screen.getByRole("button", {
       name: "Remove Selected",
@@ -55,11 +60,11 @@ describe("AddressTable", () => {
     fireEvent.click(selectAll);
     expect(removeButton).not.toBeDisabled();
     fireEvent.click(removeButton);
-    expect(removeSelected).toHaveBeenCalled();
+    expect(removeAddresses).toHaveBeenCalled();
   });
 
   it("filters addresses", () => {
-    render(mockAddressTable());
+    renderAddressTable();
     expect(screen.getByText("a")).toBeInTheDocument();
     const input = screen.getByRole("textbox");
     fireEvent.change(input, { target: { value: "b" } });
@@ -69,7 +74,7 @@ describe("AddressTable", () => {
   });
 
   it("sorts addresses", () => {
-    render(mockAddressTable());
+    renderAddressTable();
     expect(screen.getByText("a")).toBeInTheDocument();
     const sortByName = screen.getByText("Name");
     const sortByAddress = screen.getByText("Address");

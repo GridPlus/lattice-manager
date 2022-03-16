@@ -1,7 +1,8 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Input, Result, Tabs } from "antd";
+import { Button, Card, Input, Result, Tabs } from "antd";
 import "antd/dist/antd.dark.css";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
+import { AppContext } from "../store/AppContext";
 import { useFeature } from "../hooks/useFeature";
 import { constants } from "../util/helpers";
 import { ContractCardList } from "./ContractCardList";
@@ -9,6 +10,8 @@ import { ContractTable } from "./ContractTable";
 import { PageContent } from "./index";
 import { SearchCard } from "./SearchCard";
 import "./styles.css";
+import { ErrorAlert } from "./ErrorAlert";
+import { useContracts } from "../hooks/useContracts";
 
 const TAB_KEYS = {
   PACK: "1",
@@ -19,20 +22,19 @@ const TAB_KEYS = {
 const manualPlaceholder =
   '[{"inputs":[{"internalType":"address[]","name":"_components","type":"address[]"},{"internalType":"int256[]","name":"_units","type":"int256[]"},{"internalType":"address[]","name":"_modules","type":"address[]"},{"internalType":"contract IController","name":"_controller","type":"address"},{"internalType":"address","name":"_manager","type":"address"},{"internalType":"string","name":"_name","type":"string"},';
 
-const EthContracts = ({ session, isMobile }) => {
-  const [error, setError] = useState(null);
+const EthContracts = () => {
+  const { session } = useContext(AppContext);
+  const { error, setError, retryFunction, addContracts, isLoading, } = useContracts();
   const [defs, setDefs] = useState([]);
   const [customDefs, setCustomDefs] = useState([]);
   const [customDefsStr, setCustomDefsStr] = useState("");
   const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState(TAB_KEYS.PACK);
-  const { CAN_VIEW_CONTRACTS } = useFeature(session);
+  const { CAN_VIEW_CONTRACTS } = useFeature();
 
   function setDefaultState() {
     setDefs([]);
     setSuccess(false);
-    setLoading(false);
     setCustomDefs([]);
     setCustomDefsStr("");
   }
@@ -41,45 +43,17 @@ const EthContracts = ({ session, isMobile }) => {
     setTab(key);
     setSuccess(false);
     setError(null);
-    setLoading(false);
   }
 
-  function addDefs(skipErrors = false, defsToAdd = null) {
-    setError(null);
-    setLoading(true);
-    // Longer timeout for loading these since requests may get dropped
-    session.client.timeout = 2 * constants.ASYNC_SDK_TIMEOUT;
+  function addDefs() {
     const _defs = customDefs ? customDefs : defs;
-    session.client.addAbiDefs(_defs, (err) => {
-      // Reset timeout to default
-      session.client.timeout = constants.ASYNC_SDK_TIMEOUT;
-      if (err) {
-        setError(err.toString());
-        setLoading(false);
-        setSuccess(false);
-      } else {
-        setError(null);
-        setLoading(false);
-        setSuccess(true);
-      }
-    });
-  }
-
-  function renderBanner() {
-    if (error) {
-      return (
-        <Alert
-          message="Error"
-          description={error}
-          type="error"
-          closable
-          onClose={() => {
-            setError(null);
-            setDefaultState();
-          }}
-        />
-      );
-    }
+    addContracts(_defs)
+      .then(() => {
+        setSuccess(true)
+      })
+      .catch(() => {
+        setSuccess(false)
+      })
   }
 
   function renderSuccessAlert(buttonTxt = null) {
@@ -98,7 +72,6 @@ const EthContracts = ({ session, isMobile }) => {
                   key="buttonTxt"
                   onClick={() => {
                     setSuccess(false);
-                    setLoading(false);
                   }}
                 >
                   {buttonTxt}
@@ -111,8 +84,6 @@ const EthContracts = ({ session, isMobile }) => {
   }
 
   function renderTabs() {
-    const isLoadingDefs = success || loading;
-    if (isLoadingDefs) return;
     return (
       <Tabs activeKey={tab} onChange={onTabChange.bind(this)}>
         <Tabs.TabPane tab="Add Packs" key={TAB_KEYS.PACK} />
@@ -198,7 +169,6 @@ const EthContracts = ({ session, isMobile }) => {
                       setCustomDefs([]);
                       setCustomDefsStr("");
                       setSuccess(false);
-                      setLoading(false);
                     }}
                   >
                     Add More
@@ -217,11 +187,11 @@ const EthContracts = ({ session, isMobile }) => {
                 <Button
                   type="primary"
                   onClick={() => {
-                    addDefs(true);
+                    addDefs();
                   }}
-                  loading={loading}
+                  loading={isLoading}
                 >
-                  {loading ? "Installing..." : "Install"}
+                  {isLoading ? "Installing..." : "Install"}
                 </Button>
                 {success ? (
                   <div>
@@ -243,12 +213,12 @@ const EthContracts = ({ session, isMobile }) => {
         case TAB_KEYS.CUSTOM:
           return renderCustomCard();
         case TAB_KEYS.SINGLE_ADDR:
-          return <SearchCard session={session} />;
+          return <SearchCard />;
         case TAB_KEYS.ADDED:
-          return <ContractTable session={session} />;
+          return <ContractTable />;
         case TAB_KEYS.PACK:
         default:
-          return <ContractCardList session={session} />;
+          return <ContractCardList />;
       }
     };
     return (
@@ -262,7 +232,13 @@ const EthContracts = ({ session, isMobile }) => {
   function render() {
     const content = (
       <div>
-        {renderBanner()}
+        <ErrorAlert
+          error={error}
+          retryFunction={() => {
+            retryFunction();
+            setDefaultState();
+          }}
+        />
         <Card
           title={
             <div>
@@ -285,7 +261,7 @@ const EthContracts = ({ session, isMobile }) => {
         </Card>
       </div>
     );
-    return <PageContent content={content} isMobile={isMobile} />;
+    return <PageContent content={content} />;
   }
   return render();
 };

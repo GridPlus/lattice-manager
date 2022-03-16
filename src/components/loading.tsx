@@ -22,7 +22,7 @@ class Loading extends React.Component<any, any> {
       </center>
     )
     return (
-      <PageContent content={content} isMobile={this.props.isMobile}/>
+      <PageContent content={content} />
     )
   }
 }

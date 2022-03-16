@@ -2,7 +2,10 @@ import localStorage from "../localStorage";
 
 const key = "test";
 const newKey = "newKey"
+const index = "newIndex"
+const indexTwo = "newIndexTwo"
 const value = 1;
+const valueTwo = 2;
 const obj = { [key]: value };
 
 describe("localStorage", () => {
@@ -77,5 +80,17 @@ describe("localStorage", () => {
     expect(localStorage.getLogin()).toStrictEqual({deviceID: key, password: value});
     localStorage.removeLogin();
     expect(localStorage.getLogin()).toStrictEqual({deviceID: null, password: null});
+  });
+
+  test("should store device indexed items", () => {
+    localStorage.setLogin({deviceID: key, password: value});
+    localStorage.setDeviceIndexedItem(index, value)
+    expect(localStorage.getDeviceIndexedItem(index)).toStrictEqual(value);
+    localStorage.setDeviceIndexedItem(indexTwo, valueTwo)
+    expect(localStorage.getDeviceIndexedItem(index)).toStrictEqual(value);
+    localStorage.removeDeviceIndexedItem(indexTwo)
+    expect(localStorage.getDeviceIndexedItem(indexTwo)).toStrictEqual(undefined);
+    localStorage.removeLogin()
+    expect(localStorage.getDeviceIndexedItem(index)).toStrictEqual(undefined);
   });
 });

@@ -14,6 +14,7 @@ import {
 } from './index'
 import { constants, getBtcPurpose } from '../util/helpers'
 import localStorage from '../util/localStorage';
+import { AppContext } from '../store/AppContext';
 const { Content, Footer, Sider } = Layout;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
@@ -40,6 +41,8 @@ type MainState = {
 
 
 class Main extends React.Component<any, MainState> {
+  static contextType = AppContext
+
   constructor(props) {
     super(props)
     const params = new URLSearchParams(window.location.search);
@@ -121,7 +124,6 @@ class Main extends React.Component<any, MainState> {
       this.setState({ keyringName }, () => {
         // Check if this keyring has already logged in. This login should expire after a period of time.
         const prevKeyringLogin = localStorage.getKeyringItem(keyringName);
-        //@ts-expect-error
         const keyringTimeoutBoundary = new Date().getTime() - constants.KEYRING_LOGOUT_MS;
         if (!forceLogin && prevKeyringLogin && prevKeyringLogin.lastLogin > keyringTimeoutBoundary) {
           this.connect( prevKeyringLogin.deviceID, 
@@ -144,7 +146,7 @@ class Main extends React.Component<any, MainState> {
   }
 
   componentDidUpdate() {
-    if (this.state.session)
+    if (this.context.session)
       this.syncActiveWalletState();
   }
 
@@ -162,17 +164,18 @@ class Main extends React.Component<any, MainState> {
   }
 
   isMobile() {
-    return this.state.windowWidth < 500;
+    return this.context.isMobile
   }
 
   connect(deviceID, password, cb) {
     const updates = { deviceID, password };
     const name = this.state.keyringName ? this.state.keyringName : this.state.name
-    if (!this.state.session) {
+    if (!this.context.session) {
       // Create a new session if we don't have one.
       const settings = localStorage.getSettings()
-      //@ts-expect-error
-      updates.session = new SDKSession(deviceID, this.setError, name, settings);
+      this.context.setSession(
+        new SDKSession(deviceID, this.setError, name, settings)
+      );
     }
     this.setState(updates, cb);
   }
@@ -182,8 +185,8 @@ class Main extends React.Component<any, MainState> {
     // a device that could be discovered). Most of the time this will not be possible because
     // the cancel button that triggers this function will not be displayed once the device
     // responds back that it is ready to pair.
-    if (this.state.session && this.state.session.client) {
-      this.state.session.client.pair('', () => {});
+    if (this.context.session && this.context.session.client) {
+      this.context.session.client.pair('', () => {});
     }
     // Reset all SDK-related state variables so the user can re-connect to something else.
     this.setState({ deviceID: null, password: null, session: null })
@@ -191,8 +194,8 @@ class Main extends React.Component<any, MainState> {
   }
 
   isConnected() {
-    if (!this.state.session) return false;
-    return this.state.session.isConnected();
+    if (!this.context.session) return false;
+    return this.context.session.isConnected();
   }
 
   //------------------------------------------
@@ -261,7 +264,7 @@ class Main extends React.Component<any, MainState> {
   // HEADER HANDLERS
   //------------------------------------------
   handlePageTurn(page) {
-    this.state.session.setPage(page);
+    this.context.session.setPage(page);
   }
 
   handleMenuChange ({ key }) {
@@ -273,7 +276,7 @@ class Main extends React.Component<any, MainState> {
 
   handleLogout(err=null) {
     this.unwait();
-    this.state.session.disconnect();
+    this.context.session.disconnect();
     this.setState({ session: null });
     localStorage.removeLogin()
     if (err && err === constants.LOST_PAIRING_MSG)
@@ -315,10 +318,10 @@ class Main extends React.Component<any, MainState> {
       if (showLoading === true) {
         this.wait("Looking for your Lattice", this.cancelConnect);
       }
-      this.state.session.connect(deviceID, password, (err, isPaired) => {
+      this.context.session.connect(deviceID, password, (err, isPaired) => {
         this.unwait();
         // If the request was before we got our callback, exit here
-        if (!this.state.session || this.state.deviceID !== deviceID)
+        if (!this.context.session || this.state.deviceID !== deviceID)
           return;
         if (err) {
           // If we failed to connect, clear out the SDK session. This component will
@@ -357,7 +360,7 @@ class Main extends React.Component<any, MainState> {
     this.unwait();
     this.setError();
     this.wait('Fetching addresses');
-    this.state.session.fetchBtcAddresses((err, newAddrCounts) => {
+    this.context.session.fetchBtcAddresses((err, newAddrCounts) => {
       if (err) {
         console.error('Error fetching BTC addresses', err)
         this.unwait();
@@ -378,12 +381,12 @@ class Main extends React.Component<any, MainState> {
       // If this is the first time we are calling this function,
       // start by clearing UTXOs to avoid stale balances
       if (!isRecursion) {
-        this.state.session.clearUtxos();
+        this.context.session.clearUtxos();
       }
       // Sync data now
       this.wait('Syncing chain data')
       const opts = isRecursion ? newAddrCounts : null;
-      this.state.session.fetchBtcStateData(opts, (err) => {
+      this.context.session.fetchBtcStateData(opts, (err) => {
         if (err) {
           console.error('Error fetching BTC state data', err)
           this.unwait();
@@ -406,7 +409,7 @@ class Main extends React.Component<any, MainState> {
     // TODO: This will still draw a pairing failure screen on the Lattice. There is
     //       currently no way around this, but it is something we should address
     //       in the future.
-    this.state.session.client.pair('x', () => {
+    this.context.session.client.pair('x', () => {
       this.handleLogout(constants.LOST_PAIRING_MSG);
     });
   }
@@ -416,7 +419,7 @@ class Main extends React.Component<any, MainState> {
       return;
     this.wait("Refreshing wallets")
     this.setState({ waiting: true })
-    this.state.session.refreshWallets((err) => {
+    this.context.session.refreshWallets((err) => {
       if (err === constants.LOST_PAIRING_ERR)
         return this.handleLostPairing();
       
@@ -432,7 +435,7 @@ class Main extends React.Component<any, MainState> {
 
   // If we detect a new active wallet interface, save it and refresh wallet addresses
   syncActiveWalletState(bypassRefresh=false) {
-    const activeWallet = this.state.session.getActiveWallet();
+    const activeWallet = this.context.session.getActiveWallet();
     if (!activeWallet)
       return;
     const isExternal = activeWallet.external;
@@ -468,7 +471,7 @@ class Main extends React.Component<any, MainState> {
 
     // If we didn't timeout, submit the secret and hope for success!
     this.wait("Establishing connection with your Lattice");
-    this.state.session.client.pair(data, (err) => {
+    this.context.session.client.pair(data, (err) => {
       this.unwait();
       if (err) {
         // If there was an error here, the user probably entered the wrong secret
@@ -580,7 +583,7 @@ class Main extends React.Component<any, MainState> {
     // Display a tag if there is a SafeCard inserted
     let walletTag = null;
     const size = this.isMobile() ? 'small' : 'middle';
-    const activeWallet = this.state.session.getActiveWallet();
+    const activeWallet = this.context.session.getActiveWallet();
 
     if (activeWallet === null) {
       walletTag = ( 
@@ -619,7 +622,7 @@ class Main extends React.Component<any, MainState> {
         />
       )
       return (
-        <PageContent content={err} isMobile={() => this.isMobile()}/>
+        <PageContent content={err} />
       )
     } else {
       return;
@@ -633,69 +636,44 @@ class Main extends React.Component<any, MainState> {
 
   renderMenuItem() {
     switch (this.state.menuItem) {
-      case 'menu-wallet':
+      case "menu-wallet":
         return (
-          <Wallet isMobile={() => this.isMobile()}
-                  session={this.state.session}
-                  refreshData={this.fetchBtcData}
-                  lastUpdated={this.state.lastUpdated}
-                  pageTurnCb={this.handlePageTurn}
+          <Wallet
+            session={this.context.session}
+            refreshData={this.fetchBtcData}
+            lastUpdated={this.state.lastUpdated}
+            pageTurnCb={this.handlePageTurn}
           />
         );
-      case 'menu-receive':
-        return (
-          <Receive session={this.state.session}
-                   isMobile={() => this.isMobile()}
-          />
-        );
-      case 'menu-send':
-        return (
-          <Send session={this.state.session}
-                isMobile={() => this.isMobile()}
-          />
-        )
-      case 'menu-eth-contracts':
-        return (
-          <EthContracts
-            session={this.state.session}
-            isMobile={() => this.isMobile()}
-          />
-        )
+      case "menu-receive":
+        return <Receive session={this.context.session} />;
+      case "menu-send":
+        return <Send session={this.context.session} />;
+      case "menu-eth-contracts":
+        return <EthContracts />;
       // case 'menu-permissions':
       //   return (
       //     <Permissions
       //       session={this.state.session}
       //       isMobile={() => this.isMobile()}
       //     />
-      //   )   
-      case 'menu-settings':
-        return (
-          <Settings
-            isMobile={() => this.isMobile()}
-          />
-        )
-      case 'menu-kv-records':
-        return (
-          <AddressTagsPage
-            session={this.state.session}
-            isMobile={() => this.isMobile()}
-          />
-        )
+      //   )
+      case "menu-settings":
+        return <Settings />;
+      case "menu-kv-records":
+        return <AddressTagsPage />;
       case DEFAULT_MENU_ITEM:
-        return (
-          <Landing isMobile={() => this.isMobile()}/>
-        );
+        return <Landing />;
       default:
         return;
     }
   }
 
   renderContent() {
-    const hasActiveWallet = this.state.session ? this.state.session.getActiveWallet() !== null : false;
+    const hasActiveWallet = this.context.session ? this.context.session.getActiveWallet() !== null : false;
     if (this.state.waiting) {
       return (
-        <Loading  isMobile={() => this.isMobile()} 
-                  msg={this.state.pendingMsg}
+        <Loading  msg={this.state.pendingMsg}
                   onCancel={this.state.onCancel}/> 
       );
     } else if (!this.isConnected()) {
@@ -706,25 +684,22 @@ class Main extends React.Component<any, MainState> {
                   name={this.state.name}
                   keyringName={this.state.keyringName}
                   setKeyringName={(keyringName) => this.setState({ keyringName })}
-                  isMobile={() => this.isMobile()}
                   errMsg={this.state.error.msg}/>
       );
-    } else if (!this.state.session.isPaired()) {
+    } else if (!this.context.session.isPaired()) {
       // Automatically try to pair if we have a session but no pairing  
       return (
         <Pair submit={this.handlePair}
-              isMobile={() => this.isMobile()}
               hide={!!this.state.error.msg} />
       );
     } else if (this.state.openedByKeyring) {
       // The window should close automatically, but just in case something goes wrong...
       return (
-        <Loading isMobile={() => { this.isMobile() }}
-                  msg={"Successfully connected to your Lattice! You may close this window."}
+        <Loading  msg={"Successfully connected to your Lattice! You may close this window."}
                   spin={false}/>
       )
     } else if (!hasActiveWallet) {
-      const retry = this.state.session ? this.refreshWallets : null;
+      const retry = this.context.session ? this.refreshWallets : null;
       return (
         <Error msg={"No active wallet present for device!"}
                retryCb={retry} 
@@ -746,7 +721,7 @@ class Main extends React.Component<any, MainState> {
 
   renderPage() {
     if (this.state.hwCheck !== null) {
-      return <ValidateSig data={this.state.hwCheck} isMobile={() => this.isMobile()}/>
+      return <ValidateSig data={this.state.hwCheck} />
     } else {
       return this.renderContent();
     }

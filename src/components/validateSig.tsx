@@ -3,6 +3,7 @@ import 'antd/dist/antd.dark.css'
 import { Card, Col, Result, Row } from 'antd'
 import { decode } from 'bs58'
 import { constants } from '../util/helpers';
+import { AppContext } from '../store/AppContext';
 const ReactCrypto = require('gridplus-react-crypto').default;
 const EC = require('elliptic').ec;
 
@@ -11,6 +12,8 @@ const SIG_TEMPLATE_LEN =  74; // Struct containing DER sig
 const CERT_TEMPLATE_LEN = 147;  // Struct containing pubkey, permissions, and signature on it
 
 class ValidateSig extends React.Component<any, any> {
+  static contextType = AppContext;
+  
   // Validate a signature for a message from a known signer on a known curve
   // * msg - Expected ASCII string
   // * signer - Expected buffer containing 65-byte public key
@@ -89,8 +92,8 @@ class ValidateSig extends React.Component<any, any> {
 
 
   render() {
-    const spanLength = this.props.isMobile() ? 18 : 10;
-    const spanOffset = this.props.isMobile() ? 3 : 7; 
+    const spanLength = this.context.isMobile ? 18 : 10;
+    const spanOffset = this.context.isMobile ? 3 : 7; 
     return (
       <Row>
         <Col span={spanLength} offset={spanOffset}>

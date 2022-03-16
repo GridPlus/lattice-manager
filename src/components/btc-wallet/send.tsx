@@ -6,10 +6,13 @@ import { PageContent } from '../index'
 import { allChecks } from '../../util/sendChecks';
 import { constants, buildBtcTxReq, getBtcNumTxBytes } from '../../util/helpers'
 import '../styles.css'
+import { AppContext } from '../../store/AppContext';
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";
 
 class Send extends React.Component<any, any> {
+  static contextType = AppContext;
+  
   constructor(props) {
     super(props);
 
@@ -257,7 +260,7 @@ class Send extends React.Component<any, any> {
         />
       )
     } else if (this.state.txHash) {
-      const desc = this.props.isMobile() ? (
+      const desc = this.context.isMobile ? (
         <p>Transaction signed and broadcast successfully.&nbsp;
         <a className='lattice-a' target='_blank' rel='noopener noreferrer' href={this.getUrl()}>View</a></p>
       ) : (
@@ -390,8 +393,7 @@ class Send extends React.Component<any, any> {
       </center>      
     )
     return (
-      <PageContent content={content} isMobile={this.props.isMobile}/>
-    )
+      <PageContent content={content} />    )
   }
 }
 

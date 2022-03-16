@@ -223,7 +223,7 @@ class Settings extends React.Component<any, any> {
     if (this.props.inModal)
       return (<center>{this.renderCard()}</center>);
     return (
-      <PageContent content={content} isMobile={this.props.isMobile}/>
+      <PageContent content={content} />
     )
   }
 }
