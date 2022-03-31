@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import React from "react";
 import { renderMockProvider } from "../../testUtils/MockProvider";
 import { AddressTable } from "../AddressTable";
@@ -8,20 +8,14 @@ const addresses = [
   { key: "b", val: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
 ];
 const removeAddresses = jest.fn();
-const loading = false;
+const isLoadingAddresses = false;
 
 const renderAddressTable = (overrides?) =>
   renderMockProvider({
-    children: (
-      <AddressTable
-        {...{
-          addresses,
-          loading,
-          removeAddresses,
-          ...overrides,
-        }}
-      />
-    ),
+    children: <AddressTable />,
+    addresses,
+    isLoadingAddresses,
+    ...overrides,
   });
 
 describe("AddressTable", () => {
@@ -30,7 +24,7 @@ describe("AddressTable", () => {
   });
 
   it("shows loading", () => {
-    renderAddressTable({ loading: true });
+    renderAddressTable({ isLoadingAddresses: true });
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
@@ -60,7 +54,7 @@ describe("AddressTable", () => {
     fireEvent.click(selectAll);
     expect(removeButton).not.toBeDisabled();
     fireEvent.click(removeButton);
-    expect(removeAddresses).toHaveBeenCalled();
+    waitFor(()=>expect(removeAddresses).toHaveBeenCalled())
   });
 
   it("filters addresses", () => {

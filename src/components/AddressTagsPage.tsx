@@ -12,9 +12,8 @@ import { ErrorAlert } from "./ErrorAlert";
 const AddressTagsPage = () => {
   const {
     fetchAddresses,
-    isLoading,
+    isLoadingAddresses,
     addresses,
-    removeAddresses,
     resetAddressesInState,
     error,
     retryFunction,
@@ -22,7 +21,7 @@ const AddressTagsPage = () => {
 
   // Fetch and Cache Addresses
   useEffect(() => {
-    if (isEmpty(addresses) && !isLoading) {
+    if (isEmpty(addresses) && !isLoadingAddresses) {
       fetchAddresses();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -33,7 +32,7 @@ const AddressTagsPage = () => {
       key="sync-button"
       type="link"
       icon={<SyncOutlined />}
-      disabled={isLoading}
+      disabled={isLoadingAddresses}
       onClick={() => {
         resetAddressesInState();
         fetchAddresses();
@@ -48,7 +47,7 @@ const AddressTagsPage = () => {
     <PageContent>
       <ErrorAlert error={error} retryFunction={retryFunction} />
       <Card title={"Saved Addresses"} extra={extra} bordered={true}>
-        <AddressTable {...{ addresses, isLoading, removeAddresses }} />
+        <AddressTable />
       </Card>
     </PageContent>
   );

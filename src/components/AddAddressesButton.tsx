@@ -12,8 +12,14 @@ export const valIsDuplicatedErrorMessage =
   "You already have a tag with this name on your device.";
 
 export const AddAddressesButton = () => {
-  const { addresses, addAddresses, isLoading, error, setError, retryFunction } =
-    useAddresses();
+  const {
+    addresses,
+    addAddresses,
+    isLoadingAddresses,
+    error,
+    setError,
+    retryFunction,
+  } = useAddresses();
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -37,7 +43,9 @@ export const AddAddressesButton = () => {
         .mapValues("val")
         .value();
 
-      addAddresses(addresses).then(hideModal);
+      addAddresses(addresses)
+        .then(hideModal)
+        .catch(console.error);
     });
   };
 
@@ -67,7 +75,7 @@ export const AddAddressesButton = () => {
           </Button>,
           <Button
             type="primary"
-            loading={isLoading}
+            loading={isLoadingAddresses}
             onClick={form.submit}
             key="add"
           >
@@ -171,7 +179,7 @@ export const AddAddressesButton = () => {
                         <Button
                           type="text"
                           icon={<MinusSquareFilled />}
-                          disabled={isLoading}
+                          disabled={isLoadingAddresses}
                           style={{
                             height: "auto",
                             marginLeft: "1em",
@@ -187,7 +195,7 @@ export const AddAddressesButton = () => {
                       type="dashed"
                       block
                       icon={<PlusOutlined />}
-                      disabled={isLoading}
+                      disabled={isLoadingAddresses}
                       onClick={add}
                     >
                       Add Another Address Tag
