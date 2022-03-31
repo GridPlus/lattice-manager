@@ -1,3 +1,4 @@
+import { waitFor } from "@testing-library/react";
 import { act, renderHook } from "@testing-library/react-hooks";
 import React from "react";
 import { getMockSession, mockContracts } from "../../testUtils/getMockSession";
@@ -29,7 +30,7 @@ describe("useContracts", () => {
     const { result } = renderUseContracts();
     expect(result.current.contracts).toStrictEqual([]);
     await act(() => result.current.fetchContracts());
-    expect(result.current.contracts).toStrictEqual(mockContracts);
+    waitFor(()=>expect(result.current.contracts).toStrictEqual(mockContracts));
   });
 
   test("should add contracts", async () => {

@@ -1,11 +1,9 @@
 import isEmpty from "lodash/isEmpty";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext } from "react";
 import { AppContext } from "../store/AppContext";
 import { Record } from "../types/records";
 import { constants } from "../util/helpers";
-import { useRecords } from "./useRecords";
 import { useRequestFailed } from "./useRequestFailed";
-import localStorage from "../util/localStorage";
 const { ADDRESSES_PER_PAGE } = constants;
 const ADDRESS_RECORD_TYPE = 0;
 
@@ -14,26 +12,25 @@ const ADDRESS_RECORD_TYPE = 0;
  * key-value address data on the user's Lattice and caching that data in `localStorage`.
  */
 export const useAddresses = () => {
-  const { session } = useContext(AppContext);
-
-  const [
+  const {
+    session,
+    isLoadingAddresses,
+    setIsLoadingAddresses,
     addresses,
     addAddressesToState,
     removeAddressesFromState,
     resetAddressesInState,
-  ] = useRecords(localStorage.getAddresses() ?? []);
+  } = useContext(AppContext);
 
   const { error, setError, retryFunction, setRetryFunctionWithReset } =
     useRequestFailed();
-
-  const [isLoading, setIsLoading] = useState(false);
 
   /**
    * Fetches the installed addresses from the user's Lattice.
    */
   const fetchAddresses = useCallback(
     async (fetched = 0, retries = 1) => {
-      setIsLoading(true);
+      setIsLoadingAddresses(true);
 
       return session.client
         .getKvRecords({
@@ -48,7 +45,7 @@ export const useAddresses = () => {
             fetchAddresses(fetched + res.fetched);
           } else {
             setError(null);
-            setIsLoading(false);
+            setIsLoadingAddresses(false);
           }
         })
         .catch((err) => {
@@ -57,7 +54,7 @@ export const useAddresses = () => {
             fetchAddresses(fetched, retries - 1);
           } else {
             setError(err);
-            setIsLoading(false);
+            setIsLoadingAddresses(false);
             setRetryFunctionWithReset(fetchAddresses);
           }
         });
@@ -66,7 +63,7 @@ export const useAddresses = () => {
       addAddressesToState,
       session.client,
       setError,
-      setIsLoading,
+      setIsLoadingAddresses,
       setRetryFunctionWithReset,
     ]
   );
@@ -77,7 +74,7 @@ export const useAddresses = () => {
   const removeAddresses = (selectedAddresses: Record[]) => {
     const ids = selectedAddresses.map((r) => parseInt(r.id));
     if (isEmpty(ids)) return;
-    setIsLoading(true);
+    setIsLoadingAddresses(true);
 
     return session.client
       .removeKvRecords({ ids })
@@ -90,40 +87,37 @@ export const useAddresses = () => {
         setRetryFunctionWithReset(() => removeAddresses(selectedAddresses));
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsLoadingAddresses(false);
       });
   };
 
   /**
-   * Installs new addresses to the user's Lattice.
+   * Adds new addresses to the user's Lattice.
    */
-  const addAddresses = async (records: Record[]) => {
-    setIsLoading(true);
+  const addAddresses = async (addressesToAdd) => {
+    setIsLoadingAddresses(true);
 
     return session.client
       .addKvRecords({
         caseSensitive: false,
         type: ADDRESS_RECORD_TYPE,
-        records,
+        records: addressesToAdd,
       })
       .then(() => {
-        addAddressesToState(records);
+        // TODO: Remove fetch and call addAddressesToState() with the address data when FW is
+        //  updated to return address data. See GitHub issue:
+        //  https://github.com/GridPlus/k8x_firmware_production/issues/2323
+        fetchAddresses();
       })
       .catch((err) => {
         setError(err);
-        setRetryFunctionWithReset(() => addAddresses(records));
+        setRetryFunctionWithReset(() => addAddresses(addressesToAdd));
+        throw err
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsLoadingAddresses(false);
       });
   };
-
-  /**
-   * Whenever `addresses` data changes, it is persisted to `localStorage`
-   */
-  useEffect(() => {
-    localStorage.setAddresses(addresses);
-  }, [addresses]);
 
   return {
     fetchAddresses,
@@ -133,7 +127,7 @@ export const useAddresses = () => {
     removeAddresses,
     removeAddressesFromState,
     resetAddressesInState,
-    isLoading,
+    isLoadingAddresses,
     error,
     setError,
     retryFunction,
