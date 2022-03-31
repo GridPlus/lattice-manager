@@ -239,6 +239,7 @@ class SDKSession {
         privKey: key,
         baseUrl,
         timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
+        skipRetryOnWrongWallet: false,
       })
     } catch (err) {
       return cb(err.toString());

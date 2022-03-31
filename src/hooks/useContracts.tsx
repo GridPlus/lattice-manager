@@ -1,3 +1,4 @@
+import { GetAbiRecordsData } from "gridplus-sdk/dist/types/client";
 import isEmpty from "lodash/isEmpty";
 import { useCallback, useContext, useEffect, useState } from "react";
 import SDKSession from "../sdk/sdkSession";
@@ -47,11 +48,8 @@ export const useContracts = () => {
           category: "",
         })
         .then(
-          (res: {
-            records: LatticeContract[];
-            numFetched: number;
-            numRemaining: number;
-          }) => {
+          //@ts-expect-error - SDK return type for `getAbiRecords` needs to be updated
+          (res: GetAbiRecordsData) => {
             const _contracts = res.records.map(
               transformLatticeContractToContractRecord
             );
