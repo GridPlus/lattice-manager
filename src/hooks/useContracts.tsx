@@ -3,7 +3,7 @@ import isEmpty from "lodash/isEmpty";
 import { useCallback, useContext, useEffect, useState } from "react";
 import SDKSession from "../sdk/sdkSession";
 import { AppContext } from "../store/AppContext";
-import { ContractRecord, LatticeContract } from "../types/contracts";
+import { ContractRecord } from "../types/contracts";
 import { transformLatticeContractToContractRecord } from "../util/contracts";
 import { constants } from "../util/helpers";
 import localStorage from "../util/localStorage";
