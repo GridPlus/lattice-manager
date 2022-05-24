@@ -8,7 +8,6 @@ export { PageContent } from './formatting/index'
 // Content screens
 export { default as Connect } from './connect'
 export { default as Pair } from './pair'
-export { default as EthContracts} from './ethContracts'
 export { default as Permissions } from './permissions'
 export { default as Settings } from './settings'
 export { default as AddressTagsPage } from './AddressTagsPage'

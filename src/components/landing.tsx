@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { AuditOutlined, DesktopOutlined, TagsOutlined } from '@ant-design/icons';
+import { DesktopOutlined, TagsOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import { constants } from '../util/helpers';
 import { Card, Col, Divider, Row } from 'antd'
@@ -33,22 +33,6 @@ class Landing extends React.Component<any, any> {
               <i>Give names to your favorite contracts or recipient addresses.</i>
             </p>
             <br/>
-          </Col>
-        </Row>
-        <Row justify='center'>
-          <Col span={20}>
-            <p>
-              <a  href={constants.CONTRACTS_HELP_LINK}
-                  className='lattice-a'
-                  target='_blank'
-                  rel='noopener noreferrer'
-              >
-                <AuditOutlined/>&nbsp;
-                <b>Contracts</b>&nbsp;
-              </a>
-              <br/>
-              <i>Add your favorite smart contracts for better transaction request readability.</i>
-            </p>
           </Col>
         </Row>
         <Divider/>
