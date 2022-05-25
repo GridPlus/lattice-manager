@@ -1,72 +1,89 @@
-import React from 'react';
-import 'antd/dist/antd.dark.css'
-import { AuditOutlined, DesktopOutlined, TagsOutlined } from '@ant-design/icons';
-import { PageContent } from './index'
-import { constants } from '../util/helpers';
-import { Card, Col, Divider, Row } from 'antd'
+import { DesktopOutlined, TagsOutlined } from "@ant-design/icons";
+import { Alert, Card, Divider } from "antd";
+import "antd/dist/antd.dark.css";
+import React, { useContext } from "react";
+import SDKSession from "../sdk/sdkSession";
+import { AppContext } from "../store/AppContext";
+import { constants } from "../util/helpers";
+import { PageContent } from "./index";
 
-class Landing extends React.Component<any, any> {
-  renderCard() {
-    return (
-      <Card bordered={true} style={{textAlign: "center"}}>
-        <Row justify='center'>
-          <Col span={20}>
-            <p className='lattice-h1'><DesktopOutlined/>&nbsp;Lattice Manager</p>
-            <p className='lattice-h4'>
-              Manage secure data on your Lattice hardware wallet device for a better web3 experience:
-            </p>
-            <br/>
-          </Col>
-        </Row>
-        <Row justify='center'>
-          <Col span={20}>
-            <p>
-              <a  href={constants.TAGS_HELP_LINK}
-                  className='lattice-a'
-                  target='_blank'
-                  rel='noopener noreferrer'
-              >
-                <TagsOutlined/>&nbsp;
-                <b>Address Tags</b>&nbsp;
-              </a>
-              <br/>
-              <i>Give names to your favorite contracts or recipient addresses.</i>
-            </p>
-            <br/>
-          </Col>
-        </Row>
-        <Row justify='center'>
-          <Col span={20}>
-            <p>
-              <a  href={constants.CONTRACTS_HELP_LINK}
-                  className='lattice-a'
-                  target='_blank'
-                  rel='noopener noreferrer'
-              >
-                <AuditOutlined/>&nbsp;
-                <b>Contracts</b>&nbsp;
-              </a>
-              <br/>
-              <i>Add your favorite smart contracts for better transaction request readability.</i>
-            </p>
-          </Col>
-        </Row>
-        <Divider/>
+const Landing = () => {
+  const { session } = useContext(AppContext) as { session: SDKSession };
+  const fwVersion = session?.client?.getFwVersion();
+  const doesSupportGenericSigning = fwVersion.minor < 15;
+
+  return (
+    <PageContent>
+      <Card bordered={true} style={{ textAlign: "center" }}>
+        <div>
+          <h1 className="lattice-h1">
+            <DesktopOutlined />
+            &nbsp;Lattice Manager
+          </h1>
+          <p className="lattice-h4">
+            Manage secure data on your Lattice hardware wallet device for a
+            better web3 experience:
+          </p>
+        </div>
+        <div style={{ margin: "25px" }}>
+          <p>
+            <a
+              href={constants.TAGS_HELP_LINK}
+              className="lattice-a"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <TagsOutlined />
+              &nbsp;
+              <b>Address Tags</b>&nbsp;
+            </a>
+          </p>
+        </div>
+        <p>
+          <i>Give names to your favorite contracts or recipient addresses.</i>
+        </p>
+        {doesSupportGenericSigning ? (
+          <Alert
+            style={{ maxWidth: "500px", margin: "auto" }}
+            message="Lattice firmware is out of date"
+            description={
+              <div style={{ padding: "0 25px 0 25px" }}>
+                <p>
+                  Please update immediately to receive automatic contract
+                  decoding, which ensures you know what you're signing.
+                </p>
+                <div
+                  style={{ margin: "auto", width: "66%", textAlign: "left" }}
+                >
+                  <p>To update your firmware:</p>
+                  <ol>
+                    <li>Unlock your device</li>
+                    <li>
+                      Tap <strong>Settings</strong>
+                    </li>
+                    <li>
+                      Tap <strong>Software Update</strong>
+                    </li>
+                    <li>
+                      Tap <strong>Update</strong>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            }
+            type="warning"
+            showIcon
+          />
+        ) : null}
+        <Divider />
         <img
           src="lattice-landing.jpg"
           style={{ maxHeight: "500px", maxWidth: "100%" }}
           alt="lattice-one-device"
         />
       </Card>
-    )
-  }
+    </PageContent>
+  );
+};
 
-
-  render() {
-    return (
-      <PageContent content={this.renderCard()}/>
-    )
-  }
-}
-
-export default Landing
+export default Landing;

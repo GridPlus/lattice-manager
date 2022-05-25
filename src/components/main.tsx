@@ -3,14 +3,14 @@ import 'antd/dist/antd.dark.css'
 import './styles.css'
 import { Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
 import { 
-  HomeOutlined, AuditOutlined, MenuOutlined, TagsOutlined, 
+  HomeOutlined, MenuOutlined, TagsOutlined, 
   WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
   ReloadOutlined, CreditCardOutlined, CheckOutlined, SettingOutlined 
 } from '@ant-design/icons';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { 
   Connect, Error, Landing, Loading, PageContent, Pair, Send, 
-  Receive, Wallet, EthContracts, Settings, ValidateSig, AddressTagsPage 
+  Receive, Wallet, Settings, ValidateSig, AddressTagsPage 
 } from './index'
 import { constants, getBtcPurpose } from '../util/helpers'
 import localStorage from '../util/localStorage';
@@ -507,14 +507,6 @@ class Main extends React.Component<any, MainState> {
             <TagsOutlined />
             <span>Address Tags</span>
           </Menu.Item>
-          <Menu.Item key="menu-eth-contracts" title={null}>
-            <AuditOutlined />
-            <span>Contracts</span>
-          </Menu.Item>
-          {/* <Menu.Item key="menu-permissions">
-            <DollarOutlined/>
-            <span>Limits</span>
-          </Menu.Item> */}
           <Menu.Item key="menu-settings" title={null}>
             <SettingOutlined />
             <span>Settings</span>
@@ -649,8 +641,6 @@ class Main extends React.Component<any, MainState> {
         return <Receive session={this.context.session} />;
       case "menu-send":
         return <Send session={this.context.session} />;
-      case "menu-eth-contracts":
-        return <EthContracts />;
       // case 'menu-permissions':
       //   return (
       //     <Permissions
