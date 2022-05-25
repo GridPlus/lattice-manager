@@ -3,7 +3,7 @@ import { Button, Input, Table } from "antd";
 import fuzzysort from "fuzzysort";
 import intersectionBy from "lodash/intersectionBy";
 import React, { useCallback, useEffect, useState } from "react";
-import { Record } from "../types/records";
+import { useAddresses } from "../hooks/useAddresses";
 import { constants } from "../util/helpers";
 import { abbreviateHash } from "../util/addresses";
 const { ADDRESSES_PER_PAGE } = constants;
@@ -11,20 +11,9 @@ const { ADDRESSES_PER_PAGE } = constants;
 /**
  * `AddressTable` is a table of key-value pairs of names and hashes with some management features to
  * make it easier to manage a large amount of addresses.
- *
- * @param `addresses` - the list of key-value records to display
- * @param `isLoading` - the table displays a loading spinner when true
- * @param `removeSelected` - callback that lets the parent component remove a selected record
  */
-export const AddressTable = ({
-  addresses,
-  isLoading,
-  removeSelected,
-}: {
-  addresses: Record[];
-  isLoading: boolean;
-  removeSelected: (selectedAddresses: Record[]) => void;
-}) => {
+export const AddressTable = () => {
+  const { isLoadingAddresses, addresses, removeAddresses } = useAddresses();
   const [input, setInput] = useState("");
   const [filteredAddresses, setFilteredAddresses] = useState([]);
   const [selectedAddresses, setSelectedAddresses] = useState([]);
@@ -32,7 +21,7 @@ export const AddressTable = ({
   useEffect(() => {
     setInput("");
     setFilteredAddresses(addresses);
-  }, [addresses, isLoading]);
+  }, [addresses, isLoadingAddresses]);
 
   const filter = useCallback(
     (value) =>
@@ -63,7 +52,7 @@ export const AddressTable = ({
         <Input
           value={input}
           placeholder="Filter"
-          disabled={isLoading}
+          disabled={isLoadingAddresses}
           onChange={onChange}
           style={{ marginBottom: "1em" }}
           allowClear
@@ -72,7 +61,12 @@ export const AddressTable = ({
           danger
           type="text"
           disabled={selectedAddresses.length === 0}
-          onClick={()=>removeSelected(selectedAddresses)}
+          onClick={() =>
+            removeAddresses(selectedAddresses)
+              .then(() => {
+                setSelectedAddresses([]);
+              })
+          }
           style={{ marginLeft: "1em" }}
         >
           Remove Selected
@@ -82,7 +76,7 @@ export const AddressTable = ({
         dataSource={filteredAddresses}
         tableLayout="fixed"
         loading={{
-          spinning: isLoading,
+          spinning: isLoadingAddresses,
           tip: "Loading...",
           indicator: <LoadingOutlined />,
         }}

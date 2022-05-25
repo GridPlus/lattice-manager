@@ -2,6 +2,9 @@ import omit from "lodash/omit";
 
 const LOGIN_ID_STORAGE_KEY = "gridplus_web_wallet_id";
 const LOGIN_PASSWORD_STORAGE_KEY = "gridplus_web_wallet_password";
+const ADDRESSES_STORAGE_KEY = "gridplus_addresses";
+const CONTRACTS_STORAGE_KEY = "gridplus_contracts";
+const CONTRACT_PACKS_STORAGE_KEY = "gridplus_contracts_packs";
 const ROOT_STORE = process.env.REACT_APP_ROOT_STORE || "gridplus";
 
 // #region -- Generic Local Storage Functions
@@ -9,9 +12,9 @@ const ROOT_STORE = process.env.REACT_APP_ROOT_STORE || "gridplus";
 const getItem = (key) => {
   const value = window.localStorage.getItem(key);
   try {
-    return JSON.parse(value)
+    return JSON.parse(value);
   } catch (e) {
-    return JSON.parse(JSON.stringify(value))
+    return JSON.parse(JSON.stringify(value));
   }
 };
 const setItem = (key, value) =>
@@ -92,6 +95,52 @@ const removeLogin = () => {
 
 // #endregion
 
+// #region -- Device Indexed Functions
+
+const getDeviceIndexedItem = (key) => {
+  const deviceId = getLoginId();
+  if (deviceId) {
+    return getRootStoreItem(deviceId)?.[key];
+  }
+};
+
+const setDeviceIndexedItem = (key, value) => {
+  const deviceId = getLoginId();
+  if (deviceId && value) {
+    return setRootStoreItem(deviceId, {
+      ...getRootStoreItem(deviceId),
+      [`${key}`]: value,
+    });
+  }
+};
+
+const removeDeviceIndexedItem = (key) => {
+  const deviceId = getLoginId();
+  if (deviceId) {
+    return setRootStoreItem(deviceId, omit(getRootStoreItem(deviceId), key));
+  }
+};
+
+// #endregion
+
+// #region -- Address & Contracts Functions
+
+const getAddresses = () => getDeviceIndexedItem(ADDRESSES_STORAGE_KEY);
+const setAddresses = (value) =>
+  setDeviceIndexedItem(ADDRESSES_STORAGE_KEY, value);
+const removeAddresses = () => removeDeviceIndexedItem(ADDRESSES_STORAGE_KEY);
+
+const getContracts = () => getDeviceIndexedItem(CONTRACTS_STORAGE_KEY);
+const setContracts = (value) =>
+  setDeviceIndexedItem(CONTRACTS_STORAGE_KEY, value);
+const removeContracts = () => removeDeviceIndexedItem(CONTRACTS_STORAGE_KEY);
+
+const getContractPacks = () => getItem(CONTRACT_PACKS_STORAGE_KEY) ?? [];
+const setContractPacks = (value) => setItem(CONTRACT_PACKS_STORAGE_KEY, value);
+const removeContractPacks = () => removeItem(CONTRACT_PACKS_STORAGE_KEY);
+
+// #endregion
+
 export default {
   getItem,
   setItem,
@@ -119,4 +168,16 @@ export default {
   getLogin,
   setLogin,
   removeLogin,
+  getDeviceIndexedItem,
+  setDeviceIndexedItem,
+  removeDeviceIndexedItem,
+  getAddresses,
+  setAddresses,
+  removeAddresses,
+  getContracts,
+  setContracts,
+  removeContracts,
+  getContractPacks,
+  setContractPacks,
+  removeContractPacks,
 };

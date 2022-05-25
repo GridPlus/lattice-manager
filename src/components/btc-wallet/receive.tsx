@@ -4,11 +4,13 @@ import { Button, Card, Row, Input, Empty } from 'antd'
 import { CopyOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { validateBtcAddr } from '../../util/helpers'
+import { AppContext } from '../../store/AppContext';
 const QRCode = require('qrcode.react');
 const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
 
 class Receive extends React.Component<any, any> {
+  static contextType = AppContext;
   constructor(props) {
     super(props);
 
@@ -50,7 +52,7 @@ class Receive extends React.Component<any, any> {
 
 
   renderAddrBox() {
-    if (this.props.isMobile()) {
+    if (this.context.isMobile) {
       return (
         <div>
           <TextArea id={SEARCH_ID}
@@ -118,7 +120,7 @@ class Receive extends React.Component<any, any> {
       </center>      
     )
     return (
-      <PageContent content={content} isMobile={this.props.isMobile}/>
+      <PageContent content={content} />
     )
   }
 }

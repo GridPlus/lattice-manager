@@ -1,28 +1,24 @@
+import { fireEvent, screen } from "@testing-library/react";
 import React from "react";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-import Settings from "../settings";
+import { renderMockProvider } from "../../testUtils/MockProvider";
 import localStorage from "../../util/localStorage";
+import Settings from "../settings";
 
 const testName = "TestKeyRing";
-const newTestName = "NewTestName";
 const testKeyring = () => ({
   TestKeyRing: { name: testName },
   TestKeyRing2: { name: "TestKeyRing2" },
 });
 
+const renderSettings = () => renderMockProvider({ children: <Settings /> });
+
 describe("Settings", () => {
   it("renders", () => {
-    render(<Settings isMobile={false} />);
+    renderSettings();
   });
 
   it("opens keyrings collapsible", () => {
-    render(<Settings isMobile={false} />);
+    renderSettings();
 
     const openButton = screen.getByRole("button", { expanded: false });
     fireEvent.click(openButton);
@@ -34,7 +30,7 @@ describe("Settings", () => {
 
   it("shows keyrings", () => {
     localStorage.setKeyring(testKeyring());
-    render(<Settings isMobile={false} />);
+    renderSettings();
 
     const openButton = screen.getByRole("button", { expanded: false });
     fireEvent.click(openButton);

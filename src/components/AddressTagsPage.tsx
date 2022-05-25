@@ -1,139 +1,53 @@
 import { SyncOutlined } from "@ant-design/icons";
-import { Alert, Button, Card } from "antd";
+import { Button, Card } from "antd";
 import "antd/dist/antd.dark.css";
-import React, { useCallback, useEffect, useState } from "react";
-import { useRecords } from "../hooks/useRecords";
-import SDKSession from "../sdk/sdkSession";
-import { constants } from "../util/helpers";
+import React, { useEffect } from "react";
+import { useAddresses } from "../hooks/useAddresses";
 import { AddAddressesButton } from "./AddAddressesButton";
 import { AddressTable } from "./AddressTable";
 import { PageContent } from "./index";
-import { Record } from "../types/records";
-const { ADDRESSES_PER_PAGE } = constants;
+import isEmpty from "lodash/isEmpty";
+import { ErrorAlert } from "./ErrorAlert";
 
-const AddressTagsPage = ({
-  isMobile,
-  session,
-}: {
-  isMobile: () => boolean;
-  session: SDKSession;
-}) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [retryFunction, setRetryFunction] = useState(null);
-  const [addresses, addAddresses, removeAddresses] = useRecords([]);
+const AddressTagsPage = () => {
+  const {
+    fetchAddresses,
+    isLoadingAddresses,
+    addresses,
+    resetAddressesInState,
+    error,
+    retryFunction,
+  } = useAddresses();
 
-  const fetchRecords = useCallback(
-    async (fetched = 0, retries = 1) => {
-      setIsLoading(true);
-      session
-        .client
-        .getKvRecords({
-          start: fetched,
-          n: ADDRESSES_PER_PAGE,
-        })
-        .then((res: any) => {
-          addAddresses(res.records);
-          const totalFetched = res.fetched + fetched;
-          const remainingToFetch = res.total - totalFetched;
-          if (remainingToFetch > 0) {
-            fetchRecords(fetched + res.fetched);
-          } else {
-            setError(null);
-            setIsLoading(false);
-          }
-        })
-        .catch((err) => {
-          if (retries > 0) {
-            setError(null);
-            fetchRecords(fetched, retries - 1);
-          } else {
-            setError(err);
-            setIsLoading(false);
-            setRetryFunction(fetchRecords);
-          }
-        });
-    },
-    [addAddresses, session.client]
-  );
-
+  // Fetch and Cache Addresses
   useEffect(() => {
-    fetchRecords();
+    if (isEmpty(addresses) && !isLoadingAddresses) {
+      fetchAddresses();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const removeSelected = (selectedAddresses: Record[]) => {
-    const ids = selectedAddresses.map((r) => parseInt(r.id));
-    if (ids.length === 0) return;
-    setIsLoading(true);
-    session
-      .client
-      .removeKvRecords({ ids, type: undefined })
-      .then(() => {
-        removeAddresses(selectedAddresses);
-        setError(null);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        setError(err);
-        setIsLoading(false);
-        setRetryFunction(removeSelected);
-      });
-  };
-
-  const onAddAddresses = () => {
-    fetchRecords()
-  }
 
   const extra = [
     <Button
       key="sync-button"
       type="link"
       icon={<SyncOutlined />}
-      disabled={isLoading}
-      onClick={fetchRecords}
+      disabled={isLoadingAddresses}
+      onClick={() => {
+        resetAddressesInState();
+        fetchAddresses();
+      }}
     >
       Sync
     </Button>,
-    <AddAddressesButton
-      key="add-addresses-button"
-      records={addresses}
-      session={session}
-      onAddAddresses={onAddAddresses}
-    />,
+    <AddAddressesButton key="add-addresses-button" />,
   ];
 
-  const ErrorAlert = () =>
-    error && (
-      <Alert
-        message="Error"
-        description={error}
-        action={
-          retryFunction ? (
-            <Button
-              //@ts-expect-error
-              type="danger"
-              onClick={() => {
-                retryFunction();
-                setRetryFunction(null);
-                setError(null);
-              }}
-            >
-              Retry
-            </Button>
-          ) : null
-        }
-        type="error"
-        closable
-        onClose={() => setError(null)}
-      />
-    );
-
   return (
-    <PageContent isMobile={isMobile}>
-      <ErrorAlert />
+    <PageContent>
+      <ErrorAlert error={error} retryFunction={retryFunction} />
       <Card title={"Saved Addresses"} extra={extra} bordered={true}>
-        <AddressTable {...{ addresses, isLoading, removeSelected }} />
+        <AddressTable />
       </Card>
     </PageContent>
   );

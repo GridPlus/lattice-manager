@@ -64,7 +64,7 @@ class Landing extends React.Component<any, any> {
 
   render() {
     return (
-      <PageContent content={this.renderCard()} isMobile={this.props.isMobile}/>
+      <PageContent content={this.renderCard()}/>
     )
   }
 }
