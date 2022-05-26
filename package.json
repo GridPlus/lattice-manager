@@ -2,7 +2,7 @@
   "name": "app",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://gridplus.github.io/lattice-manager/",
+  "homepage": "https://lattice.gridplus.io/",
   "dependencies": {
     "antd": "^4.16.13",
     "bech32": "^2.0.0",
