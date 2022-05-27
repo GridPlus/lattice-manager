@@ -11,7 +11,6 @@ import { PageContent } from "./index";
 
 const Landing = () => {
   const { USES_AUTO_ABI } = useFeature();
-  const is15Released = false; //TODO: Activate when fw v15 is released
 
   return (
     <PageContent>
@@ -43,7 +42,7 @@ const Landing = () => {
         <p>
           <i>Give names to your favorite contracts or recipient addresses.</i>
         </p>
-        {is15Released && !USES_AUTO_ABI ? (
+        {!USES_AUTO_ABI ? (
           <Alert
             style={{ maxWidth: "500px", margin: "auto" }}
             message="Lattice firmware is out of date"
