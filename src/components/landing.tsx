@@ -9,6 +9,7 @@ import { PageContent } from "./index";
 
 const Landing = () => {
   const { session } = useContext(AppContext) as { session: SDKSession };
+  const is15Released = false //TODO: Activate when fw v15 is released
   const fwVersion = session?.client?.getFwVersion();
   const doesSupportGenericSigning = fwVersion.minor < 15;
 
@@ -42,7 +43,7 @@ const Landing = () => {
         <p>
           <i>Give names to your favorite contracts or recipient addresses.</i>
         </p>
-        {doesSupportGenericSigning ? (
+        {is15Released && doesSupportGenericSigning ? (
           <Alert
             style={{ maxWidth: "500px", margin: "auto" }}
             message="Lattice firmware is out of date"
