@@ -47,7 +47,8 @@ export const constants = {
     BTC_SEGWIT_NATIVE_V0_PREFIX: 'bc',
     BTC_LEGACY_VERSION: 0x00,
     BTC_WRAPPED_SEGWIT_VERSION: 0x05,
-    RATE_LIMIT: 1000, // 1s between requests
+    RATE_LIMIT: 2000, // 2s between requests
+    THROTTLE_RATE_LIMIT: 5000, // 5s between requests
     GET_ABI_URL: 'https://api.etherscan.io/api?module=contract&action=getabi&address=',
     DEFAULT_CONTRACT_NETWORK: 'ethereum',
     CONTRACT_NETWORKS: {
@@ -126,6 +127,19 @@ function fetchJSON(url, opts, cb) {
     .then((resp) => cb(null, resp))
     .catch((err) => cb(err))
 }
+
+const resolveAfter = delay => new Promise(ok => setTimeout(ok, delay));
+
+function throttle(fn, delay) {
+    let wait: any = Promise.resolve();
+    return (...args) => {
+      const res = wait.then(() => fn(...args));
+      wait = wait.then(() => resolveAfter(delay));
+      return res;
+    };
+  }
+
+const throttledFetchJSON = throttle(fetchJSON, constants.THROTTLE_RATE_LIMIT);
 
 //====== UTXOS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
@@ -228,6 +242,7 @@ function _fetchBtcTxs(addresses, txs, cb, offset=0, isFirstCall=true) {
     }
 
     let url = `${constants.BTC_PROD_DATA_API}/multiaddr?active=`;
+    let fetchFn = fetchJSON
     const isSingleAddr = isFirstCall && addresses.length === 1;
     if (isSingleAddr) {
         // Edge case when getting transactions from the blockchain.com API with
@@ -251,6 +266,7 @@ function _fetchBtcTxs(addresses, txs, cb, offset=0, isFirstCall=true) {
     }
     if (isSingleAddr) {
         url = `${url}?limit=${MAX_TXS_RET}`;
+        fetchFn = throttledFetchJSON
     } else {
         url = `${url}&n=${MAX_TXS_RET}`;
     }
@@ -258,7 +274,7 @@ function _fetchBtcTxs(addresses, txs, cb, offset=0, isFirstCall=true) {
         // If this is a follow up, fetch txs after an offset
         url = `${url}&offset=${offset}`
     }
-    fetchJSON(url, null, (err, data) => {
+    fetchFn(url, null, (err, data) => {
         if (err)
             return cb(err);
         // Add the new txs
