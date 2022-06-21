@@ -141,7 +141,7 @@ const removeContractPacks = () => removeItem(CONTRACT_PACKS_STORAGE_KEY);
 
 // #endregion
 
-export default {
+const exports = {
   getItem,
   setItem,
   removeItem,
@@ -181,3 +181,5 @@ export default {
   setContractPacks,
   removeContractPacks,
 };
+
+export default exports

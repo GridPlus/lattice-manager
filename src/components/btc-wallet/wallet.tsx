@@ -12,6 +12,7 @@ import { AppContext } from '../../store/AppContext';
 
 class Wallet extends React.Component<any, any> {
   static contextType = AppContext;
+  context = this.context as any;
 
   componentDidMount() {
     if (this.props.session) {

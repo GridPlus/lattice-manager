@@ -15,6 +15,9 @@ import {
 import { constants, getBtcPurpose } from '../util/helpers'
 import localStorage from '../util/localStorage';
 import { AppContext } from '../store/AppContext';
+import type { MenuProps } from 'antd/es/menu';
+type MenuItem = Required<MenuProps>['items'][number];
+
 const { Content, Footer, Sider } = Layout;
 const LOGIN_PARAM = 'loginCache';
 const DEFAULT_MENU_ITEM = 'menu-landing';
@@ -42,6 +45,7 @@ type MainState = {
 
 class Main extends React.Component<any, MainState> {
   static contextType = AppContext
+  context = this.context as any;
 
   constructor(props) {
     super(props)
@@ -492,42 +496,54 @@ class Main extends React.Component<any, MainState> {
   //------------------------------------------
   renderMenu() {
     const hideWallet = constants.BTC_PURPOSE_NONE === getBtcPurpose();
+
+    const getMenuItems = () => { 
+      const items: MenuItem[] = [{
+        key: 'menu-landing',
+        label: 'Home',
+        icon:  <HomeOutlined/>, 
+      },
+      {
+        key: 'menu-kv-records',
+        label: 'Address Tags',
+        icon:  <TagsOutlined/>,
+      },
+      {
+        key: 'menu-settings',
+        label: 'Settings',
+        icon:  <SettingOutlined/>,
+      },
+      ]
+      if (!hideWallet) {
+        items.push({
+          key: 'submenu-wallet',
+          label: 'BTC Wallet',
+          children: [{
+            key: 'menu-wallet',
+            label: 'History',
+            icon:  <WalletOutlined/>,
+          },
+          {
+            key: 'menu-send',
+            label: 'Send',
+            icon:  <ArrowUpOutlined/>,
+          },
+          {
+            key: 'menu-receive',
+            label: 'Receive',
+            icon:  <ArrowDownOutlined/>,
+          }]
+        })
+      }
+      return items
+    }
+
     return (
       <Sider
         collapsed={this.state.collapsed}
         collapsedWidth={0}
       >
-        <Menu theme="dark" mode="inline" onSelect={this.handleMenuChange}>
-          {/* Setting title={null} removes floating tooltip on mobile */}
-          <Menu.Item key="menu-landing" title={null}>
-            <HomeOutlined/>
-            <span>Home</span>
-            </Menu.Item>
-          <Menu.Item key="menu-kv-records" title={null}>
-            <TagsOutlined />
-            <span>Address Tags</span>
-          </Menu.Item>
-          <Menu.Item key="menu-settings" title={null}>
-            <SettingOutlined />
-            <span>Settings</span>
-          </Menu.Item>
-          {!hideWallet ? (
-            <Menu.SubMenu title="BTC Wallet" key="submenu-wallet">
-              <Menu.Item key="menu-wallet" title={null}>
-                <WalletOutlined />
-                <span>History</span>
-              </Menu.Item>
-              <Menu.Item key="menu-send" title={null}>
-                <ArrowUpOutlined />
-                <span>Send</span>
-              </Menu.Item>
-              <Menu.Item key="menu-receive" title={null}>
-                <ArrowDownOutlined />
-                <span>Receive</span>
-              </Menu.Item>
-            </Menu.SubMenu>
-          ) : null}
-        </Menu>
+        <Menu theme="dark" mode="inline" onSelect={this.handleMenuChange} items={getMenuItems()} />
       </Sider>
     );
   }
@@ -703,7 +719,7 @@ class Main extends React.Component<any, MainState> {
   renderFooter() {
     return (
       <Footer style={{ textAlign: 'center' }}>
-        ©2021 GridPlus Inc
+        © {new Date().getFullYear()} GridPlus, Inc.
         {constants.ENV === 'dev' ? <Tag color="blue" style={{margin: "0 0 0 10px"}}>DEV</Tag> : null}
       </Footer>
     )
