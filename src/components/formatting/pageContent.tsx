@@ -6,6 +6,7 @@ const SPAN_WIDTH = 14; // Max 24 for 100% width
 
 class PageContent extends React.Component<any, any> {
   static contextType = AppContext
+  context = this.context as any;
 
   render () {
     if (!this.props.children && !this.props.content)

@@ -5,12 +5,13 @@ import { CopyOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { validateBtcAddr } from '../../util/helpers'
 import { AppContext } from '../../store/AppContext';
-const QRCode = require('qrcode.react');
+import  { QRCodeSVG } from 'qrcode.react';
 const { Search, TextArea } = Input;
 const SEARCH_ID = "address-data";
 
 class Receive extends React.Component<any, any> {
   static contextType = AppContext;
+  context = this.context as any;
   constructor(props) {
     super(props);
 
@@ -89,7 +90,7 @@ class Receive extends React.Component<any, any> {
       return (
         <div>
           <Row justify='center'>
-            <QRCode value={this.state.address} 
+            <QRCodeSVG value={this.state.address} 
                     size={w}
                     style={{margin: "30px 0 0 0"}}
             />

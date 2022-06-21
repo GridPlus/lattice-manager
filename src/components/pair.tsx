@@ -7,6 +7,7 @@ const SUBMIT_LEN = 8; // 8 characters in a code
 
 class Pair extends React.Component<any, any> {
   static contextType = AppContext;
+  context = this.context as any;
 
   constructor(props) {
     super(props);

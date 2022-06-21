@@ -13,6 +13,7 @@ const CERT_TEMPLATE_LEN = 147;  // Struct containing pubkey, permissions, and si
 
 class ValidateSig extends React.Component<any, any> {
   static contextType = AppContext;
+  context = this.context as any;
   
   // Validate a signature for a message from a known signer on a known curve
   // * msg - Expected ASCII string

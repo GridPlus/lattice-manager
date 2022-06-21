@@ -26,6 +26,7 @@ type ConnectState = {
 
 class Connect extends React.Component<ConnectProps, ConnectState> {
   static contextType = AppContext;
+  context = this.context as any;
   
   constructor(props) {
     super(props)
