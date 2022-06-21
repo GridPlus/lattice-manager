@@ -1,17 +1,16 @@
-import { DesktopOutlined, TagsOutlined } from "@ant-design/icons";
+import {
+  DesktopOutlined,
+  TagsOutlined
+} from "@ant-design/icons";
 import { Alert, Card, Divider } from "antd";
 import "antd/dist/antd.dark.css";
-import React, { useContext } from "react";
-import SDKSession from "../sdk/sdkSession";
-import { AppContext } from "../store/AppContext";
+import React from "react";
+import { useFeature } from "../hooks/useFeature";
 import { constants } from "../util/helpers";
 import { PageContent } from "./index";
 
 const Landing = () => {
-  const { session } = useContext(AppContext) as { session: SDKSession };
-  const is15Released = false //TODO: Activate when fw v15 is released
-  const fwVersion = session?.client?.getFwVersion();
-  const doesSupportGenericSigning = fwVersion.minor < 15;
+  const { USES_AUTO_ABI } = useFeature();
 
   return (
     <PageContent>
@@ -43,7 +42,7 @@ const Landing = () => {
         <p>
           <i>Give names to your favorite contracts or recipient addresses.</i>
         </p>
-        {is15Released && doesSupportGenericSigning ? (
+        {!USES_AUTO_ABI ? (
           <Alert
             style={{ maxWidth: "500px", margin: "auto" }}
             message="Lattice firmware is out of date"

@@ -14,6 +14,7 @@ export const useFeature = (): { [feature: string]: boolean } => {
 
   const features = {
     CAN_VIEW_CONTRACTS: [0, 14, 0],
+    USES_AUTO_ABI: [0, 15, 0],
   };
 
   return Object.fromEntries(
