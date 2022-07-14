@@ -44,7 +44,10 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
 
   componentDidMount() {
     //@ts-expect-error
-    this.input.focus()
+    if (this.input) {
+      //@ts-expect-error
+      this.input.focus();
+    }
     this.setState({ isLoading: false  })
   }
 

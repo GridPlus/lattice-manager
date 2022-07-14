@@ -19,7 +19,10 @@ class Pair extends React.Component<any, any> {
   componentDidMount() {
     this.setState({ code: '' })
     //@ts-expect-error
-    this.input.focus()
+    if (this.input) {
+      //@ts-expect-error
+      this.input.focus();
+    }
   }
 
   componentWillUnmount() {
