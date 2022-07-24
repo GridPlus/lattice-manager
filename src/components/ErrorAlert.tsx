@@ -10,7 +10,6 @@ export const ErrorAlert = ({ error, retryFunction }) => {
       closable
       action={
         <Button
-          //@ts-expect-error
           type="danger"
           onClick={() => {
             retryFunction && retryFunction();

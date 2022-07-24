@@ -596,7 +596,6 @@ class Main extends React.Component<any, MainState> {
 
     if (activeWallet === null) {
       walletTag = ( 
-        //@ts-expect-error
         <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet <ReloadOutlined/></Button>
       )
     } else {

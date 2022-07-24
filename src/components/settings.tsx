@@ -186,7 +186,6 @@ class Settings extends React.Component<any, any> {
               Manage connections to your Lattice. Third party apps should be listed here if they are connected to your device.
             </p>
             <Collapse>
-              {/* @ts-expect-error */}
               <Collapse.Panel header={`Connections List (${data.length})`}>
                 <Table dataSource={data} columns={cols}/>
               </Collapse.Panel>

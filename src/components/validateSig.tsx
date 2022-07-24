@@ -83,7 +83,6 @@ class ValidateSig extends React.Component<any, any> {
     }
     return (
       <Result
-        //@ts-expect-error
         status={result.status}
         title={result.title}
         subTitle={result.subTitle}

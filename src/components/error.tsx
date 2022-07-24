@@ -33,7 +33,6 @@ class Error extends React.Component<any, any> {
           <p>{this.props.msg}</p>
           {this.props.retryCb ? (
             <Button id="submitButton"
-              //@ts-expect-error
               onClick={this.submit} type="danger">
               {this.props.btnMsg || "Retry"}
             </Button>
