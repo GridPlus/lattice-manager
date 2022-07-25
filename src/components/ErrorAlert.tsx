@@ -10,6 +10,7 @@ export const ErrorAlert = ({ error, retryFunction }) => {
       closable
       action={
         <Button
+          //@ts-expect-error - danger type is missing in antd
           type="danger"
           onClick={() => {
             retryFunction && retryFunction();

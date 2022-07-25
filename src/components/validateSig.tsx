@@ -4,6 +4,7 @@ import { Card, Col, Result, Row } from 'antd'
 import { decode } from 'bs58'
 import { constants } from '../util/helpers';
 import { AppContext } from '../store/AppContext';
+import { ResultStatusType } from 'antd/lib/result';
 const ReactCrypto = require('gridplus-react-crypto').default;
 const EC = require('elliptic').ec;
 
@@ -72,7 +73,7 @@ class ValidateSig extends React.Component<any, any> {
 
   renderResult() {
     let result = {
-      status: "warning",
+      status: "warning" as ResultStatusType,
       title: "Could not Verify Authenticity",
       subTitle: "We could not verify the authenticity of this signature or signer."
     };
