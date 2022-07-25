@@ -45,7 +45,6 @@ export const AddAddressesButton = () => {
 
       addAddresses(addresses)
         .then(hideModal)
-        .catch(console.error);
     });
   };
 

@@ -244,69 +244,69 @@ class SDKSession {
     } catch (err) {
       return cb(err.toString());
     }
-    client.connect(deviceID, (err) => {
-      if (err) {
-        if (_triedLocal === false) {
-          console.warn('Failed to connect to Lattice over LAN. Falling back to cloud routing.')
-          return this._tryConnect(deviceID, pw, cb, true); 
-        } else {
-          console.error('Failed to connect via cloud routing.')
-          return cb(err);
+
+    return client
+      .connect(deviceID)
+      .then((isPaired) => {
+        // Update the timeout to a longer one for future async requests
+        client.timeout = constants.ASYNC_SDK_TIMEOUT;
+        this.client = client;
+        // Setup a new storage session if these are new credentials.
+        // (This call will be bypassed if the credentials are already saved
+        // in localStorage because getBtcWalletData is also called in the constructor)
+        this.deviceID = deviceID;
+        this.getBtcWalletData();
+        return cb(null, isPaired);
+      })
+      .catch((err) => {
+        if (err) {
+          if (_triedLocal === false) {
+            console.warn(
+              "Failed to connect to Lattice over LAN. Falling back to cloud routing."
+            );
+            return this._tryConnect(deviceID, pw, cb, true);
+          } else {
+            console.error("Failed to connect via cloud routing.");
+            return cb(err);
+          }
+        } else if (_triedLocal === false) {
+          console.log("Successfully connected to Lattice over LAN.");
         }
-      } else if (_triedLocal === false) {
-        console.log('Successfully connected to Lattice over LAN.')
-      }
-      // Update the timeout to a longer one for future async requests
-      client.timeout = constants.ASYNC_SDK_TIMEOUT;
-      this.client = client;
-      // Setup a new storage session if these are new credentials.
-      // (This call will be bypassed if the credentials are already saved
-      // in localStorage because getBtcWalletData is also called in the constructor)
-      this.deviceID = deviceID;
-      this.getBtcWalletData();
-      return cb(null, client.isPaired);
-    });
+      });
   }
 
   connect(deviceID, pw, cb) {
     return this._tryConnect(deviceID, pw, cb, true); // temporarily disable local connect
   }
 
-  refreshWallets(cb) {
+  async refreshWallets(cb) {
     if (this.client) {
       const prevWallet = JSON.stringify(this.client.getActiveWallet());
-      this.client.connect(this.deviceID, (err, isPaired) => {
-        // If we lost connection, the user most likely removed the pairing and will need to repair
-        if (false === this.client.isPaired)
-          return cb(constants.LOST_PAIRING_ERR);
-        if (err)
-          return cb(err);
-        // If we pulled a new active wallet, reset balances + transactions
-        // so we can reload a new set.
-        const newWallet = JSON.stringify(this.client.getActiveWallet());
-        if (newWallet !== prevWallet)
-          this.resetStateData();
-        // Update storage. This will remap to a new localStorage key if the wallet UID
-        // changed. If we didn't get an active wallet, it will just clear out the addresses
-        this.getBtcWalletData();
-        return cb(null, isPaired);
-      })
+      const isPaired = await this.client.connect(this.deviceID).catch(cb)
+      // If we lost connection, the user most likely removed the pairing and will need to repair
+      if (false === this.client.isPaired)
+        return cb(constants.LOST_PAIRING_ERR);
+      // If we pulled a new active wallet, reset balances + transactions
+      // so we can reload a new set.
+      const newWallet = JSON.stringify(this.client.getActiveWallet());
+      if (newWallet !== prevWallet)
+        this.resetStateData();
+      // Update storage. This will remap to a new localStorage key if the wallet UID
+      // changed. If we didn't get an active wallet, it will just clear out the addresses
+      this.getBtcWalletData();
+      return cb(null, isPaired);
     } else {
       return cb('Lost connection to Lattice. Please refresh.');
     }
   }
 
-  sign(req, cb) {
+  async sign(req, cb) {
     // Get the tx payload to broadcast
-    this.client.sign(req, (err, res) => {
-      if (err) {
-        return cb(err);
-      }
-      broadcastBtcTx(res.tx, (err, txid) => {
-        if (err)
-          return cb(`Error broadcasting transaction: ${err.message}`)
-        return cb(null, txid)
-      })
+    const res = await this.client.sign(req).catch(cb)
+    broadcastBtcTx(res.tx, (err, txid) => {
+      if (err)
+        return cb(`Error broadcasting transaction: ${err.message}`)
+      return cb(null, txid)
     })
   }
 
@@ -494,25 +494,24 @@ class SDKSession {
   }
 
   // Generic caller to SDK getAddress route with retry mechanism
-  _getAddresses(opts, cb) {
-    this.client.getAddresses(opts, (err, addresses) => {
+  async _getAddresses(opts, cb) {
+    const addresses = await this.client.getAddresses(opts).catch((err) => {
       // Catch an error, but if the device is busy it probably means it is currently
       // caching a batch of new addresses. Continue the loop through this request until
       // it hits.
-      if (err && err !== 'Device Busy') {
-        setTimeout(() => {
-          return cb(err);
-        }, 2000);
-      } else {
-        // To avoid concurrency problems on an initial sync, we need to wait
-        // for the device to refresh addresses before completing the callback
-        if (err === 'Device Busy') {
-          return this._getAddresses(opts, cb)
+      if (err) {
+        if (err === "Device Busy") {
+          return this._getAddresses(opts, cb);
         } else {
-          return cb(null, addresses);
+          // To avoid concurrency problems on an initial sync, we need to wait
+          // for the device to refresh addresses before completing the callback
+          setTimeout(() => {
+            return cb(err);
+          }, 2000);
         }
       }
-    })
+    });
+    return cb(null, addresses);
   }
 
   // Get the highest index address that has been used for either BTC or BTC_CHANGE
