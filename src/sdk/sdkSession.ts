@@ -242,7 +242,7 @@ class SDKSession {
         skipRetryOnWrongWallet: false,
       })
     } catch (err) {
-      return cb(err.toString());
+      return cb ? cb(err.toString()) : err.toString();
     }
 
     return client
@@ -256,7 +256,7 @@ class SDKSession {
         // in localStorage because getBtcWalletData is also called in the constructor)
         this.deviceID = deviceID;
         this.getBtcWalletData();
-        return cb(null, isPaired);
+        return cb ? cb(null, isPaired) : isPaired;
       })
       .catch((err) => {
         if (err) {
@@ -267,7 +267,7 @@ class SDKSession {
             return this._tryConnect(deviceID, pw, cb, true);
           } else {
             console.error("Failed to connect via cloud routing.");
-            return cb(err);
+            return cb ? cb(err) : err;
           }
         } else if (_triedLocal === false) {
           console.log("Successfully connected to Lattice over LAN.");
