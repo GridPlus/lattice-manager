@@ -475,16 +475,20 @@ class Main extends React.Component<any, MainState> {
 
     // If we didn't timeout, submit the secret and hope for success!
     this.wait("Establishing connection with your Lattice");
-    this.context.session.client.pair(data, (err) => {
-      this.unwait();
-      if (err) {
+    this.context.session.client
+      .pair(data)
+      .then(() => {
+        this.unwait();
+        if (this.state.openedByKeyring) {
+          this.returnKeyringData();
+        }
+      })
+      .catch((err) => {
         // If there was an error here, the user probably entered the wrong secret
-        const pairErr = 'Failed to pair. You either entered the wrong code or have already connected to this app.'
+        const pairErr =
+          "Failed to pair. You either entered the wrong code or have already connected to this app.";
         this.setError({ msg: pairErr, cb: this.connectSession });
-      } else if (this.state.openedByKeyring) {
-        this.returnKeyringData();
-      }
-    })
+      });
   }
 
   //------------------------------------------
