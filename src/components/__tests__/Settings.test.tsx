@@ -1,8 +1,8 @@
 import { fireEvent, screen } from "@testing-library/react";
 import React from "react";
-import { renderMockProvider } from "../../testUtils/MockProvider";
-import localStorage from "../../util/localStorage";
-import Settings from "../settings";
+import { renderMockAppProvider } from "../../testUtils/MockProvider";
+import store from "../../store/persistanceStore";
+import Settings from "../../pages/SettingsPage";
 
 const testName = "TestKeyRing";
 const testKeyring = () => ({
@@ -10,7 +10,7 @@ const testKeyring = () => ({
   TestKeyRing2: { name: "TestKeyRing2" },
 });
 
-const renderSettings = () => renderMockProvider({ children: <Settings /> });
+const renderSettings = () => renderMockAppProvider({ children: <Settings /> });
 
 describe("Settings", () => {
   it("renders", () => {
@@ -29,7 +29,7 @@ describe("Settings", () => {
   });
 
   it("shows keyrings", () => {
-    localStorage.setKeyring(testKeyring());
+    store.setKeyring(testKeyring());
     renderSettings();
 
     const openButton = screen.getByRole("button", { expanded: false });

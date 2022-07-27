@@ -1,7 +1,8 @@
-import React, { createContext, ReactNode, useEffect, useState } from "react";
+import { Client } from "gridplus-sdk";
+import { createContext, ReactNode, useEffect, useState } from "react";
+import { useIntegrationName } from "../hooks/useAppName";
 import { useRecords } from "../hooks/useRecords";
-import SDKSession from "../sdk/sdkSession";
-import localStorage from "../util/localStorage";
+import store from "./persistanceStore";
 
 /**
  * A React Hook that allows us to pass data down the component tree without having to pass
@@ -16,35 +17,63 @@ export const AppContextProvider = ({
   children: ReactNode;
   overrides?: { [key: string]: any };
 }) => {
+  const { integrationName, setIntegrationName } = useIntegrationName();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 500);
-  const [session, setSession] = useState<SDKSession>(null);
-
+  const [deviceId, setDeviceId] = useState<string>(store.getDeviceId());
+  const [password, setPassword] = useState<string>(store.getPassword());
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+  const [isLoadingClient, setIsLoadingClient] = useState(true);
+  const [activeWallet, setActiveWallet] = useState<any>();
   const [
     addresses,
     addAddressesToState,
     removeAddressesFromState,
     resetAddressesInState,
-  ] = useRecords(localStorage.getAddresses() ?? [])
+  ] = useRecords(store.getAddresses() ?? []);
+  const [client, setClient] = useState<Client | null>(null);
 
   const defaultContext = {
     isMobile,
-    session,
-    setSession,
     isLoadingAddresses,
     setIsLoadingAddresses,
+    isLoadingClient,
+    setIsLoadingClient,
     addresses,
     addAddressesToState,
     removeAddressesFromState,
     resetAddressesInState,
+    deviceId,
+    setDeviceId,
+    password,
+    setPassword,
+    integrationName,
+    setIntegrationName,
+    client,
+    setClient,
+    activeWallet,
+    setActiveWallet,
   };
 
   /**
-   * Whenever `addresses` data changes, it is persisted to `localStorage`
+   * Whenever `addresses` data changes, it is persisted to `store`
    */
   useEffect(() => {
-    localStorage.setAddresses(addresses);
+    store.setAddresses(addresses);
   }, [addresses]);
+
+  /**
+   * Whenever `deviceId` data changes, it is persisted to `store`
+   */
+  useEffect(() => {
+    store.setDeviceId(deviceId);
+  }, [deviceId]);
+
+  /**
+   * Whenever `password` data changes, it is persisted to `store`
+   */
+  useEffect(() => {
+    store.setPassword(password);
+  }, [password]);
 
   /**
    * Sets `isMobile` when the window resizes.

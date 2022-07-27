@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/extend-expect";
+import dotenv from 'dotenv'
 
 Object.defineProperty(globalThis, "matchMedia", {
   writable: true,
@@ -15,3 +16,5 @@ Object.defineProperty(globalThis, "matchMedia", {
 });
 
 console.warn = jest.fn();
+
+dotenv.config()

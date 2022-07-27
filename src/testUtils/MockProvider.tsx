@@ -1,7 +1,8 @@
 import { act, render } from "@testing-library/react";
 import React, { ReactNode } from "react";
+import { BrowserRouter } from "react-router-dom";
 import { AppContextProvider } from "../store/AppContext";
-import { getMockSession } from "./getMockSession";
+import { getMockClient } from "./getMockClient";
 
 /**
  * Component that wraps children components with the `AppContextProvider` and accepts an override
@@ -9,16 +10,18 @@ import { getMockSession } from "./getMockSession";
  *
  * @param children The React component(s) to render.
  */
-export const MockProvider = ({
+export const MockAppProvider = ({
   children,
   overrides,
 }: {
   children: ReactNode;
   overrides?;
 }) => (
-  <AppContextProvider overrides={{ ...overrides }}>
-    {children}
-  </AppContextProvider>
+  <BrowserRouter>
+    <AppContextProvider overrides={{ ...overrides }}>
+      {children}
+    </AppContextProvider>
+  </BrowserRouter>
 );
 
 /**
@@ -27,19 +30,19 @@ export const MockProvider = ({
  *
  * @param children The React component(s) to render.
  */
-export const renderMockProvider = ({
+export const renderMockAppProvider = ({
   children,
   ...overrides
 }: {
   children: ReactNode;
   overrides?;
 }) => {
-  const session = getMockSession();
+  const client = getMockClient();
   act(() => {
     render(
-      <MockProvider overrides={{ session, ...overrides }}>
+      <MockAppProvider overrides={{ client, ...overrides }}>
         {children}
-      </MockProvider>
+      </MockAppProvider>
     );
   });
 };

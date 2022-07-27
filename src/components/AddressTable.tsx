@@ -62,10 +62,9 @@ export const AddressTable = () => {
           type="text"
           disabled={selectedAddresses.length === 0}
           onClick={() =>
-            removeAddresses(selectedAddresses)
-              .then(() => {
-                setSelectedAddresses([]);
-              })
+            removeAddresses(selectedAddresses).then(() => {
+              setSelectedAddresses([]);
+            })
           }
           style={{ marginLeft: "1em" }}
         >
