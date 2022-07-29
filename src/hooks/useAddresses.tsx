@@ -53,7 +53,7 @@ export const useAddresses = () => {
             setError(null);
             fetchAddresses(fetched, retries - 1);
           } else {
-            setError(err);
+            setError(err.message);
             setIsLoadingAddresses(false);
             setRetryFunctionWithReset(fetchAddresses);
           }
@@ -83,7 +83,7 @@ export const useAddresses = () => {
         setError(null);
       })
       .catch((err) => {
-        setError(err);
+        setError(err.message);
         setRetryFunctionWithReset(() => removeAddresses(selectedAddresses));
       })
       .finally(() => {
@@ -110,9 +110,8 @@ export const useAddresses = () => {
         fetchAddresses();
       })
       .catch((err) => {
-        setError(err);
+        setError(err.message);
         setRetryFunctionWithReset(() => addAddresses(addressesToAdd));
-        throw err
       })
       .finally(() => {
         setIsLoadingAddresses(false);

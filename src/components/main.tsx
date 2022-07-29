@@ -283,6 +283,7 @@ class Main extends React.Component<any, MainState> {
     this.context.session.disconnect();
     this.setState({ session: null });
     localStorage.removeLogin()
+    localStorage.removeAddresses()
     if (err && err === constants.LOST_PAIRING_MSG)
       //@ts-expect-error
       this.setError({ err })
@@ -307,10 +308,10 @@ class Main extends React.Component<any, MainState> {
   // as we cannot connect.
   connectSession(data=this.state, showLoading=true) {
     const { deviceID, password } = data;
-      // Sanity check -- this should never get hit
+    // Sanity check -- this should never get hit
     if (!deviceID || !password) {
       //@ts-expect-error
-      return this.setError({ 
+      return this.setError({
         msg: 'You must provide a deviceID and password. Please refresh and log in again. '
       });
     } else {
@@ -322,19 +323,13 @@ class Main extends React.Component<any, MainState> {
       if (showLoading === true) {
         this.wait("Looking for your Lattice", this.cancelConnect);
       }
-      this.context.session.connect(deviceID, password, (err, isPaired) => {
-        this.unwait();
-        // If the request was before we got our callback, exit here
-        if (!this.context.session || this.state.deviceID !== deviceID)
-          return;
-        if (err) {
-          // If we failed to connect, clear out the SDK session. This component will
-          // prompt the user for new login data and will try to create one.
-          this.setError({ 
-            msg: err, 
-            cb: () => { this.connectSession(data); } 
-          });
-        } else {
+      this.context.session
+        .connect(deviceID, password)
+        .then((isPaired) => {
+          this.unwait();
+          // If the request was before we got our callback, exit here
+          if (!this.context.session || this.state.deviceID !== deviceID)
+            return;
           // We connected!
           // 1. Save these credentials to localStorage if this is NOT a keyring
           if (!this.state.openedByKeyring) {
@@ -346,9 +341,14 @@ class Main extends React.Component<any, MainState> {
           if (isPaired && this.state.openedByKeyring) {
             return this.returnKeyringData();
           }
-        }
-      });
-    })
+        })
+        .catch((err) => {
+          this.setError({
+            msg: err.message,
+            cb: () => { this.connectSession(data) },
+          });
+        });
+    });
   }
 
   // Fetch up-to-date blockchain state data for the addresses stored in our
@@ -475,16 +475,20 @@ class Main extends React.Component<any, MainState> {
 
     // If we didn't timeout, submit the secret and hope for success!
     this.wait("Establishing connection with your Lattice");
-    this.context.session.client.pair(data, (err) => {
-      this.unwait();
-      if (err) {
+    this.context.session.client
+      .pair(data)
+      .then(() => {
+        this.unwait();
+        if (this.state.openedByKeyring) {
+          this.returnKeyringData();
+        }
+      })
+      .catch((err) => {
         // If there was an error here, the user probably entered the wrong secret
-        const pairErr = 'Failed to pair. You either entered the wrong code or have already connected to this app.'
+        const pairErr =
+          "Failed to pair. You either entered the wrong code or have already connected to this app.";
         this.setError({ msg: pairErr, cb: this.connectSession });
-      } else if (this.state.openedByKeyring) {
-        this.returnKeyringData();
-      }
-    })
+      });
   }
 
   //------------------------------------------
@@ -593,9 +597,9 @@ class Main extends React.Component<any, MainState> {
     const size = this.isMobile() ? 'small' : 'middle';
     const activeWallet = this.context.session.getActiveWallet();
 
-    if (activeWallet === null) {
+    if (!activeWallet) {
       walletTag = ( 
-        //@ts-expect-error
+        //@ts-expect-error - danger type is missing in antd
         <Button type="danger" ghost onClick={this.refreshWallets} size={size}>No Wallet <ReloadOutlined/></Button>
       )
     } else {
