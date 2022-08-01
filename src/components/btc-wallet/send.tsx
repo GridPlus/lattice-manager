@@ -149,28 +149,32 @@ class Send extends React.Component<any, any> {
         duration: 0,
       });
       this.setState({ isLoading: true });
-      this.props.session.sign(req, (err, txHash) => {
-        notification.close('signNotification');
-        if (err) {
-          // Display an error banner
-          this.setState({ 
-            error: err, 
-            isLoading: false, 
-            txHash: null 
-          })
-        } else {
+      this.props.session
+        .sign(req)
+        .then((txHash) => {
           // Start watching this new tx hash for confirmation
           this.setState({ 
             recipient: '',
             recipientCheck: null,
             value: null,
             valueCheck: null,
-            txHash, 
-            error: null, 
-            isLoading: false 
+            txHash,
+            error: null,
+            isLoading: false
           })
-        }
-      })
+        })
+        .catch((err) => {
+          // Display an error banner
+          this.setState({
+            error: err,
+            isLoading: false,
+            txHash: null,
+          });
+          console.error(err)
+        })
+        .finally(() => {
+          notification.close("signNotification");
+        });
     }
   }
 
