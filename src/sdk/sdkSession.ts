@@ -300,25 +300,13 @@ class SDKSession {
     }
   }
 
-  async sign(req, cb) {
+  async sign (req, cb) {
     // Get the tx payload to broadcast
-    const res = await this.client.sign(req).catch(cb)
+    const res = await this.client.sign(req).catch(cb);
     broadcastBtcTx(res.tx, (err, txid) => {
-      if (err)
-        return cb(`Error broadcasting transaction: ${err.message}`)
-      return cb(null, txid)
-    })
-  }
-
-  _genPrivKey(deviceID, pw, name) {
-    const key = Buffer.concat([
-      Buffer.from(pw), 
-      Buffer.from(deviceID),
-      Buffer.from(name),
-    ])
-    // Create a new instance of ReactCrypto using the key as entropy
-    this.crypto = new ReactCrypto(key);
-    return this.crypto.createHash('sha256').update(key).digest();
+      if (err) return cb(`Error broadcasting transaction: ${err.message}`);
+      return cb(null, txid);
+    });
   }
 
   //----------------------------------------------------
