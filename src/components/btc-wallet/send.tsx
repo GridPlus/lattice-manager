@@ -251,10 +251,13 @@ class Send extends React.Component<any, any> {
 
   renderBanner() {
     if (this.state.error) {
+      const description = this.state.error?.message
+        ? this.state.error.message
+        : this.state.error;
       return (
         <Alert
           message="Failed to Send Transaction"
-          description={this.state.error}
+          description={description}
           type="error"
           closable
           onClose={() => { this.setState({ error: null })}}
