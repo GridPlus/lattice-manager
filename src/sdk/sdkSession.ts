@@ -300,17 +300,16 @@ class SDKSession {
     }
   }
 
-  async sign (req, cb) {
+  async sign (req) {
     // Get the tx payload to broadcast
-    this.client
+    return this.client
       .sign(req)
       .then((tx) => {
         broadcastBtcTx(tx, (err, txid) => {
-          if (err) return cb(`Error broadcasting transaction: ${err.message}`);
-          return cb(null, txid);
+          if (err) throw new Error(`Error broadcasting transaction: ${err.message}`);
+          return txid
         });
       })
-      .catch(cb);
   }
 
   _genPrivKey(deviceID, pw, name) {
