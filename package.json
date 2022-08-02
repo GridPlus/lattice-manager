@@ -12,7 +12,7 @@
     "elliptic": "^6.5.4",
     "fuzzysort": "^2.0.1",
     "gridplus-react-crypto": "0.0.5",
-    "gridplus-sdk": "^2.2.2",
+    "gridplus-sdk": "^2.2.4",
     "gulp": "^4.0.2",
     "nanoid": "^4.0.0",
     "qrcode.react": "^3.0.2",
