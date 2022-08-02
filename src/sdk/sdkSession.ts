@@ -304,11 +304,15 @@ class SDKSession {
     // Get the tx payload to broadcast
     return this.client
       .sign(req)
-      .then((tx) => {
-        broadcastBtcTx(tx, (err, txid) => {
-          if (err) throw new Error(`Error broadcasting transaction: ${err.message}`);
-          return txid
-        });
+      .then(res => {
+        if (res && res.tx) {
+          broadcastBtcTx(res.tx, (err, txid) => {
+            if (err) throw new Error(`Error broadcasting transaction: ${err.message}`);
+            return txid
+          });
+        } else {
+          throw new Error('Signing transaction invalid.');
+        }
       })
   }
 
