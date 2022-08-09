@@ -1,26 +1,24 @@
-import { act } from "@testing-library/react";
-import { renderHook } from "@testing-library/react";
-import React from "react";
-import { getMockSession, mockAddresses } from "../../testUtils/getMockSession";
-import { MockProvider } from "../../testUtils/MockProvider";
-import localStorage from "../../util/localStorage";
+import { act, renderHook } from "@testing-library/react";
+import store from "../../store/persistanceStore";
+import { getMockClient, mockAddresses } from "../../testUtils/getMockClient";
+import { MockAppProvider } from "../../testUtils/MockProvider";
 import { useAddresses } from "../useAddresses";
 
 const renderUseAddresses = (overrides?) => {
-  const session = getMockSession();
+  const client = getMockClient();
   const { result } = renderHook(() => useAddresses(), {
     wrapper: ({ children }) => (
-      <MockProvider overrides={{ session, ...overrides }}>
+      <MockAppProvider overrides={{ client, ...overrides }}>
         {children}
-      </MockProvider>
+      </MockAppProvider>
     ),
   });
-  return { result, session };
+  return { result, client };
 };
 
 describe("useAddresses", () => {
   beforeEach(() => {
-    localStorage.removeAddresses();
+    store.removeAddresses();
   });
 
   test("should fetch addresses", async () => {

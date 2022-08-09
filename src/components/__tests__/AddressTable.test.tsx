@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import React from "react";
-import { renderMockProvider } from "../../testUtils/MockProvider";
+import { renderMockAppProvider } from "../../testUtils/MockProvider";
 import { AddressTable } from "../AddressTable";
 
 const addresses = [
@@ -11,7 +11,7 @@ const removeAddresses = jest.fn();
 const isLoadingAddresses = false;
 
 const renderAddressTable = (overrides?) =>
-  renderMockProvider({
+  renderMockAppProvider({
     children: <AddressTable />,
     addresses,
     isLoadingAddresses,
@@ -54,7 +54,7 @@ describe("AddressTable", () => {
     fireEvent.click(selectAll);
     expect(removeButton).not.toBeDisabled();
     fireEvent.click(removeButton);
-    waitFor(()=>expect(removeAddresses).toHaveBeenCalled())
+    waitFor(() => expect(removeAddresses).toHaveBeenCalled());
   });
 
   it("filters addresses", () => {

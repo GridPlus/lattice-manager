@@ -1,5 +1,5 @@
 
-import localStorage from "./localStorage";
+import store from "../store/persistanceStore";
 
 const bs58check = require('bs58check');
 const bech32 = require('bech32').bech32;
@@ -13,6 +13,7 @@ export const constants = {
     HARDENED_OFFSET,
     ASYNC_SDK_TIMEOUT: 60000,
     ADDRESSES_PER_PAGE: 10,
+    ADDRESS_RECORD_TYPE: 0,
     CONTRACTS_PER_PAGE: 10,
     SHORT_TIMEOUT: 30000,
     BTC_COIN: parseInt(process.env.REACT_APP_BTC_COIN) || HARDENED_OFFSET,
@@ -29,7 +30,7 @@ export const constants = {
     LOST_PAIRING_MSG: "Cannot find Lattice connection. Please re-connect.",
     BTC_TESTNET: process.env.REACT_APP_BTC_TESTNET || null,
     KEYRING_LOGOUT_MS: parseInt(process.env.KEYRING_LOGOUT_MS) || 2592000000, // default 30 days
-    KEYRING_DATA_PATH: 'gridplus_web_wallet_keyring_logins', // item in localStorage
+    KEYRING_DATA_PATH: 'gridplus_web_wallet_keyring_logins', // item in store
     ABI_PACK_URL: "https://gridplus.github.io/abi-pack-framework",
     LATTICE_CERT_SIGNER: process.env.REACT_APP_LATTICE_CERT_SIGNER || '0477816e8e83bb17c4309cc2e5aa134c573a5943154940095a423149f7cc0384ad52d33f1b4cd89c967bf211c039202df3a7899cb7543de4738c96a81cfde4b117',
     CONTRACTS_HELP_LINK: 'https://docs.gridplus.io/gridplus-web-wallet/use-ethereum-smart-contract-abi-function-definitions',
@@ -41,6 +42,7 @@ export const constants = {
     BTC_PURPOSE_LEGACY: HARDENED_OFFSET + 44,
     BTC_PURPOSE_LEGACY_STR: 'Legacy (1)',
     BTC_PURPOSE_WRAPPED_SEGWIT: HARDENED_OFFSET + 49,
+    LOGIN_PARAM: "loginCache",
     BTC_PURPOSE_WRAPPED_SEGWIT_STR: 'Wrapped Segwit (3)',
     BTC_PURPOSE_SEGWIT: HARDENED_OFFSET + 84,
     BTC_PURPOSE_SEGWIT_STR: 'Segwit (bc1)',
@@ -53,47 +55,48 @@ export const constants = {
     DEFAULT_CONTRACT_NETWORK: 'ethereum',
     CONTRACT_NETWORKS: {
         ethereum: {
-          label: "Ethereum",
-          url: "https://etherscan.io",
-          baseUrl: "https://api.etherscan.io",
-          apiRoute: "api?module=contract&action=getabi&address=",
+            label: "Ethereum",
+            url: "https://etherscan.io",
+            baseUrl: "https://api.etherscan.io",
+            apiRoute: "api?module=contract&action=getabi&address=",
         },
         arbitrum: {
             label: "Arbitrum",
             url: "https://arbiscan.io",
             baseUrl: "https://api.arbiscan.io",
             apiRoute: "api?module=contract&action=getabi&address=",
-          },
+        },
         polygon: {
-          label: "Polygon",
-          url: "https://polygonscan.com",
-          baseUrl: "https://api.polygonscan.com",
-          apiRoute: "api?module=contract&action=getabi&address=",
+            label: "Polygon",
+            url: "https://polygonscan.com",
+            baseUrl: "https://api.polygonscan.com",
+            apiRoute: "api?module=contract&action=getabi&address=",
         },
         optimism: {
             label: "Optimism",
             url: "https://optimistic.etherscan.io",
             baseUrl: "https://api-optimistic.etherscan.io",
             apiRoute: "api?module=contract&action=getabi&address=",
-          },
+        },
         binance: {
-          label: "Binance",
-          url: "https://bscscan.com/",
-          baseUrl: "https://api.bscscan.com",
-          apiRoute: "api?module=contract&action=getabi&address=",
+            label: "Binance",
+            url: "https://bscscan.com/",
+            baseUrl: "https://api.bscscan.com",
+            apiRoute: "api?module=contract&action=getabi&address=",
         },
         avalanche: {
-          label: "Avalanche",
-          url: "https://snowtrace.io",
-          baseUrl: "https://api.snowtrace.io",
-          apiRoute: "api?module=contract&action=getabi&address=",
+            label: "Avalanche",
+            url: "https://snowtrace.io",
+            baseUrl: "https://api.snowtrace.io",
+            apiRoute: "api?module=contract&action=getabi&address=",
         },
-      },
+    },
+    VALIDATE_POAP_URL: "https://us-central1-lattice-poap.cloudfunctions.net/validate"
 };
 
 const devConstants = {
     BTC_DEV_DATA_API: 'https://blockstream.info/testnet/api',
-    BTC_BROADCAST_ENDPOINT : 'https://blockstream.info/testnet/api/tx',
+    BTC_BROADCAST_ENDPOINT: 'https://blockstream.info/testnet/api/tx',
     BASE_SIGNING_URL: 'https://signing.staging-gridpl.us',
     // Deprecating because using two different stores was very tricky and we don't
     // need the second one anyway
@@ -110,7 +113,7 @@ const devConstants = {
 
 // NEW: If you have checked the "Using Dev Lattice" box in settings, the constants
 // are swapped out here
-const localSettings = localStorage.getSettings();
+const localSettings = store.getSettings();
 if (localSettings.devLattice) {
     Object.keys(devConstants).forEach((key) => {
         constants[key] = devConstants[key];
@@ -121,29 +124,29 @@ if (localSettings.devLattice) {
 //--------------------------------------------
 // CHAIN DATA SYNCING HELPERS
 //--------------------------------------------
-function fetchJSON(url, opts, cb) {
+function fetchJSON (url, opts, cb) {
     fetch(url, opts)
-    .then((response) => response.json())
-    .then((resp) => cb(null, resp))
-    .catch((err) => cb(err))
+        .then((response) => response.json())
+        .then((resp) => cb(null, resp))
+        .catch((err) => cb(err))
 }
 
 const resolveAfter = delay => new Promise(ok => setTimeout(ok, delay));
 
-function throttle(fn, delay) {
+function throttle (fn, delay) {
     let wait: any = Promise.resolve();
     return (...args) => {
-      const res = wait.then(() => fn(...args));
-      wait = wait.then(() => resolveAfter(delay));
-      return res;
+        const res = wait.then(() => fn(...args));
+        wait = wait.then(() => resolveAfter(delay));
+        return res;
     };
-  }
+}
 
 const throttledFetchJSON = throttle(fetchJSON, constants.THROTTLE_RATE_LIMIT);
 
 //====== UTXOS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
-function _fetchBtcUtxos(addresses, cb, utxos=[], offset=0) {
+function _fetchBtcUtxos (addresses, cb, utxos = [], offset = 0) {
     if (addresses.length === 0) {
         // No more addresses left to check. We are done.
         return cb(null, utxos);
@@ -181,7 +184,7 @@ function _fetchBtcUtxos(addresses, cb, utxos=[], offset=0) {
         // Determine if we need to recurse on this set of addresses
         if (data.unspent_outputs.length >= MAX_UTOXS_RET) {
             return setTimeout(() => {
-                _fetchBtcUtxos(addresses, cb, utxos, offset+MAX_UTOXS_RET);
+                _fetchBtcUtxos(addresses, cb, utxos, offset + MAX_UTOXS_RET);
             }, constants.RATE_LIMIT);
         }
         // Otherwise we are done with these addresses. Clip them and recurse.
@@ -194,7 +197,7 @@ function _fetchBtcUtxos(addresses, cb, utxos=[], offset=0) {
 
 // For testnet we cannot use blockchain.com - we have to request stuff from each
 // address individually.
-function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
+function _fetchBtcUtxosTestnet (addresses, cb, utxos = []) {
     const address = addresses.pop()
     //@ts-expect-error
     const url = `${constants.BTC_DEV_DATA_API}/address/${address}/utxo`;
@@ -221,7 +224,7 @@ function _fetchBtcUtxosTestnet(addresses, cb, utxos=[]) {
     })
 }
 
-export function fetchBtcUtxos(addresses, cb) {
+export function fetchBtcUtxos (addresses, cb) {
     if (!addresses)
         return cb('Cannot fetch UTXOs - bad input');
     else if (addresses.length < 1)
@@ -235,7 +238,7 @@ export function fetchBtcUtxos(addresses, cb) {
 
 //====== TXS ==================
 // For mainnet (production env) we can bulk request data from the blockchain.com API
-function _fetchBtcTxs(addresses, txs, cb, offset=0, isFirstCall=true) {
+function _fetchBtcTxs (addresses, txs, cb, offset = 0, isFirstCall = true) {
     if (addresses.length === 0) {
         // No more addresses left to check. We are done.
         return cb(null, txs);
@@ -316,7 +319,7 @@ function _fetchBtcTxs(addresses, txs, cb, offset=0, isFirstCall=true) {
         // Determine if we need to recurse on this set of addresses
         if (txsAdded >= MAX_TXS_RET) {
             return setTimeout(() => {
-                _fetchBtcTxs(addresses, txs, cb, offset+MAX_TXS_RET, false);
+                _fetchBtcTxs(addresses, txs, cb, offset + MAX_TXS_RET, false);
             }, constants.RATE_LIMIT);
         }
         // Otherwise we are done with these addresses. Clip them and recurse.
@@ -329,7 +332,7 @@ function _fetchBtcTxs(addresses, txs, cb, offset=0, isFirstCall=true) {
 
 // For testnet we cannot use blockchain.com - we have to request stuff from each
 // address individually.
-function _fetchBtcTxsTestnet(addresses, txs, cb, lastSeenId=null) {
+function _fetchBtcTxsTestnet (addresses, txs, cb, lastSeenId = null) {
     const address = addresses.pop()
     //@ts-expect-error
     let url = `${constants.BTC_DEV_DATA_API}/address/${address}/txs`;
@@ -348,7 +351,7 @@ function _fetchBtcTxsTestnet(addresses, txs, cb, lastSeenId=null) {
                 id: t.txid,
                 fee: t.fee,
                 inputs: [],
-                outputs: [],                
+                outputs: [],
             }
             t.vin.forEach((input) => {
                 ftx.inputs.push({
@@ -377,7 +380,7 @@ function _fetchBtcTxsTestnet(addresses, txs, cb, lastSeenId=null) {
             // https://github.com/Blockstream/esplora/blob/master/API.md#get-addressaddresstxs
             // We need to re-request with the last tx
             addresses.push(address)
-            return _fetchBtcTxsTestnet(addresses, txs, cb, txs[confirmedCount-1].id)
+            return _fetchBtcTxsTestnet(addresses, txs, cb, txs[confirmedCount - 1].id)
         }
         if (addresses.length === 0) {
             return cb(null, txs);
@@ -388,7 +391,7 @@ function _fetchBtcTxsTestnet(addresses, txs, cb, lastSeenId=null) {
     })
 }
 
-export function fetchBtcTxs(addresses, txs, cb) {
+export function fetchBtcTxs (addresses, txs, cb) {
     if (!addresses)
         return cb('Cannot fetch transactions - bad input');
     else if (addresses.length < 1)
@@ -400,7 +403,7 @@ export function fetchBtcTxs(addresses, txs, cb) {
 }
 //====== END TXS ==================
 
-export function fetchBtcPrice(cb) {
+export function fetchBtcPrice (cb) {
     const url = 'https://api.blockchain.com/v3/exchange/tickers/BTC-USD'
     fetchJSON(url, null, (err, data) => {
         if (err)
@@ -411,15 +414,15 @@ export function fetchBtcPrice(cb) {
     })
 }
 
-export function broadcastBtcTx(rawTx, cb) {
+export function broadcastBtcTx (rawTx, cb) {
     const opts = {
         method: 'POST',
         body: rawTx
     };
     fetch(constants.BTC_BROADCAST_ENDPOINT, opts)
-    .then((response) => response.text())
-    .then((resp) => cb(null, resp))
-    .catch((err) => cb(err))
+        .then((response) => response.text())
+        .then((resp) => cb(null, resp))
+        .catch((err) => cb(err))
 }
 //--------------------------------------------
 // END CHAIN DATA SYNCING HELPERS
@@ -428,15 +431,15 @@ export function broadcastBtcTx(rawTx, cb) {
 //--------------------------------------------
 // OTHER HELPERS
 //--------------------------------------------
-export function harden(x) {
-  return x + HARDENED_OFFSET;
+export function harden (x) {
+    return x + HARDENED_OFFSET;
 }
 
 // Determine how many inputs (utxos) need to be included in a transaction
 // given the desired value and fee rate
 // Returns the number of inputs to include or -1 if there isn't enough
 // value in the inputs provided to cover value + fee
-function _calcBtcTxNumInputs(utxos, value, feeRate, inputIdx=0, currentValue=0) {
+function _calcBtcTxNumInputs (utxos, value, feeRate, inputIdx = 0, currentValue = 0) {
     if (inputIdx >= utxos.length) {
         return -1; // indicates error
     }
@@ -456,7 +459,7 @@ function _calcBtcTxNumInputs(utxos, value, feeRate, inputIdx=0, currentValue=0) 
 // We need to convert the script to a an address.
 // Since we know the purpose, we know the format of the address,
 // so we can slice out the pubkeyhash from the script and convert.
-function _blockchainDotComScriptToAddr(_scriptStr) {
+function _blockchainDotComScriptToAddr (_scriptStr) {
     const purpose = getBtcPurpose();
     if (purpose === constants.BTC_PURPOSE_SEGWIT) {
         const bech32Prefix = constants.BTC_SEGWIT_NATIVE_V0_PREFIX;
@@ -479,17 +482,17 @@ function _blockchainDotComScriptToAddr(_scriptStr) {
     }
 }
 
-export function getBtcPurpose() {
-    const localSettings = localStorage.getSettings();
-    return  localSettings.btcPurpose ? 
-            localSettings.btcPurpose : 
-            constants.BTC_PURPOSE_NONE;
+export function getBtcPurpose () {
+    const localSettings = store.getSettings();
+    return localSettings.btcPurpose ?
+        localSettings.btcPurpose :
+        constants.BTC_PURPOSE_NONE;
 }
 
 // Calculate how many bytes will be in a transaction given purpose and input count
 // Calculations come from: https://github.com/jlopp/bitcoin-transaction-size-calculator/blob/master/index.html
 // Not a perfect calculation but pretty close
-export function getBtcNumTxBytes(numInputs) {
+export function getBtcNumTxBytes (numInputs) {
     let inputSize, outputSize, inputWitnessSize
     const purpose = getBtcPurpose();
     if (purpose === constants.BTC_PURPOSE_LEGACY) {
@@ -507,17 +510,17 @@ export function getBtcNumTxBytes(numInputs) {
     }
     const vFactor = purpose === constants.BTC_PURPOSE_LEGACY ? 0 : 0.75;
     // Hardcode 2 outputs to avoid complexity in app state
-    const txVBytes =  10 + vFactor + inputSize * numInputs + outputSize * 2;
-  return (3 * vFactor) + txVBytes + inputWitnessSize * numInputs;
+    const txVBytes = 10 + vFactor + inputSize * numInputs + outputSize * 2;
+    return (3 * vFactor) + txVBytes + inputWitnessSize * numInputs;
 }
 
-export function buildBtcTxReq (   recipient, 
-                                    btcValue, 
-                                    utxos, 
-                                    addrs, 
-                                    changeAddrs, 
-                                    feeRate=constants.BTC_DEFAULT_FEE_RATE,
-                                    isFullSpend=false) {
+export function buildBtcTxReq (recipient,
+    btcValue,
+    utxos,
+    addrs,
+    changeAddrs,
+    feeRate = constants.BTC_DEFAULT_FEE_RATE,
+    isFullSpend = false) {
     if (!addrs || !changeAddrs || addrs.length < 1 || changeAddrs.length < 1) {
         return { error: 'No addresses (or change addresses). Please wait to sync.' };
     }
@@ -560,12 +563,12 @@ export function buildBtcTxReq (   recipient,
         value: satValue,
         fee,
         // Send change to the latest change address
-        changePath: BASE_SIGNER_PATH.concat([1, changeAddrs.length -1]),
+        changePath: BASE_SIGNER_PATH.concat([1, changeAddrs.length - 1]),
     };
     return { currency: 'BTC', data: req }
 }
 
-export function validateBtcAddr(addr) {
+export function validateBtcAddr (addr) {
     if (addr === '') return null;
     try {
         bs58check.decode(addr);
@@ -580,14 +583,14 @@ export function validateBtcAddr(addr) {
     }
 }
 
-export function toHexStr(bn) {
+export function toHexStr (bn) {
     const s = bn.toString(16);
     const base = s.length % 2 === 0 ? s : `0${s}`;
-    return `0x${base}`; 
+    return `0x${base}`;
 }
 
 // Filter out any duplicate objects based on `keys`
-export function filterUniqueObjects(objs, keys) {
+export function filterUniqueObjects (objs, keys) {
     const filtered: any[] = [];
     // Copy the objects in reversed order so that newer instances
     // are applied first

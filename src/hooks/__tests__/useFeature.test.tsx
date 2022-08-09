@@ -1,29 +1,27 @@
 import { renderHook } from "@testing-library/react";
 import React from "react";
-import { MockProvider } from "../../testUtils/MockProvider";
+import { MockAppProvider } from "../../testUtils/MockProvider";
 import { useFeature } from "../useFeature";
 
-const renderUseFeature = ([ fix, minor, major ], overrides?): any => {
-  const session = {
-    client: {
-      getFwVersion: () => ({ fix, minor, major }),
-    },
+const renderUseFeature = ([fix, minor, major], overrides?): any => {
+  const client = {
+    getFwVersion: () => ({ fix, minor, major }),
   };
   const {
     result: { current },
   } = renderHook(() => useFeature(), {
     wrapper: ({ children }) => (
-      <MockProvider overrides={{ session, ...overrides }}>
+      <MockAppProvider overrides={{ client, ...overrides }}>
         {children}
-      </MockProvider>
+      </MockAppProvider>
     ),
   });
-  return { ...current, session };
+  return { ...current, client };
 };
 
 describe("useFeature", () => {
   test("should return false if version is too low", () => {
-    const { CAN_VIEW_CONTRACTS } = renderUseFeature([0,10,5])
+    const { CAN_VIEW_CONTRACTS } = renderUseFeature([0, 10, 5]);
     expect(CAN_VIEW_CONTRACTS).toBeFalsy();
   });
 
