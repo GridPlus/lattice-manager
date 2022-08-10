@@ -37,21 +37,6 @@ describe("AddressTagsPage", () => {
     );
   });
 
-  it("retries to fetch", () => {
-    const session = getMockSession();
-    let retries = 2;
-    session.client.getKvRecords = jest.fn(
-      () =>
-        new Promise((resolve, reject) => {
-          if (!retries) return resolve(mockKvResponse);
-          reject("Error");
-          --retries;
-        })
-    );
-    renderAddressTagsPage({ session })
-    waitFor(() => expect(session.client.getKvRecords).toHaveBeenCalledTimes(4));
-  });
-
   it("removes addresses", () => {
     const session = getMockSession();
     renderAddressTagsPage({ session });

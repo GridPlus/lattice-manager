@@ -1,9 +1,9 @@
 import { act } from "@testing-library/react";
 import SDKSession from "../sdk/sdkSession";
-import { Record } from "../types/records";
+import { LatticeRecord } from "../types/records";
 import { ContractRecord } from "./../types/contracts";
 
-export const mockAddresses: Record[] = [
+export const mockAddresses: LatticeRecord[] = [
   { id: "a", key: "a", val: "a" },
   { id: "b", key: "b", val: "b" },
 ];
