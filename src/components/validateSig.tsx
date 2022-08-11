@@ -1,10 +1,11 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Card, Col, Result, Row } from 'antd'
+import { Button, Card, Col, Result, Row } from 'antd'
 import { decode } from 'bs58'
 import { constants } from '../util/helpers';
 import { AppContext } from '../store/AppContext';
 import { ResultStatusType } from 'antd/lib/result';
+
 const ReactCrypto = require('gridplus-react-crypto').default;
 const EC = require('elliptic').ec;
 
@@ -15,7 +16,44 @@ const CERT_TEMPLATE_LEN = 147;  // Struct containing pubkey, permissions, and si
 class ValidateSig extends React.Component<any, any> {
   static contextType = AppContext;
   context = this.context as any;
-  
+  isLoading: boolean;
+  poapToClaim: string;
+  isValid: string;
+  message: string;
+
+  constructor(props) {
+    super(props)
+    this.state = {
+      isLoading: false,
+      poapToClaim: '',
+      isValid: '',
+      message: '',
+    }
+  } 
+
+  componentDidMount(): void {
+    this.setState({ isValid: this.validateSig() })
+    this.setState({message: this.getMessageForPoap()})
+  }
+
+  /** Returns the message string reformatted for comparison*/
+  getMessageForPoap() {
+    return this.getPreimage()
+      // forces case insensitivity
+      .toLocaleLowerCase()
+      // Replaces non-alphanumeric characters with empty string
+      .replace(/[^|x00-\x7F]/g, "");
+  }
+
+  shouldShowClaimCard() {
+    return (
+      this.state.isValid &&
+      (this.state.message === "poap" || 
+      // Easter Egg
+      this.state.message === "poop")
+    );
+  }
+
   // Validate a signature for a message from a known signer on a known curve
   // * msg - Expected ASCII string
   // * signer - Expected buffer containing 65-byte public key
@@ -71,13 +109,32 @@ class ValidateSig extends React.Component<any, any> {
     }
   }
 
+  claimPoap () {
+    const url = constants.POAP_CLAIM_REMOTE_URL;
+    this.setState({ isLoading: true })
+    const data = this.props.data
+
+    fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({ data })
+    })
+      .then((res => res.json()))
+      .then(poapToClaim => {
+        this.setState({ poapToClaim })
+      })
+      .catch(console.error)
+      .finally(() => {
+        this.setState({ isLoading: false })
+      })
+  }
+
   renderResult() {
     let result = {
       status: "warning" as ResultStatusType,
       title: "Could not Verify Authenticity",
       subTitle: "We could not verify the authenticity of this signature or signer."
     };
-    if (true === this.validateSig()) {
+    if (this.state.isValid) {
       result.status = "success";
       result.title = "Verified";
       result.subTitle = "The signer is authentic!"
@@ -101,8 +158,31 @@ class ValidateSig extends React.Component<any, any> {
           <center>
             <Card title="Validate Hardware" bordered={true}>
               {this.renderResult()}
-              <p><b>Message:</b> {this.getPreimage()}</p>
+              <p>
+                <b>Message:</b> {this.getPreimage()}
+              </p>
             </Card>
+            {this.shouldShowClaimCard() && (
+              <Card
+                title="Claim POAP"
+                bordered={true}
+                style={{ marginTop: "20px" }}
+              >
+                <p>GridPlus is offering POAPs to all valid Lattice1 owners.</p>
+                <Button
+                  disabled={this.state.isLoading}
+                  loading={this.state.isLoading}
+                  onClick={() => {
+                    this.claimPoap();
+                  }}
+                >
+                  Claim
+                </Button>
+                <div style={{ paddingTop: "20px" }}>
+                  <a href={this.state.poapToClaim}>{this.state.poapToClaim}</a>
+                </div>
+              </Card>
+            )}
           </center>
         </Col>
       </Row>

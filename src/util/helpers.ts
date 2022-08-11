@@ -36,6 +36,7 @@ export const constants = {
     CONTRACTS_HELP_LINK: 'https://docs.gridplus.io/gridplus-web-wallet/use-ethereum-smart-contract-abi-function-definitions',
     TAGS_HELP_LINK: 'https://docs.gridplus.io/gridplus-web-wallet/address-tags',
     PERMISSIONS_HELP_LINK: 'https://docs.gridplus.io/gridplus-web-wallet/how-to-set-and-use-spending-limits',
+    POAP_CLAIM_REMOTE_URL: 'https://us-central1-lattice-poap.cloudfunctions.net/validate',
     BTC_WALLET_STORAGE_KEY: 'btc_wallet',
     BTC_PURPOSE_NONE: -1,
     BTC_PURPOSE_NONE_STR: 'Hide BTC Wallet',
