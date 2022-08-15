@@ -1,4 +1,4 @@
-import { Record } from "./records";
+import { LatticeRecord } from "./records";
 
 type ContractParam = {
   isArray: boolean;
@@ -25,7 +25,7 @@ export interface LatticeContract {
 }
 
 export interface ContractRecord
-  extends Record,
+  extends LatticeRecord,
     LatticeContract,
     ContractDefinition {
   id: string;

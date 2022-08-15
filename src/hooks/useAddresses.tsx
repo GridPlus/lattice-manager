@@ -1,15 +1,15 @@
+import _ from "lodash";
 import isEmpty from "lodash/isEmpty";
 import { useCallback, useContext } from "react";
 import { AppContext } from "../store/AppContext";
-import { Record } from "../types/records";
+import { LatticeRecord } from "../types/records";
 import { constants } from "../util/helpers";
-import { useRequestFailed } from "./useRequestFailed";
-const { ADDRESSES_PER_PAGE } = constants;
-const ADDRESS_RECORD_TYPE = 0;
+import { sendErrorNotification } from "../util/sendErrorNotification";
+const { ADDRESSES_PER_PAGE, ADDRESS_RECORD_TYPE } = constants;
 
 /**
  * The `useAddresses` hook is used to manage the external calls for fetching, adding, and removing
- * key-value address data on the user's Lattice and caching that data in `localStorage`.
+ * key-value address data on the user's Lattice and caching that data in `store`.
  */
 export const useAddresses = () => {
   const {
@@ -22,14 +22,11 @@ export const useAddresses = () => {
     resetAddressesInState,
   } = useContext(AppContext);
 
-  const { error, setError, retryFunction, setRetryFunctionWithReset } =
-    useRequestFailed();
-
   /**
    * Fetches the installed addresses from the user's Lattice.
    */
   const fetchAddresses = useCallback(
-    async (fetched = 0, retries = 1) => {
+    async (fetched = 0) => {
       setIsLoadingAddresses(true);
 
       return session.client
@@ -37,41 +34,31 @@ export const useAddresses = () => {
           start: fetched,
           n: ADDRESSES_PER_PAGE,
         })
-        .then((res) => {
+        .then(async (res) => {
           addAddressesToState(res.records);
           const totalFetched = res.fetched + fetched;
           const remainingToFetch = res.total - totalFetched;
           if (remainingToFetch > 0) {
-            fetchAddresses(fetched + res.fetched);
-          } else {
-            setError(null);
-            setIsLoadingAddresses(false);
+            await fetchAddresses(fetched + res.fetched);
           }
         })
         .catch((err) => {
-          if (retries > 0) {
-            setError(null);
-            fetchAddresses(fetched, retries - 1);
-          } else {
-            setError(err.message);
-            setIsLoadingAddresses(false);
-            setRetryFunctionWithReset(fetchAddresses);
-          }
+          sendErrorNotification({
+            ...err,
+            onClick: fetchAddresses,
+          });
+        })
+        .finally(() => {
+          setIsLoadingAddresses(false);
         });
     },
-    [
-      addAddressesToState,
-      session.client,
-      setError,
-      setIsLoadingAddresses,
-      setRetryFunctionWithReset,
-    ]
+    [addAddressesToState, session, setIsLoadingAddresses]
   );
 
   /**
    * Removes installed addresses from the user's Lattice.
    */
-  const removeAddresses = (selectedAddresses: Record[]) => {
+  const removeAddresses = (selectedAddresses: LatticeRecord[]) => {
     const ids = selectedAddresses.map((r) => parseInt(r.id));
     if (isEmpty(ids)) return;
     setIsLoadingAddresses(true);
@@ -80,11 +67,12 @@ export const useAddresses = () => {
       .removeKvRecords({ ids })
       .then(() => {
         removeAddressesFromState(selectedAddresses);
-        setError(null);
       })
       .catch((err) => {
-        setError(err.message);
-        setRetryFunctionWithReset(() => removeAddresses(selectedAddresses));
+        sendErrorNotification({
+          ...err,
+          onClick: () => removeAddresses(selectedAddresses),
+        });
       })
       .finally(() => {
         setIsLoadingAddresses(false);
@@ -94,25 +82,43 @@ export const useAddresses = () => {
   /**
    * Adds new addresses to the user's Lattice.
    */
-  const addAddresses = async (addressesToAdd) => {
+  const addAddresses = async (addressesToAdd: LatticeRecord[]) => {
     setIsLoadingAddresses(true);
 
-    return session.client
-      .addKvRecords({
-        caseSensitive: false,
-        type: ADDRESS_RECORD_TYPE,
-        records: addressesToAdd,
-      })
-      .then(() => {
+    /**
+     * Transform `addressesToAdd` data into chunks of size `ADDRESSES_PER_PAGE` with shape `{ key:
+     * val }` for sending to Lattice because the Lattice can only handle a particular amount of
+     * addresses at a time.
+     */
+    const recordsList = _.chain(addressesToAdd)
+      .chunk(ADDRESSES_PER_PAGE)
+      .map((addrChunk) =>
+        _.chain(addrChunk).keyBy("key").mapValues("val").value()
+      )
+      .value();
+
+    return new Promise<void>(async (resolve, reject) => {
+      for await (const records of recordsList) {
+        await session.client
+          .addKvRecords({
+            caseSensitive: false,
+            type: ADDRESS_RECORD_TYPE,
+            records,
+          })
+          .catch((err) => {
+            sendErrorNotification(err);
+            reject(err);
+          });
+      }
+      resolve();
+    })
+      .then(async () => {
         // TODO: Remove fetch and call addAddressesToState() with the address data when FW is
         //  updated to return address data. See GitHub issue:
         //  https://github.com/GridPlus/k8x_firmware_production/issues/2323
-        fetchAddresses();
+        await fetchAddresses();
       })
-      .catch((err) => {
-        setError(err.message);
-        setRetryFunctionWithReset(() => addAddresses(addressesToAdd));
-      })
+      .catch(sendErrorNotification)
       .finally(() => {
         setIsLoadingAddresses(false);
       });
@@ -127,8 +133,5 @@ export const useAddresses = () => {
     removeAddressesFromState,
     resetAddressesInState,
     isLoadingAddresses,
-    error,
-    setError,
-    retryFunction,
   };
 };

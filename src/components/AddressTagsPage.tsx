@@ -1,25 +1,28 @@
-import { SyncOutlined } from "@ant-design/icons";
-import { Button, Card } from "antd";
+import { Card } from "antd";
 import "antd/dist/antd.dark.css";
-import React, { useEffect } from "react";
-import { useAddresses } from "../hooks/useAddresses";
-import { AddAddressesButton } from "./AddAddressesButton";
-import { AddressTable } from "./AddressTable";
-import { PageContent } from "./index";
 import isEmpty from "lodash/isEmpty";
-import { ErrorAlert } from "./ErrorAlert";
+import { useEffect, useState } from "react";
+import { AddAddressesButton } from "../components/AddAddressesButton";
+import { AddAddressesModal } from "../components/AddAddressesModal";
+import { AddressTable } from "../components/AddressTable";
+import { ExportAddressesButton } from "../components/ExportAddressesButton";
+import { ImportAddressesButton } from "../components/ImportAddressesButton";
+import { ImportAddressesModal } from "../components/ImportAddressesModal";
+import { useAddresses } from "../hooks/useAddresses";
+import { PageContent } from "./formatting";
+import { SyncAddressesButton } from "./SyncAddressesButton";
 
 const AddressTagsPage = () => {
-  const {
-    fetchAddresses,
-    isLoadingAddresses,
-    addresses,
-    resetAddressesInState,
-    error,
-    retryFunction,
-  } = useAddresses();
+  const { fetchAddresses, isLoadingAddresses, addresses } = useAddresses();
+  const [isAddAddressesModalVisible, setIsAddAddressesModalVisible] =
+    useState(false);
+  const [isImportAddressesModalVisible, setIsImportAddressesModalVisible] =
+    useState(false);
 
-  // Fetch and Cache Addresses
+  const [initialAddresses, setInitialAddresses] = useState([
+    { key: null, val: null },
+  ]);
+
   useEffect(() => {
     if (isEmpty(addresses) && !isLoadingAddresses) {
       fetchAddresses();
@@ -28,27 +31,34 @@ const AddressTagsPage = () => {
   }, []);
 
   const extra = [
-    <Button
-      key="sync-button"
-      type="link"
-      icon={<SyncOutlined />}
-      disabled={isLoadingAddresses}
-      onClick={() => {
-        resetAddressesInState();
-        fetchAddresses();
-      }}
-    >
-      Sync
-    </Button>,
-    <AddAddressesButton key="add-addresses-button" />,
+    <SyncAddressesButton key="sync-addresses-button" />,
+    <AddAddressesButton
+      key="add-addresses-button"
+      showModal={() => setIsAddAddressesModalVisible(true)}
+    />,
+    <ImportAddressesButton
+      showModal={() => setIsImportAddressesModalVisible(true)}
+      key="import-addresses-button"
+    />,
+    <ExportAddressesButton key="export-addresses-button" />,
   ];
 
   return (
     <PageContent>
-      <ErrorAlert error={error} retryFunction={retryFunction} />
-      <Card title={"Saved Addresses"} extra={extra} bordered={true}>
+      <Card title={"Address Tags"} extra={extra} bordered>
         <AddressTable />
       </Card>
+      <AddAddressesModal
+        isModalVisible={isAddAddressesModalVisible}
+        setIsModalVisible={setIsAddAddressesModalVisible}
+        initialAddresses={initialAddresses}
+      />
+      <ImportAddressesModal
+        isModalVisible={isImportAddressesModalVisible}
+        setIsAddAddressesModalVisible={setIsAddAddressesModalVisible}
+        setIsModalVisible={setIsImportAddressesModalVisible}
+        setInitialAddresses={setInitialAddresses}
+      />
     </PageContent>
   );
 };
