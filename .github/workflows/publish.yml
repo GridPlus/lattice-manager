@@ -1,12 +1,8 @@
-name: Build & deploy
+name: Publish
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -27,9 +23,6 @@ jobs:
 
       - name: Build project
         run: npm run build
-
-      - name: Run tests
-        run: npm run test
 
       - name: Upload production-ready build files
         uses: actions/upload-artifact@v2
