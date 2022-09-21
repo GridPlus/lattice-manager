@@ -1,6 +1,6 @@
 import { Button, Modal, Space } from "antd";
 import { useState } from "react";
-import { useAddresses } from "../hooks/useAddresses";
+import { useAddressTags } from "../hooks/useAddressTags";
 import { csvStringToAddresses } from "../util/csv";
 
 export const ImportAddressesModal = ({
@@ -9,7 +9,7 @@ export const ImportAddressesModal = ({
   setIsAddAddressesModalVisible,
   setInitialAddresses,
 }) => {
-  const { isLoadingAddresses } = useAddresses();
+  const { isLoadingAddressTags } = useAddressTags();
   const [file, setFile] = useState();
   const fileReader = new FileReader();
 
@@ -55,7 +55,7 @@ export const ImportAddressesModal = ({
         </Button>,
         <Button
           type="primary"
-          loading={isLoadingAddresses}
+          loading={isLoadingAddressTags}
           onClick={handleOnSubmit}
           key="add"
         >

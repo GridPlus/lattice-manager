@@ -1,18 +1,18 @@
 import { Button } from "antd";
-import { useAddresses } from "../hooks/useAddresses";
+import { useAddressTags } from "../hooks/useAddressTags";
 import { SyncOutlined } from "@ant-design/icons";
 
 export const SyncAddressesButton = () => {
-  const { fetchAddresses, isLoadingAddresses, resetAddressesInState } =
-    useAddresses();
+  const { fetchAddresses, isLoadingAddressTags, resetAddressTagsInState } =
+    useAddressTags();
 
   return (
     <Button
       type="link"
       icon={<SyncOutlined />}
-      disabled={isLoadingAddresses}
+      disabled={isLoadingAddressTags}
       onClick={() => {
-        resetAddressesInState();
+        resetAddressTagsInState();
         fetchAddresses();
       }}
     >

@@ -1,5 +1,5 @@
 import React from 'react';
-import 'antd/dist/antd.dark.css'
+
 import { Button, Card, Row, Input, Empty } from 'antd'
 import { CopyOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'

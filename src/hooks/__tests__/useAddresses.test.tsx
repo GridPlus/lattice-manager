@@ -4,7 +4,7 @@ import React from "react";
 import { getMockSession, mockAddresses } from "../../testUtils/getMockSession";
 import { MockProvider } from "../../testUtils/MockProvider";
 import localStorage from "../../util/localStorage";
-import { useAddresses } from "../useAddresses";
+import { useAddresses } from "../useAddressTags";
 
 const renderUseAddresses = (overrides?) => {
   const session = getMockSession();

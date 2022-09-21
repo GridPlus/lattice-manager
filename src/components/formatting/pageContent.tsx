@@ -1,5 +1,5 @@
 import React from 'react';
-import 'antd/dist/antd.dark.css'
+
 import { Col, Row } from 'antd'
 import { AppContext } from "../../store/AppContext";
 const SPAN_WIDTH = 14; // Max 24 for 100% width

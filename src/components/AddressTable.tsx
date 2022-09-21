@@ -3,7 +3,7 @@ import { Button, Input, Table } from "antd";
 import fuzzysort from "fuzzysort";
 import intersectionBy from "lodash/intersectionBy";
 import React, { useCallback, useEffect, useState } from "react";
-import { useAddresses } from "../hooks/useAddresses";
+import { useAddressTags } from "../hooks/useAddressTags";
 import { constants } from "../util/helpers";
 import { abbreviateHash } from "../util/addresses";
 const { ADDRESSES_PER_PAGE } = constants;
@@ -13,22 +13,22 @@ const { ADDRESSES_PER_PAGE } = constants;
  * make it easier to manage a large amount of addresses.
  */
 export const AddressTable = () => {
-  const { isLoadingAddresses, addresses, removeAddresses } = useAddresses();
+  const { isLoadingAddressTags, addressTags, removeAddresses } = useAddressTags();
   const [input, setInput] = useState("");
   const [filteredAddresses, setFilteredAddresses] = useState([]);
   const [selectedAddresses, setSelectedAddresses] = useState([]);
 
   useEffect(() => {
     setInput("");
-    setFilteredAddresses(addresses);
-  }, [addresses, isLoadingAddresses]);
+    setFilteredAddresses(addressTags);
+  }, [addressTags, isLoadingAddressTags]);
 
   const filter = useCallback(
     (value) =>
       fuzzysort
-        .go(value, addresses, { keys: ["key", "val"] })
+        .go(value, addressTags, { keys: ["key", "val"] })
         .map((x) => x.obj),
-    [addresses]
+    [addressTags]
   );
 
   const handleOnSelect = (_, __, _selectedAddresses) => {
@@ -41,7 +41,7 @@ export const AddressTable = () => {
 
   const onChange = ({ target: { value } }) => {
     setInput(value);
-    const _addresses = value ? filter(value) : addresses;
+    const _addresses = value ? filter(value) : addressTags;
     setFilteredAddresses(_addresses);
     setSelectedAddresses(intersectionBy(selectedAddresses, _addresses, "key"));
   };
@@ -52,7 +52,7 @@ export const AddressTable = () => {
         <Input
           value={input}
           placeholder="Filter"
-          disabled={isLoadingAddresses}
+          disabled={isLoadingAddressTags}
           onChange={onChange}
           style={{ marginBottom: "1em" }}
           allowClear
@@ -75,7 +75,7 @@ export const AddressTable = () => {
         dataSource={filteredAddresses}
         tableLayout="fixed"
         loading={{
-          spinning: isLoadingAddresses,
+          spinning: isLoadingAddressTags,
           tip: "Loading...",
           indicator: <LoadingOutlined />,
         }}

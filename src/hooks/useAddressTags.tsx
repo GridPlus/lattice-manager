@@ -1,8 +1,9 @@
 import _ from "lodash";
 import isEmpty from "lodash/isEmpty";
 import { useCallback, useContext } from "react";
+import SDKSession from "../sdk/sdkSession";
 import { AppContext } from "../store/AppContext";
-import { LatticeRecord } from "../types/records";
+import { Address, LatticeRecord } from "../types/records";
 import { constants } from "../util/helpers";
 import { sendErrorNotification } from "../util/sendErrorNotification";
 const { ADDRESSES_PER_PAGE, ADDRESS_RECORD_TYPE } = constants;
@@ -11,43 +12,56 @@ const { ADDRESSES_PER_PAGE, ADDRESS_RECORD_TYPE } = constants;
  * The `useAddresses` hook is used to manage the external calls for fetching, adding, and removing
  * key-value address data on the user's Lattice and caching that data in `store`.
  */
-export const useAddresses = () => {
+export const useAddressTags = () => {
   const {
     session,
     isLoadingAddressTags,
     setIsLoadingAddresses,
-    addresses,
-    addAddressesToState,
-    removeAddressesFromState,
-    resetAddressesInState,
+    addressTags,
+    addAddressTagsToState,
+    removeAddressTagsFromState,
+    resetAddressTagsInState,
+  }: {
+    session: SDKSession;
+    isLoadingAddressTags: boolean;
+    setIsLoadingAddresses: (isLoading: boolean) => void;
+    addressTags: LatticeRecord[];
+    addAddressTagsToState: (addressTags: LatticeRecord[]) => void;
+    removeAddressTagsFromState: (addressTags: LatticeRecord[]) => void;
+    resetAddressTagsInState: () => void;
   } = useContext(AppContext);
 
   /**
    * Fetches the installed addresses from the user's Lattice.
    */
   const fetchAddresses = useCallback(
-    async (path = [0x80000000 + 44, 0x80000000 + 60, 0x80000000, 0, 0]) => {
+    async (fetched = 0) => {
       setIsLoadingAddresses(true);
 
       return session.client
-        .getAddresses({
-          startPath: path,
+        .getKvRecords({
+          start: fetched,
           n: ADDRESSES_PER_PAGE,
         })
         .then(async (res) => {
-          addAddressesToState(res.records);
+          addAddressTagsToState(res.records);
+          const totalFetched = res.fetched + fetched;
+          const remainingToFetch = res.total - totalFetched;
+          if (remainingToFetch > 0) {
+            await fetchAddresses(fetched + res.fetched);
+          }
         })
         .catch((err) => {
           sendErrorNotification({
             ...err,
-            onClick: ()=>fetchAddresses(path),
+            onClick: fetchAddresses,
           });
         })
         .finally(() => {
           setIsLoadingAddresses(false);
         });
     },
-    [addAddressesToState, session, setIsLoadingAddresses]
+    [addAddressTagsToState, session.client, setIsLoadingAddresses]
   );
 
   /**
@@ -61,7 +75,7 @@ export const useAddresses = () => {
     return session.client
       .removeKvRecords({ ids })
       .then(() => {
-        removeAddressesFromState(selectedAddresses);
+        removeAddressTagsFromState(selectedAddresses);
       })
       .catch((err) => {
         sendErrorNotification({
@@ -77,7 +91,7 @@ export const useAddresses = () => {
   /**
    * Adds new addresses to the user's Lattice.
    */
-  const addAddresses = async (addressesToAdd: LatticeRecord[]) => {
+  const addAddresses = async (addressesToAdd: Address[]) => {
     setIsLoadingAddresses(true);
 
     /**
@@ -92,9 +106,10 @@ export const useAddresses = () => {
       )
       .value();
 
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<Buffer[]>(async (resolve, reject) => {
+      let results = [];
       for await (const records of recordsList) {
-        await session.client
+        const buf = await session.client
           .addKvRecords({
             caseSensitive: false,
             type: ADDRESS_RECORD_TYPE,
@@ -104,29 +119,34 @@ export const useAddresses = () => {
             sendErrorNotification(err);
             reject(err);
           });
+          if(buf) results.push(buf);
+
       }
-      resolve();
+      console.log({ results });
+      if (results.length) {
+        resolve(results);
+      } else {
+        reject();
+      }
     })
-      .then(async () => {
+      .then(async (newAddrs) => {
         // TODO: Remove fetch and call addAddressesToState() with the address data when FW is
         //  updated to return address data. See GitHub issue:
         //  https://github.com/GridPlus/k8x_firmware_production/issues/2323
         await fetchAddresses();
+        return newAddrs
       })
-      .catch(sendErrorNotification)
       .finally(() => {
         setIsLoadingAddresses(false);
       });
   };
 
   return {
+    addressTags,
     fetchAddresses,
-    addresses,
     addAddresses,
-    addAddressesToState,
     removeAddresses,
-    removeAddressesFromState,
-    resetAddressesInState,
     isLoadingAddressTags,
+    resetAddressTagsInState,
   };
 };

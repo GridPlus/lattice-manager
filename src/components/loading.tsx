@@ -1,5 +1,5 @@
 import React from 'react';
-import 'antd/dist/antd.dark.css'
+
 import { Button, Card, Spin } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons';
 import { PageContent } from './index'

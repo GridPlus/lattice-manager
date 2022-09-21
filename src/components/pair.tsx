@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Input } from 'antd'
 import { PageContent } from './index'
-import 'antd/dist/antd.dark.css'
+
 import { AppContext } from '../store/AppContext';
 const SUBMIT_LEN = 8; // 8 characters in a code
 

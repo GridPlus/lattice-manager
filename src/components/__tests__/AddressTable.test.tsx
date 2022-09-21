@@ -8,13 +8,13 @@ const addresses = [
   { key: "b", val: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
 ];
 const removeAddresses = jest.fn();
-const isLoadingAddresses = false;
+const isLoadingAddressTags = false;
 
 const renderAddressTable = (overrides?) =>
   renderMockProvider({
     children: <AddressTable />,
     addresses,
-    isLoadingAddresses,
+    isLoadingAddressTags,
     ...overrides,
   });
 
@@ -24,7 +24,7 @@ describe("AddressTable", () => {
   });
 
   it("shows loading", () => {
-    renderAddressTable({ isLoadingAddresses: true });
+    renderAddressTable({ isLoadingAddressTags: true });
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 

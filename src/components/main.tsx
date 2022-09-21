@@ -1,11 +1,11 @@
 import React from 'react';
-import 'antd/dist/antd.dark.css'
-import './styles.css'
+
 import { Button, Layout, Menu, PageHeader, Tag, Tooltip } from 'antd';
 import { 
   HomeOutlined, MenuOutlined, TagsOutlined, 
   WalletOutlined, ArrowUpOutlined, ArrowDownOutlined, 
-  ReloadOutlined, CreditCardOutlined, CheckOutlined, SettingOutlined 
+  ReloadOutlined, CreditCardOutlined, CheckOutlined, SettingOutlined,
+  FileSearchOutlined
 } from '@ant-design/icons';
 import { default as SDKSession } from '../sdk/sdkSession';
 import { 
@@ -16,6 +16,7 @@ import { constants, getBtcPurpose } from '../util/helpers'
 import localStorage from '../util/localStorage';
 import { AppContext } from '../store/AppContext';
 import type { MenuProps } from 'antd/es/menu';
+import ExplorerPage from './ExplorerPage';
 type MenuItem = Required<MenuProps>['items'][number];
 
 const { Content, Footer, Sider } = Layout;
@@ -514,6 +515,11 @@ class Main extends React.Component<any, MainState> {
         icon:  <TagsOutlined/>,
       },
       {
+        key: PAGE_KEYS.EXPLORER,
+        label: 'Explorer',
+        icon:  <FileSearchOutlined />,
+      },
+      {
         key: PAGE_KEYS.SETTINGS,
         label: 'Settings',
         icon:  <SettingOutlined/>,
@@ -651,6 +657,7 @@ class Main extends React.Component<any, MainState> {
   }
 
   renderPage() {
+    console.log({menuItem: this.state.menuItem})
     switch (this.state.menuItem) {
       case PAGE_KEYS.WALLET:
         return (
@@ -669,6 +676,8 @@ class Main extends React.Component<any, MainState> {
         return <Settings />;
       case PAGE_KEYS.ADDRESS_TAGS:
         return <AddressTagsPage />;
+      case PAGE_KEYS.EXPLORER:
+        return <ExplorerPage />;
       case DEFAULT_PAGE:
         return <Landing goToPage={(key) => this.handleMenuChange({ key })} />;
       default:

@@ -8,12 +8,11 @@
 // FOR NOW, I AM HIDING THIS FEATURE IN main.js
 
 import React from 'react';
-import 'antd/dist/antd.dark.css'
+
 import { Alert, Button, Card, Col, Dropdown, Input, Menu, Row, Select, Spin } from 'antd'
 import { LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { constants, } from '../util/helpers';
 import { PageContent } from './index'
-import './styles.css'
 const BN = require('bignumber.js');
 const HOURS = 3600;
 const DAYS = 86400;

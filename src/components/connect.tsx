@@ -1,5 +1,5 @@
 import React from 'react';
-import 'antd/dist/antd.dark.css'
+
 import { Alert, Button, Card, Col, Input, Row, Modal } from 'antd'
 import { DesktopOutlined, LinkOutlined } from '@ant-design/icons';
 import { Settings } from './index'

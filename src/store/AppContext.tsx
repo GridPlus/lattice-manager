@@ -19,32 +19,32 @@ export const AppContextProvider = ({
   const [isMobile, setIsMobile] = useState(window.innerWidth < 500);
   const [session, setSession] = useState<SDKSession>(null);
 
-  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+  const [isLoadingAddressTags, setIsLoadingAddresses] = useState(false);
   const [
-    addresses,
-    addAddressesToState,
-    removeAddressesFromState,
-    resetAddressesInState,
+    addressTags,
+    addAddressTagsToState,
+    removeAddressTagsFromState,
+    resetAddressTagsInState,
   ] = useRecords(localStorage.getAddresses() ?? [])
 
   const defaultContext = {
     isMobile,
     session,
     setSession,
-    isLoadingAddresses,
+    isLoadingAddressTags,
     setIsLoadingAddresses,
-    addresses,
-    addAddressesToState,
-    removeAddressesFromState,
-    resetAddressesInState,
+    addressTags,
+    addAddressTagsToState,
+    removeAddressTagsFromState,
+    resetAddressTagsInState,
   };
 
   /**
    * Whenever `addresses` data changes, it is persisted to `localStorage`
    */
   useEffect(() => {
-    localStorage.setAddresses(addresses);
-  }, [addresses]);
+    localStorage.setAddresses(addressTags);
+  }, [addressTags]);
 
   /**
    * Sets `isMobile` when the window resizes.

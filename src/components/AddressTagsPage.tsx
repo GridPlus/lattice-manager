@@ -1,5 +1,4 @@
 import { Card } from "antd";
-import "antd/dist/antd.dark.css";
 import isEmpty from "lodash/isEmpty";
 import { useEffect, useState } from "react";
 import { AddAddressesButton } from "../components/AddAddressesButton";
@@ -8,12 +7,13 @@ import { AddressTable } from "../components/AddressTable";
 import { ExportAddressesButton } from "../components/ExportAddressesButton";
 import { ImportAddressesButton } from "../components/ImportAddressesButton";
 import { ImportAddressesModal } from "../components/ImportAddressesModal";
-import { useAddresses } from "../hooks/useAddresses";
+import { useAddressTags } from "../hooks/useAddressTags";
+import { useFeatureFlag } from "../hooks/useFeatureFlag";
 import { PageContent } from "./formatting";
 import { SyncAddressesButton } from "./SyncAddressesButton";
 
 const AddressTagsPage = () => {
-  const { fetchAddresses, isLoadingAddresses, addresses } = useAddresses();
+  const { fetchAddresses, isLoadingAddressTags, addressTags } = useAddressTags();
   const [isAddAddressesModalVisible, setIsAddAddressesModalVisible] =
     useState(false);
   const [isImportAddressesModalVisible, setIsImportAddressesModalVisible] =
@@ -24,7 +24,7 @@ const AddressTagsPage = () => {
   ]);
 
   useEffect(() => {
-    if (isEmpty(addresses) && !isLoadingAddresses) {
+    if (isEmpty(addressTags) && !isLoadingAddressTags) {
       fetchAddresses();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -36,12 +36,19 @@ const AddressTagsPage = () => {
       key="add-addresses-button"
       showModal={() => setIsAddAddressesModalVisible(true)}
     />,
-    <ImportAddressesButton
-      showModal={() => setIsImportAddressesModalVisible(true)}
-      key="import-addresses-button"
-    />,
-    <ExportAddressesButton key="export-addresses-button" />,
   ];
+
+  const { CAN_IMPORT_EXPORT_TAGS } = useFeatureFlag();
+
+  if (CAN_IMPORT_EXPORT_TAGS) {
+    extra.push(
+      <ImportAddressesButton
+        showModal={() => setIsImportAddressesModalVisible(true)}
+        key="import-addresses-button"
+      />
+    );
+    extra.push(<ExportAddressesButton key="export-addresses-button" />);
+  }
 
   return (
     <PageContent>
