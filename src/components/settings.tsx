@@ -1,6 +1,6 @@
 import React from 'react';
 import 'antd/dist/antd.dark.css'
-import { Button, Card, Checkbox, Col, Collapse, Input, Radio, Row, Space, Table } from 'antd'
+import { Button, Card, Col, Collapse, Input, Radio, Row, Space, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
 import './styles.css'
@@ -40,12 +40,6 @@ class Settings extends React.Component<any, any> {
     const settings = this.state.settings;
     settings.customEndpoint = evt.target.value;
     this.setState({ settings });
-  }
-
-  updateUseDevLattice(evt) {
-    const settings = this.state.settings;
-    settings.devLattice = evt.target.checked
-    this.setState({ settings }, this.submit)
   }
 
   removeKeyring ({ name }) {
@@ -137,8 +131,7 @@ class Settings extends React.Component<any, any> {
     )
   }
 
-  renderDevLatticeSetting() {
-    const { devLattice } = this.state.settings;
+  renderDebugSettings() {
     return (
       <Card>
         <h4>Debug Settings</h4>
@@ -146,11 +139,6 @@ class Settings extends React.Component<any, any> {
           <Button type="link" onClick={this.resetState} className='warning-a'>
           <WarningOutlined/>&nbsp;Reset App State
         </Button>
-        </Row>
-        <Row justify='center' style={{ margin: '20px 0 0 0'}}>
-          <Checkbox onChange={this.updateUseDevLattice.bind(this)} checked={devLattice}>
-            Using Dev Lattice
-          </Checkbox>
         </Row>
       </Card>
     )
@@ -202,7 +190,7 @@ class Settings extends React.Component<any, any> {
         {this.renderKeyringsSetting()}
         {this.renderCustomEndpointSetting()}
         {this.renderBitcoinVersionSetting()}
-        {this.renderDevLatticeSetting()}
+        {this.renderDebugSettings()}
         <br/>
         <Button type="primary" onClick={this.submit.bind(this)}>
           Update and Reload
