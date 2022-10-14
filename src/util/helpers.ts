@@ -93,33 +93,6 @@ export const constants = {
       },
 };
 
-const devConstants = {
-    BTC_DEV_DATA_API: 'https://blockstream.info/testnet/api',
-    BTC_BROADCAST_ENDPOINT : 'https://blockstream.info/testnet/api/tx',
-    BASE_SIGNING_URL: 'https://signing.staging-gridpl.us',
-    // Deprecating because using two different stores was very tricky and we don't
-    // need the second one anyway
-    // ROOT_STORE: 'gridplus-dev', 
-    BTC_COIN: HARDENED_OFFSET + 1,
-    BTC_DEFAULT_FEE_RATE: 10,
-    BTC_TX_BASE_URL: 'https://www.blockchain.com/btc-testnet/tx',
-    BTC_TESTNET: 'Testnet3',
-    LATTICE_CERT_SIGNER: '045cfdf77a00b4b6b4a5b8bb26b5497dbc7a4d01cbefd7aaeaf5f6f8f8865976e7941ab0ec1651209c444009fd48d925a17de5040ba47eaf3f5b51720dd40b2f9d',
-    BTC_SEGWIT_NATIVE_V0_PREFIX: 'tb',
-    BTC_LEGACY_VERSION: 0x6F,
-    BTC_WRAPPED_SEGWIT_VERSION: 0xC4,
-}
-
-// NEW: If you have checked the "Using Dev Lattice" box in settings, the constants
-// are swapped out here
-const localSettings = localStorage.getSettings();
-if (localSettings.devLattice) {
-    Object.keys(devConstants).forEach((key) => {
-        constants[key] = devConstants[key];
-    })
-}
-
-
 //--------------------------------------------
 // CHAIN DATA SYNCING HELPERS
 //--------------------------------------------
