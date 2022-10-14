@@ -1,47 +1,124 @@
 import {
-  DesktopOutlined,
-  TagsOutlined
+  CreditCardOutlined,
+  TagsOutlined,
+  TwitterOutlined,
+  YoutubeOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
-import { Alert, Card, Divider } from "antd";
+import { faBtc } from "@fortawesome/free-brands-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Alert, Card } from "antd";
 import "antd/dist/antd.dark.css";
 import React from "react";
 import { useFeature } from "../hooks/useFeature";
-import { constants } from "../util/helpers";
 import { PageContent } from "./index";
+import { LandingCard } from "./LandingCard";
 
-const Landing = () => {
+const Landing = ({ goToPage }) => {
   const { USES_AUTO_ABI } = useFeature();
 
   return (
     <PageContent>
-      <Card bordered={true} style={{ textAlign: "center" }}>
-        <div>
-          <h1 className="lattice-h1">
-            <DesktopOutlined />
-            &nbsp;Lattice Manager
-          </h1>
-          <p className="lattice-h4">
-            Manage secure data on your Lattice hardware wallet device for a
-            better web3 experience:
-          </p>
-        </div>
-        <div style={{ margin: "25px" }}>
-          <p>
-            <a
-              href={constants.TAGS_HELP_LINK}
-              className="lattice-a"
-              target="_blank"
-              rel="noopener noreferrer"
+      <Card
+        style={{ textAlign: "center" }}
+        headStyle={{ fontSize: "32px" }}
+        title="Lattice Manager"
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "30px",
+            margin: "25px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div style={{ width: "200px" }}>
+              <p style={{ fontSize: "1.2em" }}>
+                Manage secure data on your Lattice hardware wallet device for a
+                better web3 experience
+              </p>
+            </div>
+            <img
+              src="lattice-landing.png"
+              style={{ maxWidth: "250px" }}
+              alt="lattice-one-device"
+            />
+          </div>
+          <div>
+            <h2>Features</h2>
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                justifyContent: "center",
+                flexWrap: "wrap",
+              }}
             >
-              <TagsOutlined />
-              &nbsp;
-              <b>Address Tags</b>&nbsp;
-            </a>
-          </p>
+              <LandingCard
+                title="Address Tags"
+                body="Tag your favorite contracts or addresses"
+                icon={<TagsOutlined />}
+                link={"address-tags"}
+                goToPage={goToPage}
+              />
+              <LandingCard
+                title="Bitcoin Wallet"
+                body={"Check balances and send BTC transactions"}
+                icon={<FontAwesomeIcon icon={faBtc} />}
+                link="settings"
+                goToPage={goToPage}
+              />
+            </div>
+          </div>
+          <div>
+            <h2>Resources</h2>
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                justifyContent: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <LandingCard
+                title="@GridPlus"
+                body="Follow GridPlus on Twitter"
+                icon={<TwitterOutlined />}
+                link="https://twitter.com/GridPlus"
+                goToPage={goToPage}
+              />
+              <LandingCard
+                title="GridPlus"
+                body="Subscribe to GridPlus on YouTube"
+                icon={<YoutubeOutlined />}
+                link="https://youtube.com/GridPlus"
+                goToPage={goToPage}
+              />
+              <LandingCard
+                title="Documentation"
+                body="Learn more about your Lattice"
+                icon={<InfoCircleOutlined />}
+                link="https://docs.gridplus.io"
+                goToPage={goToPage}
+              />
+              <LandingCard
+                title="SafeCards"
+                body="Backup or create new wallets"
+                icon={<CreditCardOutlined />}
+                link="https://gridplus.io/safecards"
+                goToPage={goToPage}
+              />
+            </div>
+          </div>
         </div>
-        <p>
-          <i>Give names to your favorite contracts or recipient addresses.</i>
-        </p>
         {!USES_AUTO_ABI ? (
           <Alert
             style={{ maxWidth: "500px", margin: "auto" }}
@@ -75,12 +152,6 @@ const Landing = () => {
             showIcon
           />
         ) : null}
-        <Divider />
-        <img
-          src="lattice-landing.jpg"
-          style={{ maxHeight: "500px", maxWidth: "100%" }}
-          alt="lattice-one-device"
-        />
       </Card>
     </PageContent>
   );
