@@ -20,7 +20,8 @@ type MenuItem = Required<MenuProps>['items'][number];
 
 const { Content, Footer, Sider } = Layout;
 const LOGIN_PARAM = 'loginCache';
-const DEFAULT_MENU_ITEM = 'menu-landing';
+const PAGE_KEYS = constants.PAGE_KEYS;
+const DEFAULT_PAGE = PAGE_KEYS.LANDING;
 
 type MainState = {
   name: string,
@@ -53,7 +54,7 @@ class Main extends React.Component<any, MainState> {
     const keyringName = params.get('keyring')
     this.state = {
       name: constants.DEFAULT_APP_NAME,
-      menuItem: DEFAULT_MENU_ITEM,
+      menuItem: DEFAULT_PAGE,
       // GridPlusSDK session object
       session: null,
       collapsed: false,
@@ -503,17 +504,17 @@ class Main extends React.Component<any, MainState> {
 
     const getMenuItems = () => { 
       const items: MenuItem[] = [{
-        key: 'menu-landing',
+        key: PAGE_KEYS.LANDING,
         label: 'Home',
         icon:  <HomeOutlined/>, 
       },
       {
-        key: 'menu-kv-records',
+        key: PAGE_KEYS.ADDRESS_TAGS,
         label: 'Address Tags',
         icon:  <TagsOutlined/>,
       },
       {
-        key: 'menu-settings',
+        key: PAGE_KEYS.SETTINGS,
         label: 'Settings',
         icon:  <SettingOutlined/>,
       },
@@ -523,17 +524,17 @@ class Main extends React.Component<any, MainState> {
           key: 'submenu-wallet',
           label: 'BTC Wallet',
           children: [{
-            key: 'menu-wallet',
+            key: PAGE_KEYS.WALLET,
             label: 'History',
             icon:  <WalletOutlined/>,
           },
           {
-            key: 'menu-send',
+            key: PAGE_KEYS.SEND,
             label: 'Send',
             icon:  <ArrowUpOutlined/>,
           },
           {
-            key: 'menu-receive',
+            key: PAGE_KEYS.RECEIVE,
             label: 'Receive',
             icon:  <ArrowDownOutlined/>,
           }]
@@ -543,11 +544,14 @@ class Main extends React.Component<any, MainState> {
     }
 
     return (
-      <Sider
-        collapsed={this.state.collapsed}
-        collapsedWidth={0}
-      >
-        <Menu theme="dark" mode="inline" onSelect={this.handleMenuChange} items={getMenuItems()} />
+      <Sider collapsed={this.state.collapsed} collapsedWidth={0}>
+        <Menu
+          theme="dark"
+          mode="inline"
+          onSelect={this.handleMenuChange}
+          items={getMenuItems()}
+          selectedKeys={[this.state.menuItem]}
+        />
       </Sider>
     );
   }
@@ -579,7 +583,7 @@ class Main extends React.Component<any, MainState> {
         >
           <img  alt="GridPlus" 
                 src={'/gridplus-logo.png'}
-                style={{height: '1em'}}/>
+                style={{height: '3em'}}/>
         </a>
       </>
     );
@@ -646,9 +650,9 @@ class Main extends React.Component<any, MainState> {
     return cb();
   }
 
-  renderMenuItem() {
+  renderPage() {
     switch (this.state.menuItem) {
-      case "menu-wallet":
+      case PAGE_KEYS.WALLET:
         return (
           <Wallet
             session={this.context.session}
@@ -657,23 +661,16 @@ class Main extends React.Component<any, MainState> {
             pageTurnCb={this.handlePageTurn}
           />
         );
-      case "menu-receive":
+      case PAGE_KEYS.RECEIVE:
         return <Receive session={this.context.session} />;
-      case "menu-send":
+      case PAGE_KEYS.SEND:
         return <Send session={this.context.session} />;
-      // case 'menu-permissions':
-      //   return (
-      //     <Permissions
-      //       session={this.state.session}
-      //       isMobile={() => this.isMobile()}
-      //     />
-      //   )
-      case "menu-settings":
+      case PAGE_KEYS.SETTINGS:
         return <Settings />;
-      case "menu-kv-records":
+      case PAGE_KEYS.ADDRESS_TAGS:
         return <AddressTagsPage />;
-      case DEFAULT_MENU_ITEM:
-        return <Landing />;
+      case DEFAULT_PAGE:
+        return <Landing goToPage={(key) => this.handleMenuChange({ key })} />;
       default:
         return;
     }
@@ -716,7 +713,7 @@ class Main extends React.Component<any, MainState> {
         />
       )
     } else {
-      return this.renderMenuItem();
+      return this.renderPage();
     }
   }
 
@@ -729,7 +726,7 @@ class Main extends React.Component<any, MainState> {
     )
   }
 
-  renderPage() {
+  renderPageContainer() {
     if (this.state.hwCheck !== null) {
       return <ValidateSig data={this.state.hwCheck} />
     } else {
@@ -746,8 +743,8 @@ class Main extends React.Component<any, MainState> {
           <Layout id="main-content-inner">
             <Content style={{ margin: '0 0 0 0' }}>
               {this.renderErrorHeader()}
-              <div style={{ margin: '30px 0 0 0'}}>
-                {this.renderPage()}        
+              <div>
+                {this.renderPageContainer()}
               </div>
             </Content>
             {this.renderFooter()}

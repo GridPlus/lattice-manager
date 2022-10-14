@@ -91,6 +91,14 @@ export const constants = {
           apiRoute: "api?module=contract&action=getabi&address=",
         },
       },
+      PAGE_KEYS: {
+        LANDING: 'LANDING',
+        ADDRESS_TAGS: 'ADDRESS_TAGS:',
+        SETTINGS: 'SETTINGS',
+        WALLET: 'WALLET',
+        SEND: 'SEND',
+        RECEIVE: 'RECEIVE',
+      }
 };
 
 //--------------------------------------------
