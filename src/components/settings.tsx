@@ -15,7 +15,8 @@ class Settings extends React.Component<any, any> {
     this.state = {
       settings: localStorage.getSettings(),
       keyring: localStorage.getKeyring(),
-    }
+      error: "",
+    };
     this.getBtcPurposeName = this.getBtcPurposeName.bind(this)
   }
 
@@ -40,6 +41,25 @@ class Settings extends React.Component<any, any> {
     const settings = this.state.settings;
     settings.customEndpoint = evt.target.value;
     this.setState({ settings });
+  }
+
+  validateEndpoint(evt) {
+    const value = evt.target.value;
+    try {
+      const url = new URL(value);
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        this.setState({ error: "Invalid protocol" });
+      } else if (value.charAt(value.length - 1) === "/") {
+        this.setState({ error: 'URL cannot end with "/"' });
+      } else {
+        this.setState({ error: "" });
+      }
+    } catch (e) {
+      this.setState({
+        error:
+          "Invalid URL: Must contain only valid URL characters and either 'http://' or 'https://`",
+      });
+    }
   }
 
   removeKeyring ({ name }) {
@@ -70,9 +90,17 @@ class Settings extends React.Component<any, any> {
               </a> for more information.
             </p>
             <div>
-              <Input  placeholder="host:port" 
-                      defaultValue={customEndpoint} 
-                      onChange={this.updateCustomEndpoint.bind(this)}/>
+              <Input
+                placeholder="host:port"
+                defaultValue={customEndpoint}
+                status={this.state.error ? "error" : null}
+                onSelect={() => this.setState({ error: "" })}
+                onChange={this.updateCustomEndpoint.bind(this)}
+                onBlur={this.validateEndpoint.bind(this)}
+              />
+              {this.state.error && (
+                <span style={{ color: "red" }}>{this.state.error}</span>
+              )}
             </div>
           </Col>
         </Row>
