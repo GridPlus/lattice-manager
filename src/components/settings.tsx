@@ -82,7 +82,7 @@ class Settings extends React.Component<any, any> {
             <p>
               If you wish to route messages and connections through your own endpoint, you may specify it here.&nbsp;
               Otherwise leave blank.&nbsp; See&nbsp;
-              <a  href="https://github.com/GridPlus/lattice-connect"
+              <a  href="https://github.com/GridPlus/lattice-connect-v2"
                   className='lattice-a'
                   target="_blank" 
                   rel="noopener noreferrer">
