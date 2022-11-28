@@ -1,5 +1,4 @@
 import { LoadingOutlined } from "@ant-design/icons";
-import { PublicKey } from "@solana/web3.js";
 import {
   Button,
   Card,
@@ -13,22 +12,19 @@ import { useContext, useEffect, useState } from "react";
 import { useAddressTags } from "../hooks/useAddressTags";
 import { AppContext } from "../store/AppContext";
 import { abbreviateHash } from "../util/addresses";
+import {
+  DERIVATION_TYPE,
+  getDisplayStringForDerivationType,
+  getFlagForDerivationType,
+} from "../util/derivation";
 import { constants } from "../util/helpers";
 import { sendErrorNotification } from "../util/sendErrorNotification";
-import { PageContent } from "./formatting";
 import { AddressTagInput } from "./AddressTagInput";
+import { PageContent } from "./formatting";
 import { UpdateAddressTagsModal } from "./UpdateAddressTagsModal";
 
 const { ADDRESSES_PER_PAGE } = constants;
 const { Option } = Select;
-const CHAINS = {
-  BITCOIN_LEGACY: "Bitcoin (Legacy)",
-  BITCOIN_SEGWIT: "Bitcoin (Segwit)",
-  BITCOIN_WRAPPED_SEGWIT: "Bitcoin (Wrapped Segwit)",
-  ETHEREUM: "Ethereum",
-  SOLANA: "Solana",
-  CUSTOM: "Custom",
-};
 
 const ExplorerPage = () => {
   const { addressTags } = useAddressTags();
@@ -48,7 +44,9 @@ const ExplorerPage = () => {
   const [isChangeHardened, setIsChangeHardened] = useState(false);
   const [index, setIndex] = useState(0);
   const [isIndexHardened, setIsIndexHardened] = useState(false);
-  const [selectedChain, setSelectedChain] = useState(CHAINS.ETHEREUM);
+  const [selectedDerivationType, setSelectedDerivationType] = useState(
+    DERIVATION_TYPE.ETHEREUM
+  );
 
   const getInitialAddressTags = () => {
     return addresses.map((addr) => {
@@ -80,20 +78,19 @@ const ExplorerPage = () => {
 
   const getAddrs = () => {
     setIsLoading(true);
-    const flag = selectedChain === CHAINS.SOLANA ? 4 : undefined;
     session.client
       .getAddresses({
         startPath: getPath(),
         n: ADDRESSES_PER_PAGE,
-        flag,
+        flag: getFlagForDerivationType(selectedDerivationType),
       })
       .then((addrs) => {
         setAddresses(
           addrs.map((addr) => ({
-            address:
-              selectedChain === CHAINS.SOLANA
-                ? new PublicKey(addr).toString()
-                : addr,
+            address: getDisplayStringForDerivationType(
+              addr,
+              selectedDerivationType
+            ),
             record: addressTags.find((t) => t.key === addr),
           }))
         );
@@ -130,10 +127,10 @@ const ExplorerPage = () => {
   useEffect(() => {
     getAddrs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedChain]);
+  }, [selectedDerivationType]);
 
   const onSelect = (option) => {
-    if (option === CHAINS.ETHEREUM) {
+    if (option === DERIVATION_TYPE.ETHEREUM) {
       setPurpose(44);
       setIsPurposeHardened(true);
       setCoinType(60);
@@ -144,9 +141,9 @@ const ExplorerPage = () => {
       setIsChangeHardened(false);
       setIndex(0);
       setIsIndexHardened(false);
-      setSelectedChain(option);
+      setSelectedDerivationType(option);
     }
-    if (option === CHAINS.BITCOIN_LEGACY) {
+    if (option === DERIVATION_TYPE.BITCOIN_LEGACY) {
       setPurpose(44);
       setIsPurposeHardened(true);
       setCoinType(0);
@@ -157,9 +154,9 @@ const ExplorerPage = () => {
       setIsChangeHardened(false);
       setIndex(0);
       setIsIndexHardened(false);
-      setSelectedChain(option);
+      setSelectedDerivationType(option);
     }
-    if (option === CHAINS.BITCOIN_SEGWIT) {
+    if (option === DERIVATION_TYPE.BITCOIN_SEGWIT) {
       setPurpose(84);
       setIsPurposeHardened(true);
       setCoinType(0);
@@ -170,9 +167,9 @@ const ExplorerPage = () => {
       setIsChangeHardened(false);
       setIndex(0);
       setIsIndexHardened(false);
-      setSelectedChain(option);
+      setSelectedDerivationType(option);
     }
-    if (option === CHAINS.BITCOIN_WRAPPED_SEGWIT) {
+    if (option === DERIVATION_TYPE.BITCOIN_WRAPPED_SEGWIT) {
       setPurpose(49);
       setIsPurposeHardened(true);
       setCoinType(0);
@@ -183,9 +180,9 @@ const ExplorerPage = () => {
       setIsChangeHardened(false);
       setIndex(0);
       setIsIndexHardened(false);
-      setSelectedChain(option);
+      setSelectedDerivationType(option);
     }
-    if (option === CHAINS.SOLANA) {
+    if (option === DERIVATION_TYPE.SOLANA) {
       setPurpose(44);
       setIsPurposeHardened(true);
       setCoinType(501);
@@ -196,20 +193,7 @@ const ExplorerPage = () => {
       setIsChangeHardened(false);
       setIndex(null);
       setIsIndexHardened(false);
-      setSelectedChain(option);
-    }
-    if (option === CHAINS.CUSTOM) {
-      setPurpose(0);
-      setIsPurposeHardened(false);
-      setCoinType(0);
-      setIsCoinTypeHardened(false);
-      setAccount(0);
-      setIsAccountHardened(false);
-      setChange(0);
-      setIsChangeHardened(false);
-      setIndex(0);
-      setIsIndexHardened(false);
-      setAddresses([]);
+      setSelectedDerivationType(option);
     }
   };
 
@@ -220,19 +204,22 @@ const ExplorerPage = () => {
           <h3>Standard Derivation Paths</h3>
           <div style={{ paddingBottom: "25px" }}>
             <Select
-              defaultValue={CHAINS.ETHEREUM}
+              defaultValue={DERIVATION_TYPE.ETHEREUM}
               onChange={onSelect}
               style={{ width: "100%" }}
               disabled={isLoading}
             >
-              <Option value={CHAINS.ETHEREUM}>Ethereum</Option>
-              <Option value={CHAINS.BITCOIN_LEGACY}>Bitcoin (Legacy)</Option>
-              <Option value={CHAINS.BITCOIN_SEGWIT}>Bitcoin (Segwit)</Option>
-              <Option value={CHAINS.BITCOIN_WRAPPED_SEGWIT}>
+              <Option value={DERIVATION_TYPE.ETHEREUM}>Ethereum</Option>
+              <Option value={DERIVATION_TYPE.BITCOIN_LEGACY}>
+                Bitcoin (Legacy)
+              </Option>
+              <Option value={DERIVATION_TYPE.BITCOIN_SEGWIT}>
+                Bitcoin (Segwit)
+              </Option>
+              <Option value={DERIVATION_TYPE.BITCOIN_WRAPPED_SEGWIT}>
                 Bitcoin (Wrapped Segwit)
               </Option>
-              <Option value={CHAINS.SOLANA}>Solana</Option>
-              <Option value={CHAINS.CUSTOM}>Custom</Option>
+              <Option value={DERIVATION_TYPE.SOLANA}>Solana</Option>
             </Select>
           </div>
           <h3>Derivation Path</h3>
