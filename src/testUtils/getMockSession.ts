@@ -1,15 +1,14 @@
-import { act } from "@testing-library/react";
 import SDKSession from "../sdk/sdkSession";
-import { LatticeRecord } from "../types/records";
+import { AddressTag } from "../types/records";
 import { ContractRecord } from "./../types/contracts";
 
-export const mockAddresses: LatticeRecord[] = [
+export const mockAddressTags: AddressTag[] = [
   { id: "a", key: "a", val: "a" },
   { id: "b", key: "b", val: "b" },
 ];
 
 export const mockKvResponse = {
-  records: mockAddresses,
+  records: mockAddressTags,
   fetched: 5,
   total: 5,
 };
@@ -76,7 +75,7 @@ export const getMockSession = (
   }
 ): SDKSession => ({
   client: {
-    // Addresses
+    // AddressTags
     addKvRecords: jest.fn(async (records) => records),
     getKvRecords: jest.fn(async () => mockKvResponse),
     removeKvRecords: jest.fn(async () => true),

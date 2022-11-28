@@ -1,5 +1,4 @@
 import React from 'react';
-import 'antd/dist/antd.dark.css'
 import { Button, Card, Col, Result, Row } from 'antd'
 import { decode } from 'bs58'
 import { constants } from '../util/helpers';

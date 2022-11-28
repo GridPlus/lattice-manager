@@ -8,7 +8,6 @@ import {
 import { faBtc } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Alert, Card } from "antd";
-import "antd/dist/antd.dark.css";
 import React from "react";
 import { useFeature } from "../hooks/useFeature";
 import { PageContent } from "./index";

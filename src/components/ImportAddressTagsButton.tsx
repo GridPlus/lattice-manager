@@ -1,15 +1,15 @@
 import { ImportOutlined } from "@ant-design/icons";
 import { Button } from "antd";
-import { useAddresses } from "../hooks/useAddresses";
+import { useAddressTags } from "../hooks/useAddressTags";
 
-export const ImportAddressesButton = ({ showModal }) => {
-  const { isLoadingAddresses } = useAddresses();
+export const ImportAddressTagsButton = ({ showModal }) => {
+  const { isLoadingAddressTags } = useAddressTags();
 
   return (
     <Button
       type="default"
       icon={<ImportOutlined />}
-      disabled={isLoadingAddresses}
+      disabled={isLoadingAddressTags}
       onClick={showModal}
     >
       Import

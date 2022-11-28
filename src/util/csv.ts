@@ -17,7 +17,7 @@ export const getAddressVal = (address): string => {
   return "";
 };
 
-export const addressesToCsvString = (addresses: any[]): string => {
+export const addressTagsToCsvString = (addresses: any[]): string => {
   const addressList = addresses.map((address) => {
     return {
       name: address.key,
@@ -27,7 +27,7 @@ export const addressesToCsvString = (addresses: any[]): string => {
   return Papa.unparse(addressList);
 };
 
-export const csvStringToAddresses = (text: string): Address[] => {
+export const csvStringToAddressTags = (text: string): Address[] => {
   const result = Papa.parse(text, {
     header: true,
   });

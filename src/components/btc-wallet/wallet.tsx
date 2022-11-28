@@ -1,6 +1,5 @@
 
 import React from 'react';
-import 'antd/dist/antd.dark.css'
 import { Button, Avatar, Divider, Statistic, List, Row, Card, Tag} from 'antd';
 import { 
   CaretLeftOutlined, CaretRightOutlined, ClockCircleOutlined, 

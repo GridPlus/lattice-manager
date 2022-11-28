@@ -1,63 +1,63 @@
 import { Card } from "antd";
-import "antd/dist/antd.dark.css";
 import isEmpty from "lodash/isEmpty";
 import { useEffect, useState } from "react";
-import { AddAddressesButton } from "../components/AddAddressesButton";
-import { AddAddressesModal } from "../components/AddAddressesModal";
-import { AddressTable } from "../components/AddressTable";
-import { ExportAddressesButton } from "../components/ExportAddressesButton";
-import { ImportAddressesButton } from "../components/ImportAddressesButton";
-import { ImportAddressesModal } from "../components/ImportAddressesModal";
-import { useAddresses } from "../hooks/useAddresses";
+import { useAddressTags } from "../hooks/useAddressTags";
+import { AddAddressTagsButton } from "./AddAddressTagsButton";
+import { AddAddressTagsModal } from "./AddAddressTagsModal";
+import { AddressTagsTable } from "./AddressTagTable";
+import { ExportAddressTagsButton } from "./ExportAddressTagsButton";
 import { PageContent } from "./formatting";
-import { SyncAddressesButton } from "./SyncAddressesButton";
+import { ImportAddressTagsButton } from "./ImportAddressTagsButton";
+import { ImportAddressTagsModal } from "./ImportAddressTagsModal";
+import { SyncAddressTagsButton } from "./SyncAddressTagsButton";
 
 const AddressTagsPage = () => {
-  const { fetchAddresses, isLoadingAddresses, addresses } = useAddresses();
-  const [isAddAddressesModalVisible, setIsAddAddressesModalVisible] =
+  const { fetchAddressTags, isLoadingAddressTags, addressTags } =
+    useAddressTags();
+  const [isAddAddressTagsModalVisible, setIsAddAddressTagsModalVisible] =
     useState(false);
-  const [isImportAddressesModalVisible, setIsImportAddressesModalVisible] =
+  const [isImportAddressTagsModalVisible, setIsImportAddressTagsModalVisible] =
     useState(false);
 
-  const [initialAddresses, setInitialAddresses] = useState([
+  const [initialAddressTags, setInitialAddressTags] = useState([
     { key: null, val: null },
   ]);
 
   useEffect(() => {
-    if (isEmpty(addresses) && !isLoadingAddresses) {
-      fetchAddresses();
+    if (isEmpty(addressTags) && !isLoadingAddressTags) {
+      fetchAddressTags();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const extra = [
-    <SyncAddressesButton key="sync-addresses-button" />,
-    <AddAddressesButton
-      key="add-addresses-button"
-      showModal={() => setIsAddAddressesModalVisible(true)}
+    <SyncAddressTagsButton key="sync-addressTags-button" />,
+    <AddAddressTagsButton
+      key="add-addressTags-button"
+      showModal={() => setIsAddAddressTagsModalVisible(true)}
     />,
-    <ImportAddressesButton
-      showModal={() => setIsImportAddressesModalVisible(true)}
-      key="import-addresses-button"
+    <ImportAddressTagsButton
+      showModal={() => setIsImportAddressTagsModalVisible(true)}
+      key="import-addressTags-button"
     />,
-    <ExportAddressesButton key="export-addresses-button" />,
+    <ExportAddressTagsButton key="export-addressTags-button" />,
   ];
 
   return (
     <PageContent>
       <Card title={"Address Tags"} extra={extra} bordered>
-        <AddressTable />
+        <AddressTagsTable />
       </Card>
-      <AddAddressesModal
-        isModalVisible={isAddAddressesModalVisible}
-        setIsModalVisible={setIsAddAddressesModalVisible}
-        initialAddresses={initialAddresses}
+      <AddAddressTagsModal
+        isModalVisible={isAddAddressTagsModalVisible}
+        setIsModalVisible={setIsAddAddressTagsModalVisible}
+        initialAddressTags={initialAddressTags}
       />
-      <ImportAddressesModal
-        isModalVisible={isImportAddressesModalVisible}
-        setIsAddAddressesModalVisible={setIsAddAddressesModalVisible}
-        setIsModalVisible={setIsImportAddressesModalVisible}
-        setInitialAddresses={setInitialAddresses}
+      <ImportAddressTagsModal
+        isModalVisible={isImportAddressTagsModalVisible}
+        setIsAddAddressTagsModalVisible={setIsAddAddressTagsModalVisible}
+        setIsModalVisible={setIsImportAddressTagsModalVisible}
+        setInitialAddressTags={setInitialAddressTags}
       />
     </PageContent>
   );

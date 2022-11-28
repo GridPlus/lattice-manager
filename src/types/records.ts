@@ -1,4 +1,4 @@
-export interface LatticeRecord {
+export interface AddressTag {
   id: string;
   [key: string]: any;
 }

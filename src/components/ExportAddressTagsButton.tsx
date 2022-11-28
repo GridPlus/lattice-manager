@@ -1,19 +1,19 @@
 import { ExportOutlined } from "@ant-design/icons";
 import { Button } from "antd";
-import { useAddresses } from "../hooks/useAddresses";
-import { addressesToCsvString } from "../util/csv";
+import { useAddressTags } from "../hooks/useAddressTags";
+import { addressTagsToCsvString } from "../util/csv";
 
-export const ExportAddressesButton = () => {
-  const { isLoadingAddresses, addresses } = useAddresses();
+export const ExportAddressTagsButton = () => {
+  const { isLoadingAddressTags, addressTags } = useAddressTags();
 
   const handleOnClick = () => {
-    const csv = addressesToCsvString(addresses);
+    const csv = addressTagsToCsvString(addressTags);
     const csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     let csvURL = null;
     csvURL = window.URL.createObjectURL(csvData);
     const tempLink = document.createElement("a");
     tempLink.href = csvURL;
-    tempLink.setAttribute("download", "SavedAddresses.csv");
+    tempLink.setAttribute("download", "SavedAddressTags.csv");
     tempLink.click();
   };
 
@@ -21,7 +21,7 @@ export const ExportAddressesButton = () => {
     <Button
       type="default"
       icon={<ExportOutlined />}
-      disabled={isLoadingAddresses}
+      disabled={isLoadingAddressTags}
       onClick={handleOnClick}
     >
       Export

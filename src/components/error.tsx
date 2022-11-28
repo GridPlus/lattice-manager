@@ -1,5 +1,4 @@
 import React from 'react';
-import 'antd/dist/antd.dark.css'
 import { Card, Button } from 'antd'
 
 class Error extends React.Component<any, any> {
