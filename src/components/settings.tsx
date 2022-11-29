@@ -1,9 +1,7 @@
 import React from 'react';
-import 'antd/dist/antd.dark.css'
 import { Button, Card, Col, Collapse, Input, Radio, Row, Space, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
-import './styles.css'
 import omit from "lodash/omit"
 import { constants, getBtcPurpose } from '../util/helpers';
 import localStorage from '../util/localStorage';

@@ -1,7 +1,7 @@
 import differenceBy from "lodash/differenceBy";
 import unionBy from "lodash/unionBy";
 import { useState } from "react";
-import { LatticeRecord } from "../types/records";
+import { AddressTag } from "../types/records";
 
 /**
  * `useRecords` is a React hook that builds off of `useState` to add setter functions for
@@ -10,7 +10,7 @@ import { LatticeRecord } from "../types/records";
  *  - `removeRecords` - Removes passed in array of records from records in state by comparing ids
  * @param defaultValue - any array to set the default value
  */
-export const useRecords = <T extends LatticeRecord>(
+export const useRecords = <T extends AddressTag>(
   defaultValue: T[],
   id = "id"
 ): [T[], (toAdd: T[]) => void, (toRemove: T[]) => void, () => void] => {

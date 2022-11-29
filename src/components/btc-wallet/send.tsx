@@ -1,11 +1,9 @@
 import React from 'react';
-import 'antd/dist/antd.dark.css'
 import { Alert, Button, Card, Row, Input, InputNumber, Empty, Statistic, notification } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { PageContent } from '../index'
 import { allChecks } from '../../util/sendChecks';
 import { constants, buildBtcTxReq, getBtcNumTxBytes } from '../../util/helpers'
-import '../styles.css'
 import { AppContext } from '../../store/AppContext';
 const RECIPIENT_ID = "recipient";
 const VALUE_ID = "value";

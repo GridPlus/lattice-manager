@@ -93,7 +93,8 @@ export const constants = {
       },
       PAGE_KEYS: {
         LANDING: 'LANDING',
-        ADDRESS_TAGS: 'ADDRESS_TAGS:',
+        ADDRESS_TAGS: 'ADDRESS_TAGS',
+        EXPLORER: 'EXPLORER',
         SETTINGS: 'SETTINGS',
         WALLET: 'WALLET',
         SEND: 'SEND',

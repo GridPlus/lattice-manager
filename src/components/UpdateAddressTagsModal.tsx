@@ -1,6 +1,6 @@
-import { MinusSquareFilled, PlusOutlined } from "@ant-design/icons";
+import { MinusSquareFilled } from "@ant-design/icons";
 import { Button, Form, Input, Modal, Space } from "antd";
-import { useAddresses } from "../hooks/useAddresses";
+import { useAddressTags } from "../hooks/useAddressTags";
 import { sendErrorNotification } from "../util/sendErrorNotification";
 
 const MAX_RECORD_LEN = 63; // 63 characters max for both key and value
@@ -13,12 +13,17 @@ export const valIsDuplicatedErrorMessage =
 export const addingValIsDuplicatedErrorMessage =
   "You are already trying to add a tag with this name.";
 
-export const AddAddressesModal = ({
+  // TODO: Allows users to update many address tags at once
+  // NOT CURRENTLY USED
+
+export const UpdateAddressTagsModal = ({
   isModalVisible,
   setIsModalVisible,
-  initialAddresses,
+  initialAddressTags,
 }) => {
-  const { addresses, addAddresses, isLoadingAddresses } = useAddresses();
+  const { addressTags, addAddressTags, removeAddressTags, isLoadingAddressTags } =
+    useAddressTags();
+    
   const [form] = Form.useForm();
 
   const hideModal = () => {
@@ -30,11 +35,17 @@ export const AddAddressesModal = ({
   };
 
   const onFinish = () => {
-    form
-      .validateFields()
-      .then(({ addressesToAdd }) =>
-        addAddresses(addressesToAdd).then(hideModal)
-      );
+    form.validateFields().then(async ({ addressTagsToAdd }) => {
+      const currentAddressTags = addressTags.filter((address) => {
+        return initialAddressTags.find(
+          (initialAddress) =>
+            initialAddress.key === address.key &&
+            initialAddress.val === address.val
+        );
+      });
+      await removeAddressTags(currentAddressTags).catch(sendErrorNotification);
+      addAddressTags(addressTagsToAdd).then(hideModal).catch(sendErrorNotification);
+    });
   };
 
   const onFinishFailed = () => {
@@ -47,11 +58,12 @@ export const AddAddressesModal = ({
   return (
     <>
       <Modal
-        title="Add Address Tags"
+        title="Update Address Tags"
         visible={isModalVisible}
         maskClosable={false}
         onOk={form.submit}
         onCancel={handleCancel}
+        width={550}
         destroyOnClose={true}
         footer={[
           <Button type="link" onClick={handleCancel} key="cancel">
@@ -59,11 +71,11 @@ export const AddAddressesModal = ({
           </Button>,
           <Button
             type="primary"
-            loading={isLoadingAddresses}
+            loading={isLoadingAddressTags}
             onClick={form.submit}
             key="add"
           >
-            Add
+            Update
           </Button>,
         ]}
       >
@@ -77,7 +89,7 @@ export const AddAddressesModal = ({
             preserve={false}
             layout="vertical"
           >
-            <Form.List name="addressesToAdd" initialValue={initialAddresses}>
+            <Form.List name="addressTagsToAdd" initialValue={initialAddressTags}>
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (
@@ -86,7 +98,7 @@ export const AddAddressesModal = ({
                       style={{
                         display: "flex",
                         flexDirection: "row",
-                        marginBottom: "1em",
+                        marginBottom: ".1em",
                         width: "100%",
                       }}
                     >
@@ -101,6 +113,9 @@ export const AddAddressesModal = ({
                           {...restField}
                           name={[name, "key"]}
                           validateTrigger={["onChange", "onBlur"]}
+                          style={{
+                            marginBottom: ".25em",
+                          }}
                           rules={[
                             { required: true, message: "Address is required." },
                             {
@@ -108,37 +123,37 @@ export const AddAddressesModal = ({
                               type: "string",
                               message: `Must be shorter than ${MAX_RECORD_LEN} characters.`,
                             },
-                            {
-                              validator: (rule, key) => {
-                                return addresses?.some((r) => r.key === key)
-                                  ? Promise.reject(
-                                      new Error(keyIsDuplicatedErrorMessage)
-                                    )
-                                  : Promise.resolve();
-                              },
-                              validateTrigger: ["onChange", "onBlur"],
-                            },
-                            {
-                              validator: (rule, key) => {
-                                const matchingKeys = form
-                                  .getFieldsValue()
-                                  .addressesToAdd?.filter((r) => r.key === key);
-                                return matchingKeys.length > 1
-                                  ? Promise.reject(
-                                      new Error(
-                                        addingKeyIsDuplicatedErrorMessage
-                                      )
-                                    )
-                                  : Promise.resolve();
-                              },
-                              validateTrigger: ["onChange", "onBlur"],
-                            },
+                            // {
+                            //   validator: (rule, key) => {
+                            //     return addressTags?.some((r) => r.key === key)
+                            //       ? Promise.reject(
+                            //           new Error(keyIsDuplicatedErrorMessage)
+                            //         )
+                            //       : Promise.resolve();
+                            //   },
+                            //   validateTrigger: ["onChange", "onBlur"],
+                            // },
+                            // {
+                            //   validator: (rule, key) => {
+                            //     const matchingKeys = form
+                            //       .getFieldsValue()
+                            //       .addressTagsToAdd?.filter((r) => r.key === key);
+                            //     return matchingKeys.length > 1
+                            //       ? Promise.reject(
+                            //           new Error(
+                            //             addingKeyIsDuplicatedErrorMessage
+                            //           )
+                            //         )
+                            //       : Promise.resolve();
+                            //   },
+                            //   validateTrigger: ["onChange", "onBlur"],
+                            // },
                           ]}
                         >
                           <Input
                             addonBefore={"Address"}
                             data-testid={`${name}-address-input`}
-                            disabled={isLoadingAddresses}
+                            disabled={isLoadingAddressTags}
                           />
                         </Form.Item>
                         <Form.Item
@@ -152,37 +167,37 @@ export const AddAddressesModal = ({
                               type: "string",
                               message: `Must be shorter than ${MAX_RECORD_LEN} characters.`,
                             },
-                            {
-                              validator: (rule, val) => {
-                                return addresses?.some((r) => r.val === val)
-                                  ? Promise.reject(
-                                      new Error(valIsDuplicatedErrorMessage)
-                                    )
-                                  : Promise.resolve();
-                              },
-                              validateTrigger: ["onChange", "onBlur"],
-                            },
-                            {
-                              validator: (rule, val) => {
-                                const matchingVals = form
-                                  .getFieldsValue()
-                                  .addressesToAdd?.filter((r) => r.val === val);
-                                return matchingVals.length > 1
-                                  ? Promise.reject(
-                                      new Error(
-                                        addingValIsDuplicatedErrorMessage
-                                      )
-                                    )
-                                  : Promise.resolve();
-                              },
-                              validateTrigger: ["onChange", "onBlur"],
-                            },
+                            // {
+                            //   validator: (rule, val) => {
+                            //     return addressTags?.some((r) => r.val === val)
+                            //       ? Promise.reject(
+                            //           new Error(valIsDuplicatedErrorMessage)
+                            //         )
+                            //       : Promise.resolve();
+                            //   },
+                            //   validateTrigger: ["onChange", "onBlur"],
+                            // },
+                            // {
+                            //   validator: (rule, val) => {
+                            //     const matchingVals = form
+                            //       .getFieldsValue()
+                            //       .addressTagsToAdd?.filter((r) => r.val === val);
+                            //     return matchingVals.length > 1
+                            //       ? Promise.reject(
+                            //           new Error(
+                            //             addingValIsDuplicatedErrorMessage
+                            //           )
+                            //         )
+                            //       : Promise.resolve();
+                            //   },
+                            //   validateTrigger: ["onChange", "onBlur"],
+                            // },
                           ]}
                         >
                           <Input
                             addonBefore={"Name"}
                             data-testid={`${name}-name-input`}
-                            disabled={isLoadingAddresses}
+                            disabled={isLoadingAddressTags}
                           />
                         </Form.Item>
                       </div>
@@ -190,7 +205,7 @@ export const AddAddressesModal = ({
                         <Button
                           type="text"
                           icon={<MinusSquareFilled />}
-                          disabled={isLoadingAddresses}
+                          disabled={isLoadingAddressTags}
                           style={{
                             height: "auto",
                             marginLeft: "1em",
@@ -204,17 +219,6 @@ export const AddAddressesModal = ({
                       ) : null}
                     </div>
                   ))}
-                  <Form.Item>
-                    <Button
-                      type="dashed"
-                      block
-                      icon={<PlusOutlined />}
-                      disabled={isLoadingAddresses}
-                      onClick={add}
-                    >
-                      Add Another Address Tag
-                    </Button>
-                  </Form.Item>
                 </>
               )}
             </Form.List>

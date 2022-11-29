@@ -2,32 +2,32 @@ import _ from "lodash";
 import isEmpty from "lodash/isEmpty";
 import { useCallback, useContext } from "react";
 import { AppContext } from "../store/AppContext";
-import { LatticeRecord } from "../types/records";
+import { Address, AddressTag } from "../types/records";
 import { constants } from "../util/helpers";
 import { sendErrorNotification } from "../util/sendErrorNotification";
 const { ADDRESSES_PER_PAGE, ADDRESS_RECORD_TYPE } = constants;
 
 /**
- * The `useAddresses` hook is used to manage the external calls for fetching, adding, and removing
+ * The `useAddressTags` hook is used to manage the external calls for fetching, adding, and removing
  * key-value address data on the user's Lattice and caching that data in `store`.
  */
-export const useAddresses = () => {
+export const useAddressTags = () => {
   const {
     session,
-    isLoadingAddresses,
-    setIsLoadingAddresses,
-    addresses,
-    addAddressesToState,
-    removeAddressesFromState,
-    resetAddressesInState,
+    isLoadingAddressTags,
+    setIsLoadingAddressTags,
+    addressTags,
+    addAddressTagsToState,
+    removeAddressTagsFromState,
+    resetAddressTagsInState,
   } = useContext(AppContext);
 
   /**
    * Fetches the installed addresses from the user's Lattice.
    */
-  const fetchAddresses = useCallback(
+  const fetchAddressTags = useCallback(
     async (fetched = 0) => {
-      setIsLoadingAddresses(true);
+      setIsLoadingAddressTags(true);
 
       return session.client
         .getKvRecords({
@@ -35,55 +35,55 @@ export const useAddresses = () => {
           n: ADDRESSES_PER_PAGE,
         })
         .then(async (res) => {
-          addAddressesToState(res.records);
+          addAddressTagsToState(res.records);
           const totalFetched = res.fetched + fetched;
           const remainingToFetch = res.total - totalFetched;
           if (remainingToFetch > 0) {
-            await fetchAddresses(fetched + res.fetched);
+            await fetchAddressTags(fetched + res.fetched);
           }
         })
         .catch((err) => {
           sendErrorNotification({
             ...err,
-            onClick: fetchAddresses,
+            onClick: fetchAddressTags,
           });
         })
         .finally(() => {
-          setIsLoadingAddresses(false);
+          setIsLoadingAddressTags(false);
         });
     },
-    [addAddressesToState, session, setIsLoadingAddresses]
+    [addAddressTagsToState, session.client, setIsLoadingAddressTags]
   );
 
   /**
    * Removes installed addresses from the user's Lattice.
    */
-  const removeAddresses = (selectedAddresses: LatticeRecord[]) => {
-    const ids = selectedAddresses.map((r) => parseInt(r.id));
+  const removeAddressTags = (selectedAddressTags: AddressTag[]) => {
+    const ids = selectedAddressTags.map((r) => parseInt(r.id));
     if (isEmpty(ids)) return;
-    setIsLoadingAddresses(true);
+    setIsLoadingAddressTags(true);
 
     return session.client
       .removeKvRecords({ ids })
       .then(() => {
-        removeAddressesFromState(selectedAddresses);
+        removeAddressTagsFromState(selectedAddressTags);
       })
       .catch((err) => {
         sendErrorNotification({
           ...err,
-          onClick: () => removeAddresses(selectedAddresses),
+          onClick: () => removeAddressTags(selectedAddressTags),
         });
       })
       .finally(() => {
-        setIsLoadingAddresses(false);
+        setIsLoadingAddressTags(false);
       });
   };
 
   /**
    * Adds new addresses to the user's Lattice.
    */
-  const addAddresses = async (addressesToAdd: LatticeRecord[]) => {
-    setIsLoadingAddresses(true);
+  const addAddressTags = async (addressesToAdd: Address[]) => {
+    setIsLoadingAddressTags(true);
 
     /**
      * Transform `addressesToAdd` data into chunks of size `ADDRESSES_PER_PAGE` with shape `{ key:
@@ -97,9 +97,10 @@ export const useAddresses = () => {
       )
       .value();
 
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<Buffer[]>(async (resolve, reject) => {
+      let results = [];
       for await (const records of recordsList) {
-        await session.client
+        const result = await session.client
           .addKvRecords({
             caseSensitive: false,
             type: ADDRESS_RECORD_TYPE,
@@ -109,29 +110,34 @@ export const useAddresses = () => {
             sendErrorNotification(err);
             reject(err);
           });
+        if (result) {
+          results.push(result);
+        }
       }
-      resolve();
+      if (results.length) {
+        resolve(results);
+      } else {
+        reject();
+      }
     })
-      .then(async () => {
-        // TODO: Remove fetch and call addAddressesToState() with the address data when FW is
+      .then(async (newAddrs) => {
+        // TODO: Remove fetch and call addAddressTagsToState() with the address data when FW is
         //  updated to return address data. See GitHub issue:
         //  https://github.com/GridPlus/k8x_firmware_production/issues/2323
-        await fetchAddresses();
+        await fetchAddressTags();
+        return newAddrs;
       })
-      .catch(sendErrorNotification)
       .finally(() => {
-        setIsLoadingAddresses(false);
+        setIsLoadingAddressTags(false);
       });
   };
 
   return {
-    fetchAddresses,
-    addresses,
-    addAddresses,
-    addAddressesToState,
-    removeAddresses,
-    removeAddressesFromState,
-    resetAddressesInState,
-    isLoadingAddresses,
+    addressTags,
+    fetchAddressTags,
+    addAddressTags,
+    removeAddressTags,
+    isLoadingAddressTags,
+    resetAddressTagsInState,
   };
 };
