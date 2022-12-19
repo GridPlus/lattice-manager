@@ -302,6 +302,7 @@ class SDKSession {
 
   async sign (req) {
     // Get the tx payload to broadcast
+    console.log({request: JSON.stringify(req)})
     return this.client
       .sign(req)
       .then(res => {
