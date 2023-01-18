@@ -15,6 +15,7 @@ import localStorage from '../util/localStorage';
 import { AppContext } from '../store/AppContext';
 import ExplorerPage from './ExplorerPage';
 import type { MenuProps } from 'antd/es/menu';
+import { sendErrorNotification } from '../util/sendErrorNotification';
 type MenuItem = Required<MenuProps>['items'][number];
 
 const { Content, Footer, Sider } = Layout;
@@ -484,10 +485,14 @@ class Main extends React.Component<any, MainState> {
         }
       })
       .catch((err) => {
-        // If there was an error here, the user probably entered the wrong secret
-        const pairErr =
-          "Failed to pair. You either entered the wrong code or have already connected to this app.";
-        this.setError({ msg: pairErr, cb: this.connectSession });
+         // If there was an error here, the user probably entered the wrong secret
+         sendErrorNotification({
+          message: "Failed to pair",
+          description: "You may have entered either the incorrect password or pairing code. Please try again.",
+        });
+        this.cancelConnect();
+        this.context.session.client = null;
+        this.unwait();
       });
   }
 
