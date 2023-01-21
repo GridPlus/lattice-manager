@@ -23,9 +23,11 @@ const Landing = ({ goToPage }) => {
 
   return (
     <PageContent>
-      <Card style={{ textAlign: "center" }}
-              headStyle={{ fontSize: "32px" }}
-              title="Lattice Manager">
+      <Card
+        style={{ textAlign: "center" }}
+        headStyle={{ fontSize: "32px" }}
+        title="Lattice Manager"
+      >
         <div
           style={{
             display: "flex",

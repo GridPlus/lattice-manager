@@ -4,10 +4,13 @@ import React, { useState } from "react";
 
 /**
  * Allows the user to edit text inline by rendering
- * the string as a button that converts the string 
+ * the string as a button that converts the string
  * into a text field when clicked by the user.
  */
-export const NameEditor = ({ name, setName }: {
+export const NameEditor = ({
+  name,
+  setName,
+}: {
   name: string;
   setName: (name: string) => void;
 }) => {

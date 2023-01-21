@@ -18,7 +18,8 @@ export const AddAddressTagsModal = ({
   setIsModalVisible,
   initialAddressTags,
 }) => {
-  const { addressTags, addAddressTags, isLoadingAddressTags } = useAddressTags();
+  const { addressTags, addAddressTags, isLoadingAddressTags } =
+    useAddressTags();
   const [form] = Form.useForm();
 
   const hideModal = () => {
@@ -77,7 +78,10 @@ export const AddAddressTagsModal = ({
             preserve={false}
             layout="vertical"
           >
-            <Form.List name="addressTagsToAdd" initialValue={initialAddressTags}>
+            <Form.List
+              name="addressTagsToAdd"
+              initialValue={initialAddressTags}
+            >
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (
@@ -122,7 +126,9 @@ export const AddAddressTagsModal = ({
                               validator: (rule, key) => {
                                 const matchingKeys = form
                                   .getFieldsValue()
-                                  .addressTagsToAdd?.filter((r) => r.key === key);
+                                  .addressTagsToAdd?.filter(
+                                    (r) => r.key === key
+                                  );
                                 return matchingKeys.length > 1
                                   ? Promise.reject(
                                       new Error(
@@ -166,7 +172,9 @@ export const AddAddressTagsModal = ({
                               validator: (rule, val) => {
                                 const matchingVals = form
                                   .getFieldsValue()
-                                  .addressTagsToAdd?.filter((r) => r.val === val);
+                                  .addressTagsToAdd?.filter(
+                                    (r) => r.val === val
+                                  );
                                 return matchingVals.length > 1
                                   ? Promise.reject(
                                       new Error(

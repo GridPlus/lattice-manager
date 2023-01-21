@@ -13,17 +13,21 @@ export const valIsDuplicatedErrorMessage =
 export const addingValIsDuplicatedErrorMessage =
   "You are already trying to add a tag with this name.";
 
-  // TODO: Allows users to update many address tags at once
-  // NOT CURRENTLY USED
+// TODO: Allows users to update many address tags at once
+// NOT CURRENTLY USED
 
 export const UpdateAddressTagsModal = ({
   isModalVisible,
   setIsModalVisible,
   initialAddressTags,
 }) => {
-  const { addressTags, addAddressTags, removeAddressTags, isLoadingAddressTags } =
-    useAddressTags();
-    
+  const {
+    addressTags,
+    addAddressTags,
+    removeAddressTags,
+    isLoadingAddressTags,
+  } = useAddressTags();
+
   const [form] = Form.useForm();
 
   const hideModal = () => {
@@ -44,7 +48,9 @@ export const UpdateAddressTagsModal = ({
         );
       });
       await removeAddressTags(currentAddressTags).catch(sendErrorNotification);
-      addAddressTags(addressTagsToAdd).then(hideModal).catch(sendErrorNotification);
+      addAddressTags(addressTagsToAdd)
+        .then(hideModal)
+        .catch(sendErrorNotification);
     });
   };
 
@@ -89,7 +95,10 @@ export const UpdateAddressTagsModal = ({
             preserve={false}
             layout="vertical"
           >
-            <Form.List name="addressTagsToAdd" initialValue={initialAddressTags}>
+            <Form.List
+              name="addressTagsToAdd"
+              initialValue={initialAddressTags}
+            >
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (

@@ -1,12 +1,18 @@
-import { Client } from 'gridplus-sdk';
-import { SDKAddresses } from '../types/SDKAddresses';
+import { Client } from "gridplus-sdk";
+import { SDKAddresses } from "../types/SDKAddresses";
 import {
-  broadcastBtcTx, constants, fetchBtcPrice,
-  fetchBtcTxs, fetchBtcUtxos, filterUniqueObjects, getBtcPurpose, harden
-} from '../util/helpers';
-import { default as StorageSession } from '../util/storageSession';
-const Buffer = require('buffer/').Buffer;
-const ReactCrypto = require('gridplus-react-crypto').default;
+  broadcastBtcTx,
+  constants,
+  fetchBtcPrice,
+  fetchBtcTxs,
+  fetchBtcUtxos,
+  filterUniqueObjects,
+  getBtcPurpose,
+  harden,
+} from "../util/helpers";
+import { default as StorageSession } from "../util/storageSession";
+import { Buffer } from "buffer/";
+import { default as ReactCrypto } from "gridplus-react-crypto";
 
 class SDKSession {
   client: Client;
@@ -23,7 +29,7 @@ class SDKSession {
   lastFetchedBtcData: number;
   btcPrice: number;
 
-  constructor(deviceID, stateUpdateHandler, name=null, opts: any = {}) {
+  constructor(deviceID, stateUpdateHandler, name = null, opts: any = {}) {
     this.client = null;
     this.crypto = null;
     this.name = name || constants.DEFAULT_APP_NAME; // app name
@@ -38,15 +44,17 @@ class SDKSession {
     this.page = 1; // (1-indexed)
 
     // Configurable settings
-    this.baseUrl = opts.customEndpoint ? opts.customEndpoint : constants.BASE_SIGNING_URL;
+    this.baseUrl = opts.customEndpoint
+      ? opts.customEndpoint
+      : constants.BASE_SIGNING_URL;
 
     // BTC wallet data
-    this.addresses = {};          // Contains BTC and BTC_CHANGE addresses
-    this.btcTxs = [];             // Contains all txs for all addresses
-    this.btcUtxos = [];           // Contains all utxos for all addresses
-    this.lastFetchedBtcData = 0;  // Timestamp containing the last time we updated data
-    this.btcPrice = 0;            // Price in dollars of full unit BTC
-    
+    this.addresses = {}; // Contains BTC and BTC_CHANGE addresses
+    this.btcTxs = []; // Contains all txs for all addresses
+    this.btcUtxos = []; // Contains all utxos for all addresses
+    this.lastFetchedBtcData = 0; // Timestamp containing the last time we updated data
+    this.btcPrice = 0; // Price in dollars of full unit BTC
+
     // Go time
     this.getBtcWalletData();
   }
@@ -71,17 +79,16 @@ class SDKSession {
     this.btcTxs = [];
     this.btcUtxos = [];
   }
-  
+
   getBtcDisplayAddress() {
     // If we have set the next address to use, display that.
     // Otherwise, fallback on the first address.
-    const lastUsed = this._getLastUsedBtcAddrIdx()
+    const lastUsed = this._getLastUsedBtcAddrIdx();
     if (lastUsed > -1 && this.addresses.BTC[lastUsed + 1])
       return this.addresses.BTC[lastUsed + 1];
     else if (this.addresses.BTC && this.addresses.BTC.length > 0)
       return this.addresses.BTC[0];
-    else
-      return null;
+    else return null;
   }
 
   getActiveWallet() {
@@ -89,7 +96,7 @@ class SDKSession {
     return this.client.getActiveWallet();
   }
 
-  setPage(newPage=1) {
+  setPage(newPage = 1) {
     this.page = newPage;
   }
 
@@ -101,7 +108,8 @@ class SDKSession {
   dryAddresses() {
     const driedAddrs: SDKAddresses = {};
     const hasBTCAddrs = this.addresses.BTC && this.addresses.BTC.length > 0;
-    const hasBTCChangeAddrs = this.addresses.BTC_CHANGE && this.addresses.BTC_CHANGE.length > 0;
+    const hasBTCChangeAddrs =
+      this.addresses.BTC_CHANGE && this.addresses.BTC_CHANGE.length > 0;
     const BTC_PURPOSE = getBtcPurpose();
     if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
       // We cannot continue if the wallet is hidden
@@ -136,7 +144,7 @@ class SDKSession {
   }
 
   saveBtcWalletData() {
-    // This function should never be called without a deviceID 
+    // This function should never be called without a deviceID
     // or StorageSession
     if (!this.deviceID || !this.storageSession) return;
 
@@ -146,7 +154,7 @@ class SDKSession {
     // not very useful to store.
     const BTC_PURPOSE = getBtcPurpose();
     if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
-      console.error('Cannot save BTC wallet data when wallet is hidden');
+      console.error("Cannot save BTC wallet data when wallet is hidden");
       return;
     }
     const walletData = {
@@ -158,11 +166,11 @@ class SDKSession {
           lastFetchedBtcData: this.lastFetchedBtcData,
         },
         btcPrice: this.btcPrice,
-      }
+      },
     };
     const activeWallet = this.client ? this.client.getActiveWallet() : null;
     if (this.client && activeWallet !== null) {
-      const wallet_uid = activeWallet.uid.toString('hex');
+      const wallet_uid = activeWallet.uid.toString("hex");
       this.storageSession.save(this.deviceID, wallet_uid, walletData);
     }
   }
@@ -177,7 +185,7 @@ class SDKSession {
       // Make sure the btc wallet is enabled
       const BTC_PURPOSE = getBtcPurpose();
       if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
-        console.error('Cannot get wallet data when wallet is hidden.');
+        console.error("Cannot get wallet data when wallet is hidden.");
         return;
       }
       // If we have a client and if it has a non-zero active wallet UID,
@@ -187,11 +195,10 @@ class SDKSession {
         // No active wallet -- reset addresses
         this.addresses = {};
       } else {
-        const uid = activeWallet.uid.toString('hex')
+        const uid = activeWallet.uid.toString("hex");
         // Rehydrate the data
         const data = this.storageSession.getWalletData(this.deviceID, uid);
-        if (!data || !data[constants.BTC_WALLET_STORAGE_KEY])
-          return;
+        if (!data || !data[constants.BTC_WALLET_STORAGE_KEY]) return;
         const walletData = data[constants.BTC_WALLET_STORAGE_KEY];
         // Price is saved outside of the purpose sub-object
         if (walletData.btcPrice) {
@@ -199,8 +206,7 @@ class SDKSession {
         }
         // Unpack wallet data associated with the current btc purpose
         const purposeSpecificData = walletData[BTC_PURPOSE];
-        if (!purposeSpecificData)
-          return;
+        if (!purposeSpecificData) return;
         if (purposeSpecificData.addresses) {
           this.rehydrateAddresses(purposeSpecificData.addresses);
         }
@@ -217,12 +223,12 @@ class SDKSession {
     }
   }
 
-  _tryConnect(deviceID, pw, cb, _triedLocal=false) {
+  _tryConnect(deviceID, pw, cb, _triedLocal = false) {
     let baseUrl = this.baseUrl;
     let tmpTimeout = constants.SHORT_TIMEOUT; // Artificially short timeout just for connecting
     if (_triedLocal === false) {
-      baseUrl = `http://lattice-${deviceID}.local:8080`
-      tmpTimeout = 5000 // Shorten the timeout even more since we should discover quickly if device is on LAN
+      baseUrl = `http://lattice-${deviceID}.local:8080`;
+      tmpTimeout = 5000; // Shorten the timeout even more since we should discover quickly if device is on LAN
     }
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
@@ -234,13 +240,13 @@ class SDKSession {
     // attach it.
     let client;
     try {
-      client = new Client({ 
+      client = new Client({
         name: this.name,
         privKey: key,
         baseUrl,
         timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
         skipRetryOnWrongWallet: false,
-      })
+      });
     } catch (err) {
       return cb ? cb(err.toString()) : err.toString();
     }
@@ -282,49 +288,46 @@ class SDKSession {
   async refreshWallets(cb) {
     if (this.client) {
       const prevWallet = JSON.stringify(this.client.getActiveWallet());
-      const isPaired = await this.client.connect(this.deviceID).catch(cb)
+      const isPaired = await this.client.connect(this.deviceID).catch(cb);
       // If we lost connection, the user most likely removed the pairing and will need to repair
-      if (false === this.client.isPaired)
-        return cb(constants.LOST_PAIRING_ERR);
+      if (false === this.client.isPaired) return cb(constants.LOST_PAIRING_ERR);
       // If we pulled a new active wallet, reset balances + transactions
       // so we can reload a new set.
       const newWallet = JSON.stringify(this.client.getActiveWallet());
-      if (newWallet !== prevWallet)
-        this.resetStateData();
+      if (newWallet !== prevWallet) this.resetStateData();
       // Update storage. This will remap to a new localStorage key if the wallet UID
       // changed. If we didn't get an active wallet, it will just clear out the addresses
       this.getBtcWalletData();
       return cb(null, isPaired);
     } else {
-      return cb('Lost connection to Lattice. Please refresh.');
+      return cb("Lost connection to Lattice. Please refresh.");
     }
   }
 
-  async sign (req) {
+  async sign(req) {
     // Get the tx payload to broadcast
-    return this.client
-      .sign(req)
-      .then(res => {
-        if (res && res.tx) {
-          broadcastBtcTx(res.tx, (err, txid) => {
-            if (err) throw new Error(`Error broadcasting transaction: ${err.message}`);
-            return txid
-          });
-        } else {
-          throw new Error('Signing transaction invalid.');
-        }
-      })
+    return this.client.sign(req).then((res) => {
+      if (res && res.tx) {
+        broadcastBtcTx(res.tx, (err, txid) => {
+          if (err)
+            throw new Error(`Error broadcasting transaction: ${err.message}`);
+          return txid;
+        });
+      } else {
+        throw new Error("Signing transaction invalid.");
+      }
+    });
   }
 
   _genPrivKey(deviceID, pw, name) {
     const key = Buffer.concat([
-      Buffer.from(pw), 
+      Buffer.from(pw),
       Buffer.from(deviceID),
       Buffer.from(name),
-    ])
+    ]);
     // Create a new instance of ReactCrypto using the key as entropy
     this.crypto = new ReactCrypto(key);
-    return this.crypto.createHash('sha256').update(key).digest();
+    return this.crypto.createHash("sha256").update(key).digest();
   }
 
   //----------------------------------------------------
@@ -333,15 +336,15 @@ class SDKSession {
 
   // Get a set of either pending or confirmed transactions from the full
   // set of known BTC txs
-  getBtcTxs(confirmed=true) {
+  getBtcTxs(confirmed = true) {
     const txs: any[] = [];
     this.btcTxs.forEach((t) => {
       if (confirmed && t.confirmed) {
-        txs.push(t)
+        txs.push(t);
       } else if (!confirmed && !t.confirmed) {
-        txs.push(t)
+        txs.push(t);
       }
-    })
+    });
     return txs;
   }
 
@@ -356,7 +359,7 @@ class SDKSession {
     let balance = 0;
     this.btcUtxos.forEach((u) => {
       balance += u.value;
-    })
+    });
     return balance;
   }
 
@@ -368,32 +371,41 @@ class SDKSession {
   // Returns a callback containing params (error, numFetched), where `numFetched` is
   // the total number of *new* addresses we fetched. If this number is >0, it signifies
   // we should re-fetch transaction data for our new set of addresses.
-  fetchBtcAddresses(cb, isChange=false, totalFetched={regular: 0, change: 0}) {
+  fetchBtcAddresses(
+    cb,
+    isChange = false,
+    totalFetched = { regular: 0, change: 0 }
+  ) {
     const BTC_PURPOSE = getBtcPurpose();
     if (BTC_PURPOSE === constants.BTC_PURPOSE_NONE) {
       // We cannot continue if the wallet is hidden
-      return cb('Cannot request BTC addresses while wallet is hidden.');
+      return cb("Cannot request BTC addresses while wallet is hidden.");
     }
     const lastUsedIdx = this._getLastUsedBtcAddrIdx(isChange);
-    const currentAddrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
-    const GAP_LIMIT = isChange ?  constants.BTC_CHANGE_GAP_LIMIT : 
-                                  constants.BTC_MAIN_GAP_LIMIT;
+    const currentAddrs =
+      (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
+    const GAP_LIMIT = isChange
+      ? constants.BTC_CHANGE_GAP_LIMIT
+      : constants.BTC_MAIN_GAP_LIMIT;
     const targetIdx = lastUsedIdx + 1 + GAP_LIMIT;
     const maxToFetch = targetIdx - currentAddrs.length;
-    const nToFetch = Math.min(constants.BTC_ADDR_BLOCK_LEN, maxToFetch)
+    const nToFetch = Math.min(constants.BTC_ADDR_BLOCK_LEN, maxToFetch);
     if (nToFetch > 0) {
       // If we have closed our gap limit we need to get more addresses
       const changeIdx = isChange ? 1 : 0;
       const opts = {
-        startPath: [ 
-          BTC_PURPOSE, constants.BTC_COIN, harden(0), changeIdx, currentAddrs.length 
+        startPath: [
+          BTC_PURPOSE,
+          constants.BTC_COIN,
+          harden(0),
+          changeIdx,
+          currentAddrs.length,
         ],
         n: nToFetch,
         skipCache: true,
-      }
+      };
       this._getAddresses(opts, (err, addresses) => {
-        if (err)
-          return cb(err);
+        if (err) return cb(err);
         // Track the number of new addresses we fetched
         if (isChange) {
           totalFetched.change += nToFetch;
@@ -407,8 +419,8 @@ class SDKSession {
         } else {
           this.addresses.BTC = currentAddrs.concat(addresses);
         }
-        console.log('Fetched BTC', this.addresses.BTC)
-        console.log('Fetched BTC_CHANGE', this.addresses.BTC_CHANGE)
+        console.log("Fetched BTC", this.addresses.BTC);
+        console.log("Fetched BTC_CHANGE", this.addresses.BTC_CHANGE);
         // If we need to fetch more, recurse
         if (maxToFetch > nToFetch) {
           this.fetchBtcAddresses(cb, isChange, totalFetched);
@@ -419,7 +431,7 @@ class SDKSession {
           this.saveBtcWalletData();
           cb(null, totalFetched);
         }
-      })
+      });
     } else if (!isChange) {
       // If we are done fetching main BTC addresses, switch to the change path
       this.fetchBtcAddresses(cb, true, totalFetched);
@@ -441,12 +453,13 @@ class SDKSession {
   // Fetch transactions and UTXOs for all known BTC addresses (including change)
   // Calls to appropriate Bitcoin data provider and updates state internally.
   // Returns a callback with params (error)
-  fetchBtcStateData(opts, cb, isChange=false, txs=[], utxos=[]) {
+  fetchBtcStateData(opts, cb, isChange = false, txs = [], utxos = []) {
     // Determine which addresses for which to fetch state.
     // If we get non-zero `opts` values it means this is a follow up call
     // and we only want to fetch data for new addresses we've collected
     // rather than data for all known addresses.
-    let addrs = (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
+    let addrs =
+      (isChange ? this.addresses.BTC_CHANGE : this.addresses.BTC) || [];
     if (opts && opts.regular > 0) {
       addrs = this.addresses.BTC.slice(-opts.regular);
       opts.regular = 0;
@@ -461,20 +474,16 @@ class SDKSession {
     fetchBtcPrice((err, btcPrice) => {
       if (err) {
         // Don't fail out if we can't get the price - just display 0
-        console.error('Failed to fetch price:', err);
+        console.error("Failed to fetch price:", err);
         btcPrice = 0;
       }
       fetchBtcTxs(addrs, txs, (err, _txs) => {
-        if (err)
-          return cb(err);
-        else if (!_txs)
-          return cb('Failed to fetch transactions');
+        if (err) return cb(err);
+        else if (!_txs) return cb("Failed to fetch transactions");
         txs = txs.concat(_txs);
         fetchBtcUtxos(addrs, (err, _utxos) => {
-          if (err)
-            return cb(err);
-          else if (!_utxos)
-            return cb('Failed to fetch UTXOs');
+          if (err) return cb(err);
+          else if (!_utxos) return cb("Failed to fetch UTXOs");
           utxos = utxos.concat(_utxos);
           if (!isChange) {
             // Once we get data for our BTC addresses, switch to change
@@ -484,19 +493,22 @@ class SDKSession {
             this.btcPrice = btcPrice;
             this.lastFetchedBtcData = Math.floor(Date.now());
             const newTxs = this.btcTxs.concat(txs);
-            this.btcTxs = filterUniqueObjects(newTxs, ['id']);
+            this.btcTxs = filterUniqueObjects(newTxs, ["id"]);
             this._processBtcTxs();
             const newUtxos = this.btcUtxos.concat(utxos);
             // UTXOs should already be filtered but it doesn't hurt to
             // do a sanity check filter here.
-            this.btcUtxos =   filterUniqueObjects(newUtxos, ['id', 'vout'])
-                              .sort((a, b) => { return b.value - a.value });
+            this.btcUtxos = filterUniqueObjects(newUtxos, ["id", "vout"]).sort(
+              (a, b) => {
+                return b.value - a.value;
+              }
+            );
             this.saveBtcWalletData();
             cb(null);
           }
-        })
-      })
-    })
+        });
+      });
+    });
   }
 
   // Generic caller to SDK getAddress route with retry mechanism
@@ -521,8 +533,8 @@ class SDKSession {
   }
 
   // Get the highest index address that has been used for either BTC or BTC_CHANGE
-  _getLastUsedBtcAddrIdx(change=false) {
-    const coin = change ? 'BTC_CHANGE' : 'BTC';
+  _getLastUsedBtcAddrIdx(change = false) {
+    const coin = change ? "BTC_CHANGE" : "BTC";
     const addrs = this.addresses[coin] || [];
     const txs = this.btcTxs || [];
     let lastUsed = -1;
@@ -532,13 +544,12 @@ class SDKSession {
         txs[i].inputs.forEach((input) => {
           if (addrs.indexOf(input.addr) > maxUsed)
             maxUsed = addrs.indexOf(input.addr);
-        })
+        });
         txs[i].outputs.forEach((output) => {
           if (addrs.indexOf(output.addr) > maxUsed)
             maxUsed = addrs.indexOf(output.addr);
-        })
-        if (maxUsed > lastUsed)
-          lastUsed = maxUsed;
+        });
+        if (maxUsed > lastUsed) lastUsed = maxUsed;
       }
     }
     return lastUsed;
@@ -558,7 +569,9 @@ class SDKSession {
       // Determine if this is an outgoing transaction or not based on inputs.
       // We consider a transaction as "incoming" if *every* input was signed by
       // an external address.
-      tx.incoming = tx.inputs.every(input => allAddrs.indexOf(input.addr) === -1);
+      tx.incoming = tx.inputs.every(
+        (input) => allAddrs.indexOf(input.addr) === -1
+      );
 
       // Fill in the recipient. If this is an outgoing transaction, it will
       // always be the first output. Otherwise, we consider the recipient
@@ -571,7 +584,7 @@ class SDKSession {
             // Mark the recipient as the first of our addresses we find
             tx.recipient = allAddrs[allAddrs.indexOf(output.addr)];
           }
-        })
+        });
         if (!tx.recipient) {
           // Fallback to the first output. This should not be possible after
           // the loop above.
@@ -586,7 +599,7 @@ class SDKSession {
         let inputSum = 0;
         tx.inputs.forEach((input) => {
           inputSum += input.value;
-        })
+        });
         let internalOutputSum = 0;
         let externalOutputSum = 0;
         tx.outputs.forEach((output) => {
@@ -595,7 +608,7 @@ class SDKSession {
           } else {
             externalOutputSum += output.value;
           }
-        })
+        });
         if (inputSum === internalOutputSum + tx.fee) {
           // Edge case: sent to internal address, i.e. internal transaction
           tx.value = 0;
@@ -608,14 +621,15 @@ class SDKSession {
           if (allAddrs.indexOf(output.addr) > -1) {
             tx.value += output.value;
           }
-        })
+        });
       }
       processedTxs.push(tx);
-    })
-    const sortedTxs = processedTxs
-                      .sort((a, b) => { return b.timestamp - a.timestamp })
+    });
+    const sortedTxs = processedTxs.sort((a, b) => {
+      return b.timestamp - a.timestamp;
+    });
     this.btcTxs = sortedTxs;
   }
 }
 
-export default SDKSession
+export default SDKSession;

@@ -1,1 +1,1 @@
-export type LoginData = { deviceID: string, password: string }
+export type LoginData = { deviceID: string; password: string };
