@@ -5,7 +5,7 @@ export const sendErrorNotification = ({
   description,
   onClick,
   onClose,
-  duration = 4.5
+  duration = 4.5,
 }: {
   message: string;
   description?: string;

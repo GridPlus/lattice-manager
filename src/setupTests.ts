@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/extend-expect";
 
 Object.defineProperty(globalThis, "matchMedia", {
   writable: true,
-  value: ((query) => ({
+  value: (query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -11,7 +11,7 @@ Object.defineProperty(globalThis, "matchMedia", {
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
-  })),
+  }),
 });
 
 console.warn = jest.fn();

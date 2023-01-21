@@ -1,9 +1,9 @@
 import localStorage from "../localStorage";
 
 const key = "test";
-const newKey = "newKey"
-const index = "newIndex"
-const indexTwo = "newIndexTwo"
+const newKey = "newKey";
+const index = "newIndex";
+const indexTwo = "newIndexTwo";
 const value = 1;
 const valueTwo = 2;
 const obj = { [key]: value };
@@ -52,13 +52,15 @@ describe("localStorage", () => {
   test("should rename keyring items", () => {
     localStorage.setKeyringItem(key, obj);
     expect(localStorage.getKeyringItem(key)).toStrictEqual(obj);
-    localStorage.renameKeyringItem(key, newKey)
+    localStorage.renameKeyringItem(key, newKey);
     expect(localStorage.getKeyringItem(newKey)).toStrictEqual(obj);
-    localStorage.renameKeyringItem(newKey, newKey)
+    localStorage.renameKeyringItem(newKey, newKey);
     expect(localStorage.getKeyringItem(newKey)).toStrictEqual(obj);
-    localStorage.renameKeyringItem(newKey, newKey.toLowerCase())
+    localStorage.renameKeyringItem(newKey, newKey.toLowerCase());
     expect(localStorage.getKeyringItem(newKey)).toStrictEqual({});
-    expect(localStorage.getKeyringItem(newKey.toLowerCase())).toStrictEqual(obj);
+    expect(localStorage.getKeyringItem(newKey.toLowerCase())).toStrictEqual(
+      obj
+    );
   });
 
   test("should store loginId", () => {
@@ -76,21 +78,29 @@ describe("localStorage", () => {
   });
 
   test("should store login", () => {
-    localStorage.setLogin({deviceID: key, password: value});
-    expect(localStorage.getLogin()).toStrictEqual({deviceID: key, password: value});
+    localStorage.setLogin({ deviceID: key, password: value });
+    expect(localStorage.getLogin()).toStrictEqual({
+      deviceID: key,
+      password: value,
+    });
     localStorage.removeLogin();
-    expect(localStorage.getLogin()).toStrictEqual({deviceID: null, password: null});
+    expect(localStorage.getLogin()).toStrictEqual({
+      deviceID: null,
+      password: null,
+    });
   });
 
   test("should store device indexed items", () => {
-    localStorage.setLogin({deviceID: key, password: value});
-    localStorage.setDeviceIndexedItem(index, value)
+    localStorage.setLogin({ deviceID: key, password: value });
+    localStorage.setDeviceIndexedItem(index, value);
     expect(localStorage.getDeviceIndexedItem(index)).toStrictEqual(value);
-    localStorage.setDeviceIndexedItem(indexTwo, valueTwo)
+    localStorage.setDeviceIndexedItem(indexTwo, valueTwo);
     expect(localStorage.getDeviceIndexedItem(index)).toStrictEqual(value);
-    localStorage.removeDeviceIndexedItem(indexTwo)
-    expect(localStorage.getDeviceIndexedItem(indexTwo)).toStrictEqual(undefined);
-    localStorage.removeLogin()
+    localStorage.removeDeviceIndexedItem(indexTwo);
+    expect(localStorage.getDeviceIndexedItem(indexTwo)).toStrictEqual(
+      undefined
+    );
+    localStorage.removeLogin();
     expect(localStorage.getDeviceIndexedItem(index)).toStrictEqual(undefined);
   });
 });

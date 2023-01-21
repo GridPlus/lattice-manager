@@ -3,7 +3,7 @@ import React from "react";
 import { MockProvider } from "../../testUtils/MockProvider";
 import { useFeature } from "../useFeature";
 
-const renderUseFeature = ([ fix, minor, major ], overrides?): any => {
+const renderUseFeature = ([fix, minor, major], overrides?): any => {
   const session = {
     client: {
       getFwVersion: () => ({ fix, minor, major }),
@@ -23,7 +23,7 @@ const renderUseFeature = ([ fix, minor, major ], overrides?): any => {
 
 describe("useFeature", () => {
   test("should return false if version is too low", () => {
-    const { CAN_VIEW_CONTRACTS } = renderUseFeature([0,10,5])
+    const { CAN_VIEW_CONTRACTS } = renderUseFeature([0, 10, 5]);
     expect(CAN_VIEW_CONTRACTS).toBeFalsy();
   });
 

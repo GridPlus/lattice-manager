@@ -25,7 +25,7 @@ export const AppContextProvider = ({
     addAddressTagsToState,
     removeAddressTagsFromState,
     resetAddressTagsInState,
-  ] = useRecords(localStorage.getAddresses() ?? [])
+  ] = useRecords(localStorage.getAddresses() ?? []);
 
   const defaultContext = {
     isMobile,

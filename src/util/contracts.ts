@@ -1,7 +1,11 @@
-import { ContractDefinition, ContractRecord, LatticeContract } from "./../types/contracts";
+import {
+  ContractDefinition,
+  ContractRecord,
+  LatticeContract,
+} from "./../types/contracts";
 
 export const transformContractDefinitionToContractRecord = (
-  def: ContractDefinition 
+  def: ContractDefinition
 ): ContractRecord => {
   return {
     id: def.name,
@@ -12,7 +16,7 @@ export const transformContractDefinitionToContractRecord = (
 };
 
 export const transformLatticeContractToContractRecord = (
-  lc: LatticeContract 
+  lc: LatticeContract
 ): ContractRecord => {
   return {
     id: lc.header.name,

@@ -1,40 +1,40 @@
-import React from 'react';
-import { Alert, Button, Card, Col, Input, Row, Modal } from 'antd'
-import { DesktopOutlined, LinkOutlined } from '@ant-design/icons';
-import { Settings } from './index'
-import { constants } from '../util/helpers'
-import { NameEditor } from './NameEditor';
-import { LoginData } from '../types/authentication';
-import { AppContext } from '../store/AppContext';
+import React from "react";
+import { Alert, Button, Card, Col, Input, Row, Modal } from "antd";
+import { DesktopOutlined, LinkOutlined } from "@ant-design/icons";
+import { Settings } from "./index";
+import { constants } from "../util/helpers";
+import { NameEditor } from "./NameEditor";
+import { LoginData } from "../types/authentication";
+import { AppContext } from "../store/AppContext";
 
 type ConnectProps = {
-  submitCb: (data: LoginData, showLoading: boolean) => void,
-  cancelConnect: () => void,
-  name: string,
-  keyringName: string,
-  setKeyringName: (name: string) => void,
-  errMsg: string
-}
+  submitCb: (data: LoginData, showLoading: boolean) => void;
+  cancelConnect: () => void;
+  name: string;
+  keyringName: string;
+  setKeyringName: (name: string) => void;
+  errMsg: string;
+};
 
 type ConnectState = {
-  errMsg: string,
-  isLoading: boolean,
-  modal: boolean,
-  showSettings: boolean
-}
+  errMsg: string;
+  isLoading: boolean;
+  modal: boolean;
+  showSettings: boolean;
+};
 
 class Connect extends React.Component<ConnectProps, ConnectState> {
   static contextType = AppContext;
   context = this.context as any;
-  
+
   constructor(props) {
-    super(props)
+    super(props);
     this.state = {
       errMsg: null,
       isLoading: false,
       modal: false,
       showSettings: false,
-    }
+    };
     this.handleCancel = this.handleCancel.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.renderMsg = this.renderMsg.bind(this);
@@ -47,29 +47,39 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
       //@ts-expect-error
       this.input.focus();
     }
-    this.setState({ isLoading: false  })
+    this.setState({ isLoading: false });
   }
 
   componentDidUpdate() {
-    if (this.props.name !== constants.DEFAULT_APP_NAME && document.title !== 'Lattice Connector') {
-      document.title = 'Lattice Connector'
+    if (
+      this.props.name !== constants.DEFAULT_APP_NAME &&
+      document.title !== "Lattice Connector"
+    ) {
+      document.title = "Lattice Connector";
     }
   }
 
   componentWillUnmount() {
-    this.setState({ isLoading: false })
+    this.setState({ isLoading: false });
   }
 
   handleSubmit() {
-    const deviceID = (document.getElementById("deviceIdInput") as HTMLInputElement).value;
-    const password = (document.getElementById("passwordInput") as HTMLInputElement).value;
+    const deviceID = (
+      document.getElementById("deviceIdInput") as HTMLInputElement
+    ).value;
+    const password = (
+      document.getElementById("passwordInput") as HTMLInputElement
+    ).value;
     if (password.length < 8) {
-      this.setState({ isLoading: true, errMsg: "Your password must be at least 8 characters."})
+      this.setState({
+        isLoading: true,
+        errMsg: "Your password must be at least 8 characters.",
+      });
     } else {
-      this.setState({ isLoading: true, errMsg: null })
+      this.setState({ isLoading: true, errMsg: null });
       // Call the connect function. Skip the loading screen so we don't
       // leave the landing page until we connect.
-      this.props.submitCb({deviceID, password}, false);
+      this.props.submitCb({ deviceID, password }, false);
     }
   }
 
@@ -79,52 +89,60 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
   }
 
   renderConnectButton() {
-    if (this.state.isLoading && 
-        this.state.errMsg === null &&
-        this.props.errMsg === null) {
+    if (
+      this.state.isLoading &&
+      this.state.errMsg === null &&
+      this.props.errMsg === null
+    ) {
       return (
         <div>
-          <Button type="primary"
-                  style={{ margin: '20px 0 0 0' }}
-                  loading>
+          <Button type="primary" style={{ margin: "20px 0 0 0" }} loading>
             Connecting...
           </Button>
-          <br/>
+          <br />
           <Button type="link" onClick={this.handleCancel}>
             Cancel
           </Button>
         </div>
-      )
+      );
     } else {
       return (
-        <Button type="primary" onClick={this.handleSubmit} style={{ margin: '20px 0 0 0'}}>
+        <Button
+          type="primary"
+          onClick={this.handleSubmit}
+          style={{ margin: "20px 0 0 0" }}
+        >
           Connect
         </Button>
-      )
+      );
     }
   }
 
-  renderForm(getFieldDecorator) {
+  renderForm() {
     return (
       <div>
         <Row justify="center">
-          <Input  placeholder="DeviceID" 
-                  id="deviceIdInput" 
-                  //@ts-expect-error
-                  ref={i => {this.input = i}}
-                  style={{ margin: '10px 0 0 0', width: "70%"}} />
+          <Input
+            placeholder="DeviceID"
+            id="deviceIdInput"
+            ref={(i) => {
+              //@ts-expect-error
+              this.input = i;
+            }}
+            style={{ margin: "10px 0 0 0", width: "70%" }}
+          />
         </Row>
         <Row justify="center">
-          <Input.Password placeholder="Password (create for new logins)" 
-                          id="passwordInput" 
-                          onPressEnter={this.handleSubmit} 
-                          style={{ margin: '20px 0 0 0', width: "70%"}} />
+          <Input.Password
+            placeholder="Password (create for new logins)"
+            id="passwordInput"
+            onPressEnter={this.handleSubmit}
+            style={{ margin: "20px 0 0 0", width: "70%" }}
+          />
         </Row>
-        <Row justify="center">
-          {this.renderConnectButton()}
-        </Row>
+        <Row justify="center">{this.renderConnectButton()}</Row>
       </div>
-    )
+    );
   }
 
   showModal() {
@@ -139,33 +157,54 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
     return (
       <div>
         <center>
-          <h3><b>New User Setup</b></h3>
+          <h3>
+            <b>New User Setup</b>
+          </h3>
         </center>
         <p>
-          You can use this page to establish a connection between <b>{this.props.name}</b>&nbsp; and your Lattice 
-          hardware wallet device.&nbsp;
-          <i>For more general device setup information, please see the&nbsp;
-            <a className="lattice-a" href="https://gridplus.io/setup" target={"_blank"} rel={"noopener noreferrer"}>
-            Lattice setup page
-            </a>.</i>
+          You can use this page to establish a connection between{" "}
+          <b>{this.props.name}</b>&nbsp; and your Lattice hardware wallet
+          device.&nbsp;
+          <i>
+            For more general device setup information, please see the&nbsp;
+            <a
+              className="lattice-a"
+              href="https://gridplus.io/setup"
+              target={"_blank"}
+              rel={"noopener noreferrer"}
+            >
+              Lattice setup page
+            </a>
+            .
+          </i>
         </p>
-        <h3><b>Step 1:</b></h3>
+        <h3>
+          <b>Step 1:</b>
+        </h3>
         <p>
-          Unlock your Lattice and find its <b>Device ID</b> on the main menu. This is a six-character code.
+          Unlock your Lattice and find its <b>Device ID</b> on the main menu.
+          This is a six-character code.
         </p>
-        <h3><b>Step 2:</b></h3>
+        <h3>
+          <b>Step 2:</b>
+        </h3>
         <p>
-          Once you have your Device ID, specify a <b>password</b>. This does <i>not</i> secure any value and 
-          is <i>not</i> associated with your wallet seed - it is only used to send secure requests to your device. 
-          If you lose your password, you can remove the permission on your device and re-connect with a new one.
+          Once you have your Device ID, specify a <b>password</b>. This does{" "}
+          <i>not</i> secure any value and is <i>not</i> associated with your
+          wallet seed - it is only used to send secure requests to your device.
+          If you lose your password, you can remove the permission on your
+          device and re-connect with a new one.
         </p>
-        <h3><b>Step 3:</b></h3>
+        <h3>
+          <b>Step 3:</b>
+        </h3>
         <p>
-          Please ensure your Lattice is <b>online</b> and click "Connect". Your device is online if there is a single
-          wifi signal icon on the top-right of the screen.
+          Please ensure your Lattice is <b>online</b> and click "Connect". Your
+          device is online if there is a single wifi signal icon on the
+          top-right of the screen.
         </p>
       </div>
-    )
+    );
   }
 
   renderModal() {
@@ -180,12 +219,16 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
         >
           <Settings inModal={true} />
         </Modal>
-      )
+      );
     }
-     return (
+    return (
       <div>
         <Modal
-          title={this.props.name === constants.DEFAULT_APP_NAME ? this.props.name : 'Lattice Connector 🔗'}
+          title={
+            this.props.name === constants.DEFAULT_APP_NAME
+              ? this.props.name
+              : "Lattice Connector 🔗"
+          }
           footer={null}
           visible={this.state.modal}
           onOk={this.hideModal.bind(this)}
@@ -199,16 +242,22 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
 
   renderMsg() {
     let err;
-    if (this.state.errMsg)
-      err = this.state.errMsg;
-    else if (this.props.errMsg)
-      err = this.props.errMsg;
+    if (this.state.errMsg) err = this.state.errMsg;
+    else if (this.props.errMsg) err = this.props.errMsg;
     if (err)
       return (
-        <Alert  message={<p><b>Error:</b><br/>{err}</p>} 
-                type={"error"} 
-                style={{margin: "20px 0 0 0"}}
-                closable/>
+        <Alert
+          message={
+            <p>
+              <b>Error:</b>
+              <br />
+              {err}
+            </p>
+          }
+          type={"error"}
+          style={{ margin: "20px 0 0 0" }}
+          closable
+        />
       );
     return;
   }
@@ -216,7 +265,8 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
   render() {
     const spanWidth = this.context.isMobile ? 24 : 10;
     const spanOffset = this.context.isMobile ? 0 : 7;
-    const tooLong = this.props.keyringName !== null && this.props.keyringName.length < 5;
+    const tooLong =
+      this.props.keyringName !== null && this.props.keyringName.length < 5;
     return (
       <Row>
         {this.renderModal()}
@@ -224,47 +274,74 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
           <center>
             {this.renderMsg()}
             <Card bordered={true}>
-              <a  className='lattice-a'
-                  href="https://gridplus.io/lattice" 
-                  target='_blank' 
-                  rel='noopener noreferrer'
+              <a
+                className="lattice-a"
+                href="https://gridplus.io/lattice"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 {this.props.keyringName ? (
-                  <h2 style={{margin: "10px 0 0 0"}}>Lattice Connector <LinkOutlined/></h2>
+                  <h2 style={{ margin: "10px 0 0 0" }}>
+                    Lattice Connector <LinkOutlined />
+                  </h2>
                 ) : (
-                  <h2 style={{margin: "10px 0 0 0"}}>Lattice Manager<br/><DesktopOutlined/></h2>
+                  <h2 style={{ margin: "10px 0 0 0" }}>
+                    Lattice Manager
+                    <br />
+                    <DesktopOutlined />
+                  </h2>
                 )}
               </a>
               {this.props.keyringName ? (
-                <div style={{margin: "2em"}}>
+                <div style={{ margin: "2em" }}>
                   <br />
-                  <i><h3>Connect to:</h3></i>
+                  <i>
+                    <h3>Connect to:</h3>
+                  </i>
                   <NameEditor
                     name={this.props.keyringName}
                     setName={this.props.setKeyringName}
                   />
-                </div>) : null}
-              {/* @ts-expect-error */}
-              {tooLong ? (<p><b>Error: App name must be more than 4 characters.</b></p>) : this.renderForm()}
+                </div>
+              ) : null}
+              {tooLong ? (
+                <p>
+                  <b>Error: App name must be more than 4 characters.</b>
+                </p>
+              ) : (
+                this.renderForm()
+              )}
             </Card>
-            <Button type="link" onClick={this.showModal.bind(this)} style={{margin: "20px 0 0 0"}}>
+            <Button
+              type="link"
+              onClick={this.showModal.bind(this)}
+              style={{ margin: "20px 0 0 0" }}
+            >
               New User Info
             </Button>
-            <br/>
-            <Button type="link" onClick={() => {
-              this.setState({ showSettings: true }, this.showModal)
-            }}>
+            <br />
+            <Button
+              type="link"
+              onClick={() => {
+                this.setState({ showSettings: true }, this.showModal);
+              }}
+            >
               Settings
             </Button>
-            <br/>
-            <Button type="link" href="https://gridplus.io/lattice" target={"_blank"} rel={"noopener noreferrer"}>
+            <br />
+            <Button
+              type="link"
+              href="https://gridplus.io/lattice"
+              target={"_blank"}
+              rel={"noopener noreferrer"}
+            >
               About the Lattice
             </Button>
           </center>
         </Col>
       </Row>
-    )
+    );
   }
 }
 
-export default Connect
+export default Connect;

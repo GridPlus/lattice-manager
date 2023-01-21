@@ -1,18 +1,18 @@
-const Buffer = require('buffer/').Buffer
-const { validateBtcAddr } = require('./helpers');
+import { Buffer } from "buffer/";
+import { validateBtcAddr } from "./helpers";
 
 export const allChecks = {
-  'ETH': {
+  ETH: {
     full: checkEth,
     recipient: checkEthRecipient,
     value: checkNumericValue,
   },
-  'BTC': {
+  BTC: {
     full: checkBtc,
     recipient: validateBtcAddr,
     value: checkNumericValue,
-  }
-}
+  },
+};
 
 // Checks for Ethereum transfers (ETH or token)
 function checkEth(data) {
@@ -27,17 +27,20 @@ function checkBtc(data) {
 // Perform a check on the recipient and value
 // @returns bool -- true if params are both valid
 function fullCheck(data, recipientCheck) {
-  return true === recipientCheck(data.recipient) && true === checkNumericValue(data.value);
-} 
+  return (
+    true === recipientCheck(data.recipient) &&
+    true === checkNumericValue(data.value)
+  );
+}
 
 function checkEthRecipient(recipient) {
-  if (recipient === '') return null;
+  if (recipient === "") return null;
   try {
     // Make sure there is a 0x prefix
-    const isPrefixed = recipient.slice(0, 2) === '0x';
+    const isPrefixed = recipient.slice(0, 2) === "0x";
     // Check that the address contains exactly 20 hex bytes.
     // If any of the data is non-hex, the length will be shorter
-    const correctLength = Buffer.from(recipient.slice(2), 'hex').length === 20;
+    const correctLength = Buffer.from(recipient.slice(2), "hex").length === 20;
     return isPrefixed === true && correctLength === true;
   } catch (e) {
     return false;
@@ -45,7 +48,7 @@ function checkEthRecipient(recipient) {
 }
 
 function checkNumericValue(value) {
-  if (value === '') return false;
+  if (value === "") return false;
   try {
     const num = Number(value);
     return !isNaN(num) && num >= 0;

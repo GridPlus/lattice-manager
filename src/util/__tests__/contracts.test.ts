@@ -1,4 +1,8 @@
-import { ContractDefinition, ContractRecord, LatticeContract } from "./../../types/contracts";
+import {
+  ContractDefinition,
+  ContractRecord,
+  LatticeContract,
+} from "./../../types/contracts";
 import {
   transformContractDefinitionToContractRecord,
   transformLatticeContractToContractRecord,
@@ -7,7 +11,7 @@ import {
 describe("contract utilities", () => {
   test("transforms ContractDefinition to ContractRecord", () => {
     const mockDef: ContractDefinition = { name: "a", sig: "a", params: [] };
-  
+
     const expected: ContractRecord = {
       category: "",
       header: { name: "a", numParam: 0, sig: "a" },
@@ -21,7 +25,7 @@ describe("contract utilities", () => {
       expected
     );
   });
-  
+
   test("transforms LatticeContract to ContractRecord", () => {
     const mockDef: LatticeContract = {
       category: "",

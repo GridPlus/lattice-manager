@@ -1,9 +1,9 @@
 .ant-btn-link {
-  color: #94B3FD;
+  color: #94b3fd;
 }
 
 .ant-tabs-tab {
-  color: #94B3FD;
+  color: #94b3fd;
 }
 .ant-tabs-tab-active {
   color: #fff;
@@ -14,17 +14,17 @@
 }
 
 .ant-btn-background-ghost.ant-btn-primary {
-  color: #94B3FD;
-  border-color: #94B3FD;
+  color: #94b3fd;
+  border-color: #94b3fd;
   text-shadow: none;
 }
 
 .ant-spin {
-  color: #94B3FD;
+  color: #94b3fd;
 }
 
 .lattice-a {
-  color: #94B3FD;
+  color: #94b3fd;
 }
 
 .lattice-h1 {
@@ -38,8 +38,8 @@
 .lattice-pairing-box {
   border-radius: 25px;
   letter-spacing: 20px;
-  margin: '20px 0 0 0';
+  margin: "20px 0 0 0";
   text-align: center;
-  background-color: #94B3FD;
+  background-color: #94b3fd;
   color: #141414;
 }

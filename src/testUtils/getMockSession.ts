@@ -13,7 +13,6 @@ export const mockKvResponse = {
   total: 5,
 };
 
-
 export const mockContracts: ContractRecord[] = [
   {
     id: "a",
@@ -58,8 +57,8 @@ export const mockContracts: ContractRecord[] = [
 ];
 
 export const mockContractResponse: { records: ContractRecord[] } = {
-  records: mockContracts
-}
+  records: mockContracts,
+};
 
 /**
  * `getMockSession` returns a mock Session object with a Client object that has its public
@@ -79,7 +78,7 @@ export const getMockSession = (
     addKvRecords: jest.fn(async (records) => records),
     getKvRecords: jest.fn(async () => mockKvResponse),
     removeKvRecords: jest.fn(async () => true),
-    
+
     //Contracts
     getAbiRecords: jest.fn(async () => mockContractResponse),
     removeAbiRecords: jest.fn(async () => true),
