@@ -1,6 +1,7 @@
 import { waitFor } from "@testing-library/react";
 import { act, renderHook } from "@testing-library/react";
 import { useRequestFailed } from "../useRequestFailed";
+import { vi } from "vitest";
 
 const renderUseRequestFailed = () => {
   const {
@@ -12,7 +13,7 @@ describe("useRequestFailed", () => {
   test("should reset retry function", () => {
     const { retryFunction, setRetryFunctionWithReset } =
       renderUseRequestFailed();
-    const mockFn = jest.fn();
+    const mockFn = vi.fn();
 
     act(() => setRetryFunctionWithReset(mockFn));
     waitFor(() => expect(retryFunction).toBeTruthy());
@@ -24,7 +25,7 @@ describe("useRequestFailed", () => {
   test("should reset error", () => {
     const { error, setError, setRetryFunctionWithReset } =
       renderUseRequestFailed();
-    const mockFn = jest.fn();
+    const mockFn = vi.fn();
     const mockErr = "error";
 
     act(() => setRetryFunctionWithReset(mockFn));
