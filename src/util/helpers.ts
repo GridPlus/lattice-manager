@@ -1,13 +1,12 @@
 import localStorage from "./localStorage";
-import bs58check from "bs58check";
 import { bech32 } from "bech32";
+import bs58check from "bs58check";
 
 const HARDENED_OFFSET = 0x80000000;
 export const constants = {
   DEFAULT_APP_NAME: "Lattice Manager",
-  ENV: process.env.REACT_APP_ENV || "prod",
-  BASE_SIGNING_URL:
-    process.env.REACT_APP_BASE_SIGNING_URL || "https://signing.gridpl.us",
+  ENV: ENV || "prod",
+  BASE_SIGNING_URL: BASE_SIGNING_URL || "https://signing.gridpl.us",
   BTC_PROD_DATA_API: "https://blockchain.info",
   BTC_BROADCAST_ENDPOINT: "https://blockstream.info/api/tx",
   HARDENED_OFFSET,
@@ -16,26 +15,24 @@ export const constants = {
   ADDRESS_RECORD_TYPE: 0,
   CONTRACTS_PER_PAGE: 10,
   SHORT_TIMEOUT: 30000,
-  BTC_COIN: parseInt(process.env.REACT_APP_BTC_COIN) || HARDENED_OFFSET,
+  BTC_COIN: parseInt(BTC_COIN) || HARDENED_OFFSET,
   SATS_TO_BTC: Math.pow(10, 8),
   BTC_MAIN_GAP_LIMIT: 20,
   BTC_CHANGE_GAP_LIMIT: 1,
   BTC_ADDR_BLOCK_LEN: 10,
   BTC_CHANGE_ADDR_BLOCK_LEN: 1,
-  BTC_DEFAULT_FEE_RATE: process.env.REACT_APP_BTC_DEFAULT_FEE_RATE || 10, // 10 sat/byte
-  BTC_TX_BASE_URL:
-    process.env.REACT_APP_BTC_TX_BASE_URL ||
-    "https://www.blockchain.com/btc/tx",
+  BTC_DEFAULT_FEE_RATE: BTC_DEFAULT_FEE_RATE || 10, // 10 sat/byte
+  BTC_TX_BASE_URL: BTC_TX_BASE_URL || "https://www.blockchain.com/btc/tx",
   PAGE_SIZE: 20, // 20 transactions per requested page, per `gridplus-cloud-services`
   CONTRACT_PAGE_SIZE: 6,
   LOST_PAIRING_ERR: "NOT_PAIRED",
   LOST_PAIRING_MSG: "Cannot find Lattice connection. Please re-connect.",
-  BTC_TESTNET: process.env.REACT_APP_BTC_TESTNET || null,
-  KEYRING_LOGOUT_MS: parseInt(process.env.KEYRING_LOGOUT_MS) || 2592000000, // default 30 days
+  BTC_TESTNET: BTC_TESTNET || null,
+  KEYRING_LOGOUT_MS: parseInt(KEYRING_LOGOUT_MS) || 2592000000, // default 30 days
   KEYRING_DATA_PATH: "gridplus_web_wallet_keyring_logins", // item in localStorage
   ABI_PACK_URL: "https://gridplus.github.io/abi-pack-framework",
   LATTICE_CERT_SIGNER:
-    process.env.REACT_APP_LATTICE_CERT_SIGNER ||
+    LATTICE_CERT_SIGNER ||
     "0477816e8e83bb17c4309cc2e5aa134c573a5943154940095a423149f7cc0384ad52d33f1b4cd89c967bf211c039202df3a7899cb7543de4738c96a81cfde4b117",
   CONTRACTS_HELP_LINK:
     "https://docs.gridplus.io/gridplus-web-wallet/use-ethereum-smart-contract-abi-function-definitions",
