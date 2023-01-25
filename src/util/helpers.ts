@@ -28,7 +28,7 @@ export const constants = {
   LOST_PAIRING_ERR: "NOT_PAIRED",
   LOST_PAIRING_MSG: "Cannot find Lattice connection. Please re-connect.",
   BTC_TESTNET: BTC_TESTNET || null,
-  KEYRING_LOGOUT_MS: parseInt(KEYRING_LOGOUT_MS) || 2592000000, // default 30 days
+  KEYRING_LOGOUT_MS: 2592000000, // default 30 days
   KEYRING_DATA_PATH: "gridplus_web_wallet_keyring_logins", // item in localStorage
   ABI_PACK_URL: "https://gridplus.github.io/abi-pack-framework",
   LATTICE_CERT_SIGNER:

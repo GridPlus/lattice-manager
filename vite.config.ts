@@ -11,7 +11,6 @@ export default defineConfig(({ mode }) => ({
     BTC_DEFAULT_FEE_RATE: JSON.stringify(process.env.BTC_DEFAULT_FEE_RATE),
     BTC_TX_BASE_URL: JSON.stringify(process.env.BTC_TX_BASE_URL),
     BTC_TESTNET: JSON.stringify(process.env.BTC_TESTNET),
-    KEYRING_LOGOUT_MS: JSON.stringify(process.env.KEYRING_LOGOUT_MS),
     LATTICE_CERT_SIGNER: JSON.stringify(process.env.LATTICE_CERT_SIGNER),
     "process.env": {},
   },

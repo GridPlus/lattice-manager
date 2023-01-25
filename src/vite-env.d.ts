@@ -6,5 +6,4 @@ declare const BASE_SIGNING_URL: string;
 declare const BTC_DEFAULT_FEE_RATE: string;
 declare const BTC_TX_BASE_URL: string;
 declare const BTC_TESTNET: string;
-declare const KEYRING_LOGOUT_MS: string;
 declare const LATTICE_CERT_SIGNER: string;
