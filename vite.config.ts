@@ -8,7 +8,6 @@ export default defineConfig(({ mode }) => ({
     APP_VERSION: JSON.stringify(process.env.npm_package_version),
     ENV: JSON.stringify(process.env.ENV),
     BASE_SIGNING_URL: JSON.stringify(process.env.BASE_SIGNING_URL),
-    BTC_COIN: JSON.stringify(process.env.BTC_COIN),
     BTC_DEFAULT_FEE_RATE: JSON.stringify(process.env.BTC_DEFAULT_FEE_RATE),
     BTC_TX_BASE_URL: JSON.stringify(process.env.BTC_TX_BASE_URL),
     BTC_TESTNET: JSON.stringify(process.env.BTC_TESTNET),
