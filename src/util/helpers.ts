@@ -5,8 +5,7 @@ import bs58check from "bs58check";
 const HARDENED_OFFSET = 0x80000000;
 export const constants = {
   DEFAULT_APP_NAME: "Lattice Manager",
-  ENV: ENV || "prod",
-  BASE_SIGNING_URL: BASE_SIGNING_URL || "https://signing.gridpl.us",
+  BASE_SIGNING_URL: "https://signing.gridpl.us",
   BTC_PROD_DATA_API: "https://blockchain.info",
   BTC_BROADCAST_ENDPOINT: "https://blockstream.info/api/tx",
   HARDENED_OFFSET,
@@ -21,17 +20,17 @@ export const constants = {
   BTC_CHANGE_GAP_LIMIT: 1,
   BTC_ADDR_BLOCK_LEN: 10,
   BTC_CHANGE_ADDR_BLOCK_LEN: 1,
-  BTC_DEFAULT_FEE_RATE: BTC_DEFAULT_FEE_RATE || 10, // 10 sat/byte
-  BTC_TX_BASE_URL: BTC_TX_BASE_URL || "https://www.blockchain.com/btc/tx",
+  BTC_DEFAULT_FEE_RATE: 10, // 10 sat/byte
+  BTC_TX_BASE_URL: "https://www.blockchain.com/btc/tx",
   PAGE_SIZE: 20, // 20 transactions per requested page, per `gridplus-cloud-services`
   CONTRACT_PAGE_SIZE: 6,
   LOST_PAIRING_ERR: "NOT_PAIRED",
   LOST_PAIRING_MSG: "Cannot find Lattice connection. Please re-connect.",
-  BTC_TESTNET: BTC_TESTNET || null,
+  BTC_TESTNET: null,
   KEYRING_LOGOUT_MS: 2592000000, // default 30 days
   KEYRING_DATA_PATH: "gridplus_web_wallet_keyring_logins", // item in localStorage
   ABI_PACK_URL: "https://gridplus.github.io/abi-pack-framework",
-  LATTICE_CERT_SIGNER: 
+  LATTICE_CERT_SIGNER:
     "0477816e8e83bb17c4309cc2e5aa134c573a5943154940095a423149f7cc0384ad52d33f1b4cd89c967bf211c039202df3a7899cb7543de4738c96a81cfde4b117",
   CONTRACTS_HELP_LINK:
     "https://docs.gridplus.io/gridplus-web-wallet/use-ethereum-smart-contract-abi-function-definitions",
@@ -529,7 +528,6 @@ export function buildBtcTxReq(
     return { error: "Failed to build transaction." };
   }
   const bytesUsed = getBtcNumTxBytes(numInputs);
-  //@ts-expect-error
   const fee = Math.floor(bytesUsed * feeRate);
   // Build the request inputs
   const BASE_SIGNER_PATH = [

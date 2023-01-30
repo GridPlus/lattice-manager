@@ -782,11 +782,6 @@ class Main extends React.Component<any, MainState> {
       <Footer style={{ textAlign: "center", color: "#969696" }}>
         © {new Date().getFullYear()} GridPlus, Inc. &nbsp;&nbsp; | &nbsp;&nbsp;
         v{APP_VERSION}
-        {constants.ENV === "dev" ? (
-          <Tag color="blue" style={{ margin: "0 0 0 10px" }}>
-            DEV
-          </Tag>
-        ) : null}
       </Footer>
     );
   }
