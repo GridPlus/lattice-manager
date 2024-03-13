@@ -27,7 +27,16 @@ const AddressTagsPage = () => {
     if (isEmpty(addressTags) && !isLoadingAddressTags) {
       fetchAddressTags();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    const params = new URLSearchParams(window.location.search);
+    const encodedAddressTags = params.get('addresses')
+    const decodedAddressesToAdd = Buffer.from(encodedAddressTags, 'base64').toString()
+    const addressesToAdd = JSON.parse(decodedAddressesToAdd)
+    const initialAddressTags = addressesToAdd.map(({address, name})=>({key: address, val: name}))
+    if (initialAddressTags.length){
+      setInitialAddressTags(initialAddressTags)
+      setIsAddAddressTagsModalVisible(true)
+    }
   }, []);
 
   const extra = [

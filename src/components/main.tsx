@@ -129,10 +129,14 @@ class Main extends React.Component<any, MainState> {
     // to utilize window.postMessage once we connect.
     // We can extend this pattern to other apps in the future.
     const params = new URLSearchParams(window.location.search);
-    const keyringName = this.state.keyringName;
-    const hwCheck = params.get("hwCheck");
-    const forceLogin = params.get("forceLogin");
-
+    const keyringName = this.state.keyringName
+    const hwCheck = params.get('hwCheck')
+    const forceLogin = params.get('forceLogin')
+    const addressesToAdd = params.get('addresses')
+    if (addressesToAdd){
+      this.handleMenuChange({ key: PAGE_KEYS.ADDRESS_TAGS })
+    }
+    
     // Workaround to support Firefox extensions. See `returnKeyringData` below.
     const hasLoggedIn = params.get(LOGIN_PARAM);
     if (hasLoggedIn) {
