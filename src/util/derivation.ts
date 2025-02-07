@@ -6,6 +6,7 @@ export const DERIVATION_TYPE = {
   BITCOIN_LEGACY: "Bitcoin (Legacy)",
   BITCOIN_SEGWIT: "Bitcoin (Segwit)",
   BITCOIN_WRAPPED_SEGWIT: "Bitcoin (Wrapped Segwit)",
+  BITCOIN_XPUB: "Bitcoin (XPUB)",
   ETHEREUM: "Ethereum",
   SOLANA: "Solana",
 };
@@ -23,6 +24,9 @@ export const getDisplayStringForDerivationType = (
     case DERIVATION_TYPE.SOLANA:
       // Formatted Solana address
       return new PublicKey(data).toString();
+    case DERIVATION_TYPE.BITCOIN_XPUB:
+      // Return raw XPUB string
+      return data;
     default:
       // Formatted address
       return data;
@@ -36,6 +40,8 @@ export const getFlagForDerivationType = (derivationType: DerivationType) => {
   switch (derivationType) {
     case DERIVATION_TYPE.SOLANA:
       return GET_ADDR_FLAGS.ED25519_PUB;
+    case DERIVATION_TYPE.BITCOIN_XPUB:
+      return GET_ADDR_FLAGS.SECP256K1_XPUB;
     default:
       return undefined;
   }

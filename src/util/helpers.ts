@@ -103,6 +103,7 @@ export const constants = {
     WALLET: "WALLET",
     SEND: "SEND",
     RECEIVE: "RECEIVE",
+    XPUB: "XPUB",
   },
 };
 
