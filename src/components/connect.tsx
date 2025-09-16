@@ -22,6 +22,8 @@ type ConnectState = {
   isLoading: boolean;
   modal: boolean;
   showSettings: boolean;
+  deviceID: string;
+  password: string;
 };
 
 class Connect extends React.Component<ConnectProps, ConnectState> {
@@ -35,6 +37,8 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
       isLoading: false,
       modal: false,
       showSettings: false,
+      deviceID: "",
+      password: "",
     };
     this.handleCancel = this.handleCancel.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -50,13 +54,17 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
     }
     this.setState({ isLoading: false });
 
+    // Pre-populate input fields with stored credentials if available
     const keyringData = this.getKeyringDataFromURL();
     if (keyringData) {
-      this.submit(keyringData.deviceID, keyringData.password);
+      this.setState({
+        deviceID: keyringData.deviceID,
+        password: keyringData.password
+      });
     } else {
       const { deviceID, password } = localStorage.getLogin();
       if (deviceID && password) {
-        this.submit(deviceID, password);
+        this.setState({ deviceID, password });
       }
     }
   }
@@ -89,13 +97,7 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
   }
 
   handleSubmit() {
-    const deviceID = (
-      document.getElementById("deviceIdInput") as HTMLInputElement
-    ).value;
-    const password = (
-      document.getElementById("passwordInput") as HTMLInputElement
-    ).value;
-    this.submit(deviceID, password);
+    this.submit(this.state.deviceID, this.state.password);
   }
 
   handleCancel() {
@@ -156,6 +158,8 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
           <Input
             placeholder="DeviceID"
             id="deviceIdInput"
+            value={this.state.deviceID}
+            onChange={(e) => this.setState({ deviceID: e.target.value })}
             ref={(i) => {
               //@ts-expect-error
               this.input = i;
@@ -167,6 +171,8 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
           <Input.Password
             placeholder="Password (create for new logins)"
             id="passwordInput"
+            value={this.state.password}
+            onChange={(e) => this.setState({ password: e.target.value })}
             onPressEnter={this.handleSubmit}
             style={{ margin: "20px 0 0 0", width: "70%" }}
           />
