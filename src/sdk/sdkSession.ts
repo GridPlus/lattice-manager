@@ -224,22 +224,34 @@ class SDKSession {
   }
 
   _tryConnect(deviceID, pw, cb, _triedLocal = false) {
+    const connectionMethod = _triedLocal === false ? 'LAN' : 'cloud';
+    const startTime = Date.now();
+
+    console.log(`[LATTICE_CONNECTION] Starting connection attempt to device ${deviceID} via ${connectionMethod}`);
+    console.log(`[LATTICE_CONNECTION] App name: ${this.name}`);
+
     let baseUrl = this.baseUrl;
     let tmpTimeout = constants.SHORT_TIMEOUT; // Artificially short timeout just for connecting
     if (_triedLocal === false) {
       baseUrl = `http://lattice-${deviceID}.local:8080`;
       tmpTimeout = 5000; // Shorten the timeout even more since we should discover quickly if device is on LAN
     }
+
+    console.log(`[LATTICE_CONNECTION] Using baseUrl: ${baseUrl}, timeout: ${tmpTimeout}ms`);
+
     // Derive a keypair from the deviceID and password
     // This key doesn't hold any coins and only allows this app to make
     // requests to a particular device. Nevertheless, the user should
     // enter a reasonably strong password to prevent unwanted requests
     // from nefarious actors.
     const key = this._genPrivKey(deviceID, pw, this.name);
+    console.log(`[LATTICE_CONNECTION] Generated private key for device authentication`);
+
     // If no client exists in this session, create a new one and
     // attach it.
     let client;
     try {
+      console.log(`[LATTICE_CONNECTION] Creating new Client instance...`);
       client = new Client({
         name: this.name,
         privKey: key,
@@ -247,31 +259,61 @@ class SDKSession {
         timeout: tmpTimeout, // Artificially short timeout for simply locating the Lattice
         skipRetryOnWrongWallet: false,
       });
+      console.log(`[LATTICE_CONNECTION] Client created successfully`);
     } catch (err) {
-      return cb ? cb(err.toString()) : err.toString();
+      const errorMsg = err.toString();
+      console.error(`[LATTICE_CONNECTION] Failed to create Client: ${errorMsg}`);
+      console.error(`[LATTICE_CONNECTION] Client creation error details:`, err);
+      return cb ? cb(errorMsg) : errorMsg;
     }
+
+    console.log(`[LATTICE_CONNECTION] Initiating client.connect() to device ${deviceID}...`);
+    const connectStartTime = Date.now();
 
     return client
       .connect(deviceID)
       .then((isPaired) => {
+        const connectDuration = Date.now() - connectStartTime;
+        const totalDuration = Date.now() - startTime;
+
+        console.log(`[LATTICE_CONNECTION] ✅ Connection successful via ${connectionMethod}`);
+        console.log(`[LATTICE_CONNECTION] Connect duration: ${connectDuration}ms, total duration: ${totalDuration}ms`);
+        console.log(`[LATTICE_CONNECTION] Device paired status: ${isPaired}`);
+
         // Update the timeout to a longer one for future async requests
         client.timeout = constants.ASYNC_SDK_TIMEOUT;
+        console.log(`[LATTICE_CONNECTION] Updated client timeout to ${constants.ASYNC_SDK_TIMEOUT}ms for future requests`);
+
         this.client = client;
         // Setup a new storage session if these are new credentials.
         // (This call will be bypassed if the credentials are already saved
         // in localStorage because getBtcWalletData is also called in the constructor)
         this.deviceID = deviceID;
         this.getBtcWalletData();
+
+        console.log(`[LATTICE_CONNECTION] Connection setup completed successfully`);
         return cb ? cb(null, isPaired) : isPaired;
       })
       .catch((err) => {
+        const connectDuration = Date.now() - connectStartTime;
+        const totalDuration = Date.now() - startTime;
+
+        console.error(`[LATTICE_CONNECTION] ❌ Connection failed via ${connectionMethod} after ${connectDuration}ms`);
+        console.error(`[LATTICE_CONNECTION] Error details:`, err);
+
         if (err) {
           if (_triedLocal === false) {
-            console.warn(
-              "Failed to connect to Lattice over LAN. Falling back to cloud routing."
-            );
+            console.warn(`[LATTICE_CONNECTION] Failed to connect to Lattice over LAN after ${totalDuration}ms. Falling back to cloud routing.`);
             return this._tryConnect(deviceID, pw, cb, true);
           } else {
+            console.error(`[LATTICE_CONNECTION] Cloud connection also failed. Total time elapsed: ${totalDuration}ms`);
+            console.error(`[LATTICE_CONNECTION] Final error details:`, {
+              message: err.message || err,
+              stack: err.stack,
+              deviceID,
+              baseUrl,
+              timeout: tmpTimeout
+            });
             throw err;
           }
         } else if (_triedLocal === false) {

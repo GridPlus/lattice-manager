@@ -59,6 +59,7 @@ type MainState = {
   walletIsExternal: boolean;
   keyringName: string;
   openedByKeyring: boolean;
+  keyringConnectionFailed: boolean;
   hwCheck: string;
 };
 
@@ -95,6 +96,8 @@ class Main extends React.Component<any, MainState> {
       keyringName,
       // Was the app opened with a keyring in the url parameters
       openedByKeyring: !!keyringName,
+      // Track if keyring connection failed to prevent returning invalid data
+      keyringConnectionFailed: false,
       // Validation check on Lattice hardware. Should draw a separate component
       hwCheck: null,
     };
@@ -126,9 +129,9 @@ class Main extends React.Component<any, MainState> {
     window.addEventListener("resize", this.updateWidth);
 
     if (this.isMobile()) this.setState({ collapsed: true });
-    // Metamask connects through a keyring and in these cases we need
+    // Consuming libraries connect through a keyring and in these cases we need
     // to utilize window.postMessage once we connect.
-    // We can extend this pattern to other apps in the future.
+    // This pattern can be extended to other apps in the future.
     const params = new URLSearchParams(window.location.search);
     const keyringName = this.state.keyringName;
     const hwCheck = params.get("hwCheck");
@@ -229,37 +232,109 @@ class Main extends React.Component<any, MainState> {
   }
 
   returnKeyringData() {
-    if (!this.state.openedByKeyring) return;
+    console.log(`[KEYRING_RETURN] Starting returnKeyringData process`);
+    console.log(`[KEYRING_RETURN] State check - openedByKeyring: ${this.state.openedByKeyring}, connectionFailed: ${this.state.keyringConnectionFailed}`);
+
+    if (!this.state.openedByKeyring) {
+      console.warn(`[KEYRING_RETURN] ⚠️ Not opened by keyring, aborting return process`);
+      return;
+    }
+
+    // CRITICAL: Do not return data if the connection failed
+    if (this.state.keyringConnectionFailed) {
+      console.error(`[KEYRING_RETURN] 🚫 BLOCKED: Connection failed - refusing to return data to consuming library`);
+      console.error(`[KEYRING_RETURN] This prevents consuming library from receiving invalid/stale connection data`);
+      return;
+    }
+
+    console.log(`[KEYRING_RETURN] Saving login data for keyring: ${this.state.keyringName}`);
+
     // Save the login for later
-    localStorage.setKeyringItem(this.state.keyringName, {
+    const keyringData = {
       deviceID: this.state.deviceID,
       password: this.state.password,
       lastLogin: new Date().getTime(),
-    });
+    };
+
+    try {
+      localStorage.setKeyringItem(this.state.keyringName, keyringData);
+      console.log(`[KEYRING_RETURN] Successfully saved keyring data`);
+    } catch (err) {
+      console.error(`[KEYRING_RETURN] Failed to save keyring data:`, err);
+    }
+
     // Send the data back to the opener
     const data = {
       deviceID: this.state.deviceID,
       password: this.state.password,
       endpoint: constants.BASE_SIGNING_URL,
     };
+
+    console.log(`[KEYRING_RETURN] Preparing response data with endpoint: ${data.endpoint}`);
+
     // Check if there is a custom endpoint configured
     const settings = localStorage.getSettings();
     if (settings.customEndpoint && settings.customEndpoint !== "") {
+      console.log(`[KEYRING_RETURN] Using custom endpoint: ${settings.customEndpoint}`);
       data.endpoint = settings.customEndpoint;
     }
+
+    console.log(`[KEYRING_RETURN] Final response data prepared:`, {
+      deviceID: data.deviceID,
+      endpoint: data.endpoint,
+      hasPassword: !!data.password
+    });
+
     this.handleLogout();
+
+    // Check the window opener situation
+    console.log(`[KEYRING_RETURN] Window opener check - exists: ${!!window.opener}`);
+
     if (window.opener) {
       // If there is a `window.opener` we can just post back
-      window.opener.postMessage(JSON.stringify(data), "*");
-      window.close();
+      console.log(`[KEYRING_RETURN] Using window.opener.postMessage method`);
+
+      try {
+        const messageData = JSON.stringify(data);
+        console.log(`[KEYRING_RETURN] Sending postMessage with data length: ${messageData.length} characters`);
+
+        window.opener.postMessage(messageData, "*");
+        console.log(`[KEYRING_RETURN] ✅ PostMessage sent successfully, closing window...`);
+
+        window.close();
+      } catch (err) {
+        console.error(`[KEYRING_RETURN] ❌ Failed to send postMessage:`, err);
+        console.error(`[KEYRING_RETURN] Error details:`, {
+          message: err.message,
+          stack: err.stack,
+          dataSize: JSON.stringify(data).length
+        });
+      }
     } else {
       // Otherwise we need a workaround to let the originator
       // know we have logged in. We will put the login data
       // into the URL and the requesting app will fetch that.
       // Note that the requesting extension is now responsible for
       // closing this web page.
-      const enc = Buffer.from(JSON.stringify(data)).toString("base64");
-      window.location.href = `${window.location.href}&${LOGIN_PARAM}=${enc}`;
+      console.log(`[KEYRING_RETURN] No window.opener, using URL-based workaround`);
+
+      try {
+        const enc = Buffer.from(JSON.stringify(data)).toString("base64");
+        const newUrl = `${window.location.href}&${LOGIN_PARAM}=${enc}`;
+
+        console.log(`[KEYRING_RETURN] Encoded data length: ${enc.length} characters`);
+        console.log(`[KEYRING_RETURN] Redirecting to URL with login parameter...`);
+
+        window.location.href = newUrl;
+        console.log(`[KEYRING_RETURN] ✅ URL redirect initiated`);
+      } catch (err) {
+        console.error(`[KEYRING_RETURN] ❌ Failed to encode data or redirect:`, err);
+        console.error(`[KEYRING_RETURN] Error details:`, {
+          message: err.message,
+          stack: err.stack,
+          currentUrl: window.location.href
+        });
+      }
     }
   }
   //------------------------------------------
@@ -325,8 +400,18 @@ class Main extends React.Component<any, MainState> {
   // as we cannot connect.
   connectSession(data = this.state, showLoading = true) {
     const { deviceID, password } = data;
+    const sessionStartTime = Date.now();
+
+    console.log(`[KEYRING_CONNECTION] Starting connectSession for device: ${deviceID}`);
+    console.log(`[KEYRING_CONNECTION] Keyring details:`, {
+      keyringName: this.state.keyringName,
+      openedByKeyring: this.state.openedByKeyring,
+      showLoading
+    });
+
     // Sanity check -- this should never get hit
     if (!deviceID || !password) {
+      console.error(`[KEYRING_CONNECTION] Missing credentials - deviceID: ${!!deviceID}, password: ${!!password}`);
       //@ts-expect-error
       return this.setError({
         msg: "You must provide a deviceID and password. Please refresh and log in again. ",
@@ -334,35 +419,90 @@ class Main extends React.Component<any, MainState> {
     } else {
       this.setError();
     }
+
+    console.log(`[KEYRING_CONNECTION] Credentials validated, proceeding with connection...`);
+
     // Connect to the device
     this.connect(deviceID, password, () => {
+      console.log(`[KEYRING_CONNECTION] Local session setup completed, initiating SDK connection...`);
+
       // Create a new session with the deviceID and password provided.
       if (showLoading === true) {
         this.wait("Looking for your Lattice", this.cancelConnect);
       }
+
       this.context.session
         .connect(deviceID, password)
         .then((isPaired) => {
+          const sessionDuration = Date.now() - sessionStartTime;
+          console.log(`[KEYRING_CONNECTION] ✅ SDK connection successful after ${sessionDuration}ms`);
+          console.log(`[KEYRING_CONNECTION] Device paired status: ${isPaired}`);
+
           this.unwait();
+
           // If the request was before we got our callback, exit here
-          if (!this.context.session || this.state.deviceID !== deviceID) return;
+          if (!this.context.session || this.state.deviceID !== deviceID) {
+            console.warn(`[KEYRING_CONNECTION] Session state mismatch detected, aborting:`, {
+              sessionExists: !!this.context.session,
+              deviceIdMatch: this.state.deviceID === deviceID,
+              currentDeviceId: this.state.deviceID,
+              callbackDeviceId: deviceID
+            });
+            return;
+          }
+
+          console.log(`[KEYRING_CONNECTION] Processing successful connection...`);
+
           // We connected!
           // 1. Save these credentials to localStorage if this is NOT a keyring
           if (!this.state.openedByKeyring) {
+            console.log(`[KEYRING_CONNECTION] Saving login credentials to localStorage (non-keyring)`);
             localStorage.setLogin({ deviceID, password });
+          } else {
+            console.log(`[KEYRING_CONNECTION] Skipping localStorage save (keyring mode)`);
           }
+
           // 2. Clear errors and alerts
           this.setError();
+
           // 3. Proceed based on state
           if (isPaired && this.state.openedByKeyring) {
+            console.log(`[KEYRING_CONNECTION] Device paired and in keyring mode, returning data to consuming library...`);
             return this.returnKeyringData();
+          } else {
+            console.log(`[KEYRING_CONNECTION] Connection completed. Paired: ${isPaired}, Keyring mode: ${this.state.openedByKeyring}`);
           }
         })
         .catch((err) => {
-          localStorage.removeKeyringItem(this.state.keyringName);
+          const sessionDuration = Date.now() - sessionStartTime;
+          console.error(`[KEYRING_CONNECTION] ❌ SDK connection failed after ${sessionDuration}ms`);
+          console.error(`[KEYRING_CONNECTION] Error details:`, {
+            message: err.message,
+            stack: err.stack,
+            keyringName: this.state.keyringName,
+            openedByKeyring: this.state.openedByKeyring,
+            deviceID
+          });
+
+          // Mark keyring connection as failed if this was opened by a keyring
+          if (this.state.openedByKeyring) {
+            console.error(`[KEYRING_CONNECTION] 🚫 Marking keyring connection as failed - no data will be returned to consuming library`);
+            this.setState({ keyringConnectionFailed: true });
+          }
+
+          if (this.state.keyringName) {
+            console.log(`[KEYRING_CONNECTION] Cleaning up keyring data for: ${this.state.keyringName}`);
+            localStorage.removeKeyringItem(this.state.keyringName);
+          }
+
           this.setError({
             msg: err.message,
             cb: () => {
+              console.log(`[KEYRING_CONNECTION] Retrying connection...`);
+              // Reset the failure flag on retry
+              if (this.state.openedByKeyring) {
+                this.setState({ keyringConnectionFailed: false });
+              }
               this.connectSession(data);
             },
           });
@@ -499,6 +639,14 @@ class Main extends React.Component<any, MainState> {
         }
       })
       .catch((err) => {
+        console.error(`[KEYRING_PAIRING] ❌ Pairing failed:`, err);
+
+        // Mark keyring connection as failed if this was opened by a keyring
+        if (this.state.openedByKeyring) {
+          console.error(`[KEYRING_PAIRING] 🚫 Marking keyring connection as failed due to pairing failure`);
+          this.setState({ keyringConnectionFailed: true });
+        }
+
         // If there was an error here, the user probably entered the wrong secret
         sendErrorNotification({
           message: "Failed to pair",
@@ -506,6 +654,7 @@ class Main extends React.Component<any, MainState> {
             "You may have mistyped the pairing code, or this device is already paired and you entered the incorrect password. Please try again.",
           duration: null, // Don't auto-dismiss
         });
+
         this.setState({ deviceID: null, password: null });
         this.context.session.disconnect();
         localStorage.removeLogin();

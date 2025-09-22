@@ -106,18 +106,40 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
   }
 
   getKeyringDataFromURL = () => {
+    console.log(`[KEYRING] Checking URL for keyring parameters...`);
+
     const urlParams = new URLSearchParams(window.location.search);
     const keyringName = urlParams.get("keyring");
 
-    if (keyringName) {
-      const keyringData = localStorage.getKeyringItem(keyringName);
-      const { deviceID, password } = keyringData;
+    console.log(`[KEYRING] Keyring name from URL: ${keyringName}`);
 
-      if (deviceID && password) {
-        return { deviceID, password };
+    if (keyringName) {
+      console.log(`[KEYRING] Found keyring parameter, looking up stored data...`);
+
+      try {
+        const keyringData = localStorage.getKeyringItem(keyringName);
+        console.log(`[KEYRING] Retrieved keyring data:`, {
+          hasDeviceID: !!keyringData.deviceID,
+          hasPassword: !!keyringData.password,
+          lastLogin: keyringData.lastLogin
+        });
+
+        const { deviceID, password } = keyringData;
+
+        if (deviceID && password) {
+          console.log(`[KEYRING] ✅ Valid keyring credentials found for: ${keyringName}`);
+          return { deviceID, password };
+        } else {
+          console.warn(`[KEYRING] ⚠️ Incomplete keyring data - deviceID: ${!!deviceID}, password: ${!!password}`);
+        }
+      } catch (err) {
+        console.error(`[KEYRING] ❌ Error retrieving keyring data:`, err);
       }
+    } else {
+      console.log(`[KEYRING] No keyring parameter in URL`);
     }
 
+    console.log(`[KEYRING] No valid keyring data found, returning null`);
     return null;
   };
 
