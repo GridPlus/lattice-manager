@@ -442,7 +442,12 @@ class Main extends React.Component<any, MainState> {
 
           // If the request was before we got our callback, exit here
           if (!this.context.session || this.state.deviceID !== deviceID) {
-            console.warn(`[KEYRING_CONNECTION] Session state mismatch detected, aborting. Session exists: ${!!this.context.session}, DeviceID match: ${this.state.deviceID === deviceID}`);
+            console.warn(`[KEYRING_CONNECTION] Session state mismatch detected, aborting:`, {
+              sessionExists: !!this.context.session,
+              deviceIdMatch: this.state.deviceID === deviceID,
+              currentDeviceId: this.state.deviceID,
+              callbackDeviceId: deviceID
+            });
             return;
           }
 
