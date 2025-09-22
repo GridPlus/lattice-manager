@@ -240,7 +240,6 @@ class Main extends React.Component<any, MainState> {
       return;
     }
 
-    // CRITICAL: Do not return data if the connection failed
     if (this.state.keyringConnectionFailed) {
       console.error(`[KEYRING_RETURN] 🚫 BLOCKED: Connection failed - refusing to return data to consuming library`);
       console.error(`[KEYRING_RETURN] This prevents consuming library from receiving invalid/stale connection data`);
@@ -408,6 +407,12 @@ class Main extends React.Component<any, MainState> {
       openedByKeyring: this.state.openedByKeyring,
       showLoading
     });
+
+    // Reset failure flag at the start of any new connection attempt
+    if (this.state.openedByKeyring && this.state.keyringConnectionFailed) {
+      console.log(`[KEYRING_CONNECTION] Resetting keyringConnectionFailed flag for fresh attempt`);
+      this.setState({ keyringConnectionFailed: false });
+    }
 
     // Sanity check -- this should never get hit
     if (!deviceID || !password) {
