@@ -10,6 +10,12 @@ import { constants, getBtcPurpose } from "../../util/helpers";
 const { Search, TextArea } = Input;
 const SEARCH_ID = "xpub-data";
 
+const WALLET_TYPE_LABELS = {
+  [constants.BTC_PURPOSE_LEGACY]: "Legacy",
+  [constants.BTC_PURPOSE_WRAPPED_SEGWIT]: "Wrapped SegWit",
+  [constants.BTC_PURPOSE_SEGWIT]: "Native SegWit",
+} as const;
+
 interface XpubPageProps {
   session: any;
 }
@@ -78,19 +84,7 @@ const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
     }
   };
 
-  const getWalletTypeLabel = () => {
-    const btcPurpose = getBtcPurpose();
-    switch (btcPurpose) {
-      case constants.BTC_PURPOSE_LEGACY:
-        return "Legacy";
-      case constants.BTC_PURPOSE_WRAPPED_SEGWIT:
-        return "Wrapped SegWit";
-      case constants.BTC_PURPOSE_SEGWIT:
-        return "Native SegWit";
-      default:
-        return "Unknown";
-    }
-  };
+  const walletTypeLabel = WALLET_TYPE_LABELS[getBtcPurpose()] || "Unknown";
 
   const renderXpubBox = () => {
     if (isMobile) {
@@ -163,7 +157,7 @@ const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
       return (
         <div>
           <p style={{ marginBottom: 16, fontSize: '14px', color: '#666' }}>
-            Wallet Type: <strong>{getWalletTypeLabel()}</strong>
+            Wallet Type: <strong>{walletTypeLabel}</strong>
           </p>
           <Row justify="center">
             <QRCodeSVG
