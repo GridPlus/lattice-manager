@@ -5,6 +5,8 @@ import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../../store/AppContext";
 import { useFeature } from "../../hooks/useFeature";
 import { PageContent } from "../index";
+import { constants, getBtcPurpose } from "../../util/helpers";
+
 const { Search, TextArea } = Input;
 const SEARCH_ID = "xpub-data";
 
@@ -13,13 +15,14 @@ interface XpubPageProps {
 }
 
 const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
-  const context = useContext(AppContext);
+  const { isMobile } = useContext(AppContext);
   const { SUPPORTS_XPUB } = useFeature();
   const [xpub, setXpub] = useState<string | null>(null);
   const [windowWidth, setWindowWidth] = useState<number | undefined>(
     document.getElementById("main-content-inner")?.offsetWidth
   );
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     updateXpubAddress();
@@ -34,17 +37,31 @@ const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
   const updateXpubAddress = async () => {
     if (!session) return;
 
+    // Get the active BTC purpose (wallet type)
+    const btcPurpose = getBtcPurpose();
+    if (btcPurpose === constants.BTC_PURPOSE_NONE) {
+      setError("BTC Wallet is hidden. Please enable it in settings to view XPUB.");
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+
     try {
+      // Use the active wallet's BTC purpose as the derivation path
       const addresses = await session.client?.getAddresses({
-        startPath: [44 + 0x80000000, 0 + 0x80000000, 0 + 0x80000000],
-        flag: 6,
+        startPath: [btcPurpose, constants.BTC_COIN, 0 + constants.HARDENED_OFFSET],
+        flag: 6, // LatticeGetAddressesFlag.secp256k1Xpub
       });
+
       if (addresses && addresses.length > 0) {
         setXpub(addresses[0]);
+      } else {
+        setError("No XPUB returned from device");
       }
     } catch (err) {
       console.error("Error fetching XPUB:", err);
+      setError("Failed to fetch XPUB from device");
     } finally {
       setLoading(false);
     }
@@ -61,8 +78,22 @@ const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
     }
   };
 
+  const getWalletTypeLabel = () => {
+    const btcPurpose = getBtcPurpose();
+    switch (btcPurpose) {
+      case constants.BTC_PURPOSE_LEGACY:
+        return "Legacy";
+      case constants.BTC_PURPOSE_WRAPPED_SEGWIT:
+        return "Wrapped SegWit";
+      case constants.BTC_PURPOSE_SEGWIT:
+        return "Native SegWit";
+      default:
+        return "Unknown";
+    }
+  };
+
   const renderXpubBox = () => {
-    if (context.isMobile) {
+    if (isMobile) {
       return (
         <div>
           <TextArea
@@ -70,6 +101,7 @@ const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
             value={xpub}
             autoSize={{ minRows: 1, maxRows: 3 }}
             style={{ margin: "30px 0 0 0", textAlign: "center" }}
+            readOnly
           />
           <Button
             type="primary"
@@ -89,6 +121,7 @@ const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
         enterButton={<CopyOutlined />}
         onSearch={copyXpub}
         style={{ margin: "30px 0 0 0", textAlign: "center" }}
+        readOnly
       />
     );
   };
@@ -99,6 +132,17 @@ const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
         <div>
           <p>XPUB feature requires firmware version 0.18.6 or higher</p>
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div>
+          <p style={{ color: '#ff4d4f', marginBottom: 16 }}>{error}</p>
+          <Button onClick={updateXpubAddress}>
+            Retry
+          </Button>
         </div>
       );
     }
@@ -118,6 +162,9 @@ const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
       const xpubUrl = `https://www.blockchain.com/explorer/assets/btc/xpub/${xpub}`;
       return (
         <div>
+          <p style={{ marginBottom: 16, fontSize: '14px', color: '#666' }}>
+            Wallet Type: <strong>{getWalletTypeLabel()}</strong>
+          </p>
           <Row justify="center">
             <QRCodeSVG
               value={xpubUrl}
@@ -129,6 +176,7 @@ const XpubPage: React.FC<XpubPageProps> = ({ session }) => {
         </div>
       );
     }
+
     return (
       <div>
         <p>No XPUB address found</p>
