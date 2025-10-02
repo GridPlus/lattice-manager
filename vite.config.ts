@@ -11,6 +11,8 @@ export default defineConfig(({ mode }) => ({
     BTC_DEFAULT_FEE_RATE: JSON.stringify(process.env.VITE_BTC_DEFAULT_FEE_RATE),
     BTC_TX_BASE_URL: JSON.stringify(process.env.VITE_BTC_TX_BASE_URL),
     BTC_TESTNET: JSON.stringify(process.env.VITE_BTC_TESTNET),
+    SENTRY_DSN: JSON.stringify(process.env.VITE_SENTRY_DSN),
+    SENTRY_ENVIRONMENT: JSON.stringify(process.env.VITE_SENTRY_ENVIRONMENT),
     "process.env": {},
   },
   server: {
