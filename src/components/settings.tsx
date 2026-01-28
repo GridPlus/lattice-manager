@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, Card, Col, Collapse, Input, Radio, Row, Space, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons';
 import { PageContent } from './index'
+import { SeedPhraseWarning } from './SeedPhraseWarning';
 import omit from "lodash/omit"
 import { constants, getBtcPurpose } from '../util/helpers';
 import localStorage from '../util/localStorage';
@@ -213,6 +214,7 @@ class Settings extends React.Component<any, any> {
   renderCard() {
     return (
       <div>
+        <SeedPhraseWarning />
         {this.renderKeyringsSetting()}
         {this.renderCustomEndpointSetting()}
         {this.renderBitcoinVersionSetting()}

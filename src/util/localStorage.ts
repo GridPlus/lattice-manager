@@ -43,6 +43,16 @@ const removeRootStoreItem = (key) =>
 
 // #endregion
 
+// #region -- Seed Phrase Warning Functions (sessionStorage - resets each browser session)
+
+const SEED_WARNING_KEY = "gridplus_seed_phrase_warning_ack";
+const getSeedWarningAcknowledged = (): boolean =>
+  window.sessionStorage.getItem(SEED_WARNING_KEY) === "true";
+const setSeedWarningAcknowledged = (): void =>
+  window.sessionStorage.setItem(SEED_WARNING_KEY, "true");
+
+// #endregion
+
 // #region -- Settings Functions
 
 const getSettings = () => getRootStoreItem("settings");
@@ -151,6 +161,8 @@ const exports = {
   getRootStoreItem,
   setRootStoreItem,
   removeRootStoreItem,
+  getSeedWarningAcknowledged,
+  setSeedWarningAcknowledged,
   getSettings,
   setSettings,
   getLoginId,

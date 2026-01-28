@@ -16,6 +16,7 @@ import React from "react";
 import { useFeature } from "../hooks/useFeature";
 import { PageContent } from "./index";
 import { LandingCard } from "./LandingCard";
+import { SeedPhraseWarning } from "./SeedPhraseWarning";
 
 const Landing = ({ goToPage }) => {
   const { USES_AUTO_ABI } = useFeature();
@@ -37,6 +38,7 @@ const Landing = ({ goToPage }) => {
             justifyItems: "center",
           }}
         >
+          <SeedPhraseWarning />
           <div
             style={{
               display: "flex",

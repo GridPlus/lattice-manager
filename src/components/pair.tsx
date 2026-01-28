@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Input } from 'antd'
 import { PageContent } from './index'
+import { SeedPhraseWarning } from './SeedPhraseWarning';
 import { AppContext } from '../store/AppContext';
 const SUBMIT_LEN = 8; // 8 characters in a code
 
@@ -64,6 +65,7 @@ class Pair extends React.Component<any, any> {
     const content = (
       <center>
         <Card title="Enter Secret" bordered={true} id='secret-card'>
+          <SeedPhraseWarning />
           <p></p>
           <p>Please enter the pairing secret displayed on your Lattice screen:</p>
           <Input

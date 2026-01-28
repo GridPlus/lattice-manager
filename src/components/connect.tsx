@@ -2,6 +2,7 @@ import React from "react";
 import { Alert, Button, Card, Col, Input, Row, Modal } from "antd";
 import { DesktopOutlined, LinkOutlined } from "@ant-design/icons";
 import { Settings } from "./index";
+import { SeedPhraseWarning } from "./SeedPhraseWarning";
 import { constants } from "../util/helpers";
 import { NameEditor } from "./NameEditor";
 import { LoginData } from "../types/authentication";
@@ -362,6 +363,7 @@ class Connect extends React.Component<ConnectProps, ConnectState> {
                   />
                 </div>
               ) : null}
+              <SeedPhraseWarning style={{ margin: "10px 0" }} />
               {this.renderMsg()}
               {tooLong ? (
                 <p>
